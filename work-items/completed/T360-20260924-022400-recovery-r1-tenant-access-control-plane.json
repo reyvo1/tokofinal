@@ -1,0 +1,79 @@
+{
+  "id": "T360-20260924-022400",
+  "title": "R1 tenant branch identity access and control-plane closure",
+  "type": "feature",
+  "module": "platform",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-020700"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "HIGH",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Company identity remains derived from trusted authenticated context; client companyId never selects another tenant.",
+    "New company provisioning remains bootstrap/deployment controlled because the current product has no cross-company membership model; operators may manage only the active company profile.",
+    "User home branch remains persisted on User.branchId; active branch switching is per AuthSession.activeBranchId and never mutates home-branch ownership.",
+    "Branch switching is allowed only to active branches in the same company and requires branch.switch; denied attempts are audited.",
+    "Refresh rotation and JwtAuthGuard preserve and revalidate session active-branch context against the home company.",
+    "Role/permission/user-status and control-plane mutations remain backend-authorized and audited; UI visibility is not an authorization boundary.",
+    "R1 CRITICAL/HIGH findings require live PostgreSQL GitHub evidence before CLOSED."
+  ],
+  "acceptanceCriteria": [
+    "F07 current company profile is operable from Admin while company creation remains explicitly BOOTSTRAP_ONLY.",
+    "F08 Admin exposes same-company branch switching backed by AuthSession.activeBranchId with cross-branch/cross-company denial.",
+    "F09 Admin exposes user creation, user status, user-role assignment, role creation, and role-permission management.",
+    "F10 Admin exposes system settings, custom fields, webhooks, approval policies/queue, UI schema, audit log, outbox, and ops health.",
+    "SQLite/PostgreSQL expand migration parity adds AuthSession.activeBranchId without destructive reset.",
+    "GitHub full-system and manual Full UAT require the R1 tenant/access runtime probe.",
+    "Local workflow/repo/full audit/UI audit/recovery audit and dependency-free regression pass."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r1-tenant-access-control-plane.test.mjs",
+    "npm run db:migrations:rehearse:sqlite",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:full:repo",
+    "npm run ci:ui:audit",
+    "npm run audit:recovery",
+    "npm run test:dependency-free",
+    "npm run uat:pre-github:local on dependency-complete Windows repo",
+    "GitHub Full System Simulation / Toko360 Full Automated UAT: npm run ci:r1:probe against live PostgreSQL exact runtime"
+  ],
+  "migrationPlan": "Apply expand-only T360-20260924-r1-session-branch-context after the existing F11 transaction-UOM migration in SQLite rehearsal and PostgreSQL production-order manifest. No destructive column/table changes.",
+  "rollbackPlan": "Application rollback may ignore activeBranchId and fall back to User.branchId. Do not drop the expand-only column during rollback; remove it only in a later reviewed contract migration if ever required.",
+  "monitoringPlan": "GitHub R1 evidence records source fingerprint, company/home/active branch identities, same-company switch, denial probes, access lifecycle, and control-plane health. Audit logs record tenant profile and branch-context mutations.",
+  "securityNotes": "No API accepts arbitrary tenant identity as authority. Company creation is not exposed. Branch target is revalidated server-side in the authenticated company. Sensitive control-plane routes have explicit Permissions decorators. Secrets remain redacted/encrypted.",
+  "documentation": [
+    "docs/R1-TENANT-ACCESS-CONTROL-PLANE.md",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md",
+    "config/recovery-finding-matrix.json",
+    ".github/workflows/full-system-simulation.yml",
+    ".github/workflows/toko360-full-uat.yml"
+  ],
+  "createdAt": "2026-09-24T02:24:00+08:00",
+  "updatedAt": "2026-09-24T18:00:00+08:00",
+  "closureEvidence": {
+    "commit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29",
+    "githubRuns": [
+      "97436154184",
+      "97436154273",
+      "97436154286"
+    ],
+    "automatedStatus": "PASS",
+    "humanStage20": "PENDING_SEPARATE"
+  }
+}

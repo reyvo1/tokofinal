@@ -1,0 +1,94 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import { spawnNpm } from './lib/process-runner.mjs';
+import { sourceFingerprint } from './lib/source-fingerprint.mjs';
+import { buildArtifactManifest } from './lib/build-artifact-identity.mjs';
+
+const root = process.cwd();
+const output = path.resolve(root, process.env.T360_BUILD_GATE_OUTPUT || 'handoff/quality/build-gate-latest.json');
+const artifactOutput = path.resolve(root, process.env.T360_BUILD_ARTIFACT_OUTPUT || 'handoff/quality/build-artifact-manifest-latest.json');
+const startedAt = new Date().toISOString();
+const evidence = { startedAt, finishedAt: null, status: 'FAIL', sourceIdentityBefore: sourceFingerprint(root), sourceIdentityAfter: null, buildArtifactId: null, steps: [], error: null };
+
+function runNpm(args, id, envOverrides = {}) {
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const child = spawnNpm(args, { cwd: root, env: { ...process.env, ...envOverrides }, stdio: 'inherit' });
+    child.once('error', (error) => {
+      evidence.steps.push({ id, command: `npm ${args.join(' ')}`, status: 'FAIL', durationMs: Date.now() - started, error: error.message });
+      reject(error);
+    });
+    child.once('close', (code) => {
+      const passed = code === 0;
+      evidence.steps.push({ id, command: `npm ${args.join(' ')}`, status: passed ? 'PASS' : 'FAIL', exitCode: code ?? 1, durationMs: Date.now() - started });
+      if (passed) resolve(); else reject(new Error(`${id} gagal dengan exit code ${code ?? 1}.`));
+    });
+  });
+}
+
+async function main() {
+  fs.mkdirSync(path.dirname(output), { recursive: true });
+  fs.mkdirSync(path.dirname(artifactOutput), { recursive: true });
+  fs.rmSync(artifactOutput, { force: true });
+  try {
+    await runNpm(['run', 'setup:dependencies'], 'DETERMINISTIC_NPM_CI');
+    await runNpm(['run', 'workflow:validate'], 'WORKFLOW_VALIDATE');
+    await runNpm(['run', 'validate:repo'], 'REPOSITORY_VALIDATE');
+    const sqliteEnv = { DATABASE_PROFILE: 'sqlite', DATABASE_URL: 'file:./data/build-gate.db', SEED_MODE: 'demo', NODE_ENV: 'test' };
+    const postgresEnv = { DATABASE_PROFILE: 'postgresql', DATABASE_URL: process.env.T360_BUILD_GATE_POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://toko360:toko360@127.0.0.1:5432/toko360_build_gate?schema=public' };
+    await runNpm(['run', 'prisma:validate:sqlite', '-w', '@toko360/api'], 'PRISMA_VALIDATE_SQLITE', sqliteEnv);
+    await runNpm(['run', 'prisma:validate:postgres', '-w', '@toko360/api'], 'PRISMA_VALIDATE_POSTGRES', postgresEnv);
+    // `npm ci` installs @prisma/client but does not generate this repository's schema-specific client.
+    // TypeScript source imports Prisma.Decimal/Json/model types, so generate the production PostgreSQL client
+    // before lint/test. SQLite compatibility is rehearsed later, then PostgreSQL is generated again before build.
+    await runNpm(['run', 'db:postgres:generate'], 'PRISMA_GENERATE_POSTGRES_FOR_TYPECHECK', postgresEnv);
+    await runNpm(['run', 'lint'], 'TYPESCRIPT_LINT');
+
+    // `npm test` menjalankan runtime tests yang instantiate PrismaClient lewat URL SQLite.
+    // Client yang aktif di titik ini adalah hasil PRISMA_GENERATE_POSTGRES_FOR_TYPECHECK di atas,
+    // jadi lewatannya terjadi:
+    //   PrismaClientInitializationError: the URL must start with the protocol `postgresql://`
+    // dan 59 test gagal - di checkout BERSIH saja. Di laptop yang sudah pernah `prisma generate`
+    // atau `db:local:prepare`, client-nya kebetulan sudah cocok sehingga tidak pernah muncul.
+    //
+    // Perbaikannya adalah MENGHASILKAN CLIENT YANG BENAR: bukan.Selected test, bukan dipaksa hijau.
+    // Urutannya: siapkan SQLite lebih dulu (db:local:prepare sudah termasuk generate), baru
+    // jalankan test. Client PostgreSQL untuk typecheck di langkah sebelumnya tetap dipakai,
+    // karena typecheck memang harus terhadap skema produksi.
+    await runNpm(['run', 'db:local:prepare'], 'SQLITE_DB_PREPARE', sqliteEnv);
+    // `tests/post1c-telegram-polling.test.mjs` meng-import `apps/worker/dist/telegram-polling.js`
+    // dengan SENGAJA: ia stood up HTTP server sungguhan dan memeriksa lalu lintas kabel, jadi
+    // mengujinya lewat source tidak akan membuktikan apa pun. Test itu tidak diubah.
+    //
+    // Karena itu `apps/worker/dist` harus ada SEBELUM `npm test`. Di checkout bersih SIX_APP_
+    // PRODUCTION_BUILD baru selesai jauh setelah REGRESSION_TESTS, jadi tanpa build worker di
+    // sini hasilnya ERR_MODULE_NOT_FOUND. Di laptop `dist/` selalu ada dari build sebelumnya.
+    await runNpm(['run', 'build', '-w', '@toko360/worker'], 'WORKER_BUILD_FOR_TRANSPORT_TESTS', sqliteEnv);
+    await runNpm(['test'], 'REGRESSION_TESTS', sqliteEnv);
+    // SQLite compatibility must run before the exact runtime artifact is created.
+    // The final generated Prisma Client is then restored to PostgreSQL and is not regenerated by the GitHub release simulation.
+    await runNpm(['run', 'test:db:smoke'], 'SQLITE_DB_SMOKE', sqliteEnv);
+    await runNpm(['run', 'db:postgres:generate'], 'PRISMA_GENERATE_POSTGRES_FINAL', postgresEnv);
+    await runNpm(['run', 'build'], 'SIX_APP_PRODUCTION_BUILD', { NODE_ENV: 'production' });
+    evidence.sourceIdentityAfter = sourceFingerprint(root);
+    if (evidence.sourceIdentityAfter.value !== evidence.sourceIdentityBefore.value) throw new Error(`Source fingerprint berubah selama build gate; evidence dibatalkan. before=${evidence.sourceIdentityBefore.value}/${evidence.sourceIdentityBefore.fileCount} after=${evidence.sourceIdentityAfter.value}/${evidence.sourceIdentityAfter.fileCount}`);
+    const artifactManifest = buildArtifactManifest({ root, sourceIdentity: evidence.sourceIdentityAfter });
+    evidence.buildArtifactId = artifactManifest.artifact.id;
+    fs.writeFileSync(artifactOutput, JSON.stringify(artifactManifest, null, 2) + '\n');
+    evidence.status = 'PASS';
+  } catch (error) {
+    evidence.error = error instanceof Error ? error.message : String(error);
+    evidence.sourceIdentityAfter = sourceFingerprint(root);
+    fs.writeFileSync(artifactOutput, JSON.stringify({ generatedAt: new Date().toISOString(), status: 'FAIL', sourceIdentity: evidence.sourceIdentityAfter, artifact: null, error: evidence.error }, null, 2) + '\n');
+    throw error;
+  } finally {
+    evidence.finishedAt = new Date().toISOString();
+    fs.writeFileSync(output, JSON.stringify(evidence, null, 2) + '\n');
+  }
+}
+
+main().then(() => console.log(`Build gate PASS — evidence: ${output}`)).catch((error) => {
+  console.error(`Build gate FAIL — ${error instanceof Error ? error.message : error}`);
+  process.exitCode = 1;
+});

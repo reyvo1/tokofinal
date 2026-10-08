@@ -1,0 +1,650 @@
+name: Toko360 Full Automated UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_live_telegram:
+        description: 'Kirim satu pesan uji ke Telegram nyata menggunakan protected GitHub Environment provider-uat'
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toko360-full-uat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-uat:
+    name: Build + Browser + PostgreSQL Release Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: toko360_ci_password
+          POSTGRES_DB: toko360_staging
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d toko360_staging"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DATABASE_PROFILE: postgresql
+      DATABASE_URL: postgresql://postgres:toko360_ci_password@localhost:5432/toko360_staging
+      T360_UAT_ENVIRONMENT: GITHUB_UAT
+      SEED_ADMIN_EMAIL: ci-admin@example.invalid
+      SEED_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
+      SEED_EMPLOYEE_EMAIL: ci-employee@example.invalid
+      SEED_EMPLOYEE_PASSWORD: CI-Only-Employee-Password-2026!
+      T360_UAT_ADMIN_EMAIL: ci-admin@example.invalid
+      T360_UAT_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
+      T360_UAT_HR_MUTATIONS: 'true'
+      T360_UAT_PREPARE_EMPLOYEE_SELF: 'true'
+      T360_UAT_PREPARE_SALES: 'true'
+      T360_UAT_PREPARE_P5_STOREFRONT_FIXTURE: 'true'
+      T360_UAT_STOREFRONT_BRANCH_CODE: PUSAT
+      T360_UAT_EXPECTED_HOST: localhost
+      T360_UAT_EXPECTED_DATABASE: toko360_staging
+      T360_CI_EXPECTED_HOST: localhost
+      T360_CI_EXPECTED_DATABASE: toko360_staging
+      T360_ALLOW_PRESERVE_ARTIFACT: "1"
+      T360_API_URL: http://localhost:4000/api/v1
+      T360_STOREFRONT_URL: http://localhost:3000
+      T360_ADMIN_URL: http://localhost:3001
+      T360_POS_URL: http://localhost:3002
+      T360_EMPLOYEE_URL: http://localhost:3003
+      WEBHOOK_ALLOW_PRIVATE_TARGETS: "true"
+      SECRET_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      T360_CI_TELEGRAM_API_BASE_URL: http://127.0.0.1:4789
+      T360_PROVIDER_SIM_URL: http://127.0.0.1:4789
+      T360_PROVIDER_SIM_LOG: logs/github-uat/provider-simulator.jsonl
+      DATA_ARCHIVE_STORAGE_PROVIDER: local
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Resolve Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            sudo apt-get install -y chromium-browser || sudo apt-get install -y chromium
+            CHROME="$(command -v chromium-browser || command -v chromium)"
+          fi
+          echo "T360_CHROMIUM=$CHROME" >> "$GITHUB_ENV"
+          "$CHROME" --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Full repository structural audit
+        id: repo_audit
+        continue-on-error: true
+        run: npm run audit:full:repo
+
+      - name: Four-surface UI source interaction audit
+        id: ui_audit
+        continue-on-error: true
+        run: npm run ci:ui:audit
+
+      - name: Rehearse expand migrations from previous source baseline
+        id: migration_rehearsal
+        shell: bash
+        env:
+          PGPASSWORD: toko360_ci_password
+          T360_MIGRATION_DATABASE_URL: postgresql://postgres:toko360_ci_password@localhost:5432/toko360_migration_rehearsal
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.event.before }}"
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE_REF^{commit}" 2>/dev/null; then
+            # `git rev-parse HEAD^` KEGAGALAN pada repo yang hanya punya satu commit (push pertama),
+            # dan dengan `set -e` itu membatalkan seluruh run sebelum satu langkah lain jalan.
+            #Repo ini pernah kosong, jadi kasus itu nyata, bukan hipotetis.
+            BASE_REF="$(git rev-parse --verify --quiet HEAD^ || true)"
+          fi
+          if [ -z "$BASE_REF" ]; then
+            # Tidak ada baseline = tidak ada migrasi untuk direhearse. Melewati LANGKAH INI SAJA
+            # dan mengatakannya, bukan (a) gagalkan run, (b) memakai HEAD sebagai baseline sendiri
+            # yang berarti membandingkan kode dengan dirinya, atau (c) mengarang SHA.
+            # Rehearsal mulai bermakna pada commit kedua; run ini belum punya yang bisa dibuktikan.
+            echo "Tidak ada commit sebelumnya - rehearsal expand migration dilewati pada push pertama."
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          echo "Migration rehearsal baseline: $BASE_REF"
+          export PGPASSWORD=toko360_ci_password
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='toko360_migration_rehearsal' AND pid <> pg_backend_pid();
+          DROP DATABASE IF EXISTS toko360_migration_rehearsal;
+          CREATE DATABASE toko360_migration_rehearsal;
+          SQL
+          T360_MIGRATION_BASE_REF="$BASE_REF" npm run db:migrations:rehearse:postgres
+
+      - name: Prepare PostgreSQL databases and exact UAT env
+        id: env
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p logs/github-uat
+          export PGPASSWORD=toko360_ci_password
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c 'DROP DATABASE IF EXISTS toko360_stage18_restore;' \
+            -c 'CREATE DATABASE toko360_stage18_restore;'
+          node scripts/prepare-github-uat-env.mjs 2>&1 | tee logs/github-uat/05-prepare-env.log
+
+      - name: Sync PostgreSQL schema
+        id: schema
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run prisma:push:postgres -w @toko360/api 2>&1 | tee logs/github-uat/10-prisma-push.log
+
+      - name: Seed PostgreSQL staging
+        id: seed
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/prepare-github-uat-env.mjs --seed 2>&1 | tee logs/github-uat/20-seed.log
+
+      - name: Build gate
+        id: build
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build:gate 2>&1 | tee logs/github-uat/30-build-gate.log
+
+      - name: Record exact source and build artifact identities
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_ENV"
+          const fs = require('fs');
+          const build = JSON.parse(fs.readFileSync('handoff/quality/build-gate-latest.json','utf8'));
+          const artifact = JSON.parse(fs.readFileSync('handoff/quality/build-artifact-manifest-latest.json','utf8'));
+          if (build.status !== 'PASS' || artifact.status !== 'PASS' || !artifact.artifact?.id) process.exit(1);
+          console.log(`T360_SOURCE_FINGERPRINT=${build.sourceIdentityAfter.value}`);
+          console.log(`T360_EXPECTED_SOURCE_FINGERPRINT=${build.sourceIdentityAfter.value}`);
+          console.log(`T360_BUILD_ARTIFACT_ID=${artifact.artifact.id}`);
+          console.log(`T360_EXPECTED_BUILD_ARTIFACT_ID=${artifact.artifact.id}`);
+          NODE
+
+      - name: Configure payroll recovery staging fixture
+        id: recovery
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/prepare-github-payroll-recovery.mjs 2>&1 | tee logs/github-uat/35-payroll-recovery-config.log
+
+      - name: Built Browser UAT (also generates Browser UAT evidence)
+        id: built_browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run uat:browser:built 2>&1 | tee logs/github-uat/50-built-browser-uat.log
+
+      - name: Verify Browser UAT evidence from built run
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'handoff/quality/browser-uat-latest.json';
+          if (!fs.existsSync(p)) throw new Error(`Evidence tidak ditemukan: ${p}`);
+          const e = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const pass = e.status === 'PASS' || e.gate?.passed === true || e.passed === true;
+          if (!pass) throw new Error(`Browser UAT evidence belum PASS: ${JSON.stringify(e.gate ?? e.status ?? e.passed)}`);
+          console.log(`Browser UAT evidence PASS: ${p}`);
+          NODE
+
+      - name: Verify R7 full UI and information architecture on exact browser artifact
+        id: r7_ui
+        continue-on-error: true
+        run: npm run ci:r7:probe
+
+      - name: Verify P5 full visual product rebuild screenshot matrix
+        id: p5_visual_rebuild
+        continue-on-error: true
+        run: npm run ci:p5:probe
+
+      - name: Start exact API + worker + provider simulator for deep runtime sweeps
+        id: runtime_sweep_start
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p logs/github-uat
+          : > /tmp/t360-uat-sweep-pids
+          setsid node scripts/ci-provider-simulator.mjs > logs/github-uat/provider-simulator.log 2>&1 &
+          echo $! >> /tmp/t360-uat-sweep-pids
+          setsid npm run start -w @toko360/api > logs/github-uat/api-runtime.log 2>&1 &
+          echo $! >> /tmp/t360-uat-sweep-pids
+          setsid npm run start -w @toko360/worker > logs/github-uat/worker-runtime.log 2>&1 &
+          echo $! >> /tmp/t360-uat-sweep-pids
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1 && curl -fsS http://127.0.0.1:4789/health >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat logs/github-uat/api-runtime.log || true
+          cat logs/github-uat/provider-simulator.log || true
+          exit 1
+
+      - name: Prove worker consumes queued report job and API serves exact worker output
+        id: worker_probe
+        continue-on-error: true
+        env:
+          T360_WORKER_PROBE_BASE_URL: http://127.0.0.1:4000/api/v1
+        run: npm run ci:worker:probe
+
+      - name: Exercise R1 tenant, branch, access and control-plane lifecycle
+        id: r1_tenant_access
+        continue-on-error: true
+        run: npm run ci:r1:probe
+
+      - name: Exercise R2 HR, attendance, employee self-service and payroll configuration lifecycle
+        id: r2_hr_payroll
+        continue-on-error: true
+        run: npm run ci:r2:probe
+
+      - name: Exercise R4 core-business lifecycle and posting controls
+        id: r4_core_business
+        continue-on-error: true
+        run: npm run ci:r4:probe
+
+      - name: Exercise P2A mixed-UOM order fulfillment and historical return lifecycle
+        id: p2a_multi_uom
+        continue-on-error: true
+        run: npm run ci:p2a:multi-uom-probe
+
+      - name: Exercise P2 payroll methods split-period accounting and recovery lifecycle
+        id: p2_payroll
+        continue-on-error: true
+        run: npm run ci:p2:payroll-probe
+
+      - name: Exercise R5 assets fleet and maintenance lifecycle
+        id: r5_assets_fleet
+        continue-on-error: true
+        run: npm run ci:r5:probe
+
+      - name: Exercise R6 scale summaries retention archive and capability truth
+        id: r6_scale_ai
+        continue-on-error: true
+        run: npm run ci:r6:probe
+
+      - name: Exercise P3 hidden capability productization and maturity truth
+        id: p3_productization
+        continue-on-error: true
+        run: npm run ci:p3:probe
+
+      - name: Exercise P4 canonical domain ownership and legacy-surface removal
+        id: p4_canonical_ownership
+        continue-on-error: true
+        run: npm run ci:p4:probe
+
+      - name: Exercise R3 residual payment reporting edge and marketplace operations
+        id: r3_residual
+        continue-on-error: true
+        run: npm run ci:r3:residual-probe
+
+      - name: Exercise R8 reporting security and owner-digest runtime controls
+        id: r8_reporting_security
+        continue-on-error: true
+        run: npm run ci:r8:reporting-security-probe
+
+      - name: Sweep every documented OpenAPI operation against exact runtime
+        id: api_sweep
+        continue-on-error: true
+        run: npm run ci:api:sweep
+
+      - name: Exercise Telegram, WhatsApp and owner daily-digest delivery end-to-end
+        id: provider_probe
+        continue-on-error: true
+        run: npm run ci:provider:probe
+
+      - name: Stop deep runtime sweep processes before database release gates
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/t360-uat-sweep-pids ]; then
+            while read -r pid; do kill -TERM -- "-$pid" 2>/dev/null || true; done < /tmp/t360-uat-sweep-pids
+            sleep 2
+            while read -r pid; do kill -KILL -- "-$pid" 2>/dev/null || true; done < /tmp/t360-uat-sweep-pids
+          fi
+
+      - name: Stage 18 ownership / restore
+        id: stage18
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run db:ownership:stage:postgres 2>&1 | tee logs/github-uat/60-stage18.log
+
+      - name: Stage 19 tenant integration
+        id: stage19
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:tenant:staging:artifact 2>&1 | tee logs/github-uat/70-stage19.log
+
+      - name: Payroll adjustment staging
+        id: payroll
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run db:payroll-adjustment:stage:postgres:artifact 2>&1 | tee logs/github-uat/80-payroll.log
+
+      - name: Prepare isolated PostgreSQL DR scratch database
+        shell: bash
+        env:
+          PGPASSWORD: toko360_ci_password
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='toko360_dr_restore' AND pid <> pg_backend_pid();
+          DROP DATABASE IF EXISTS toko360_dr_restore;
+          CREATE DATABASE toko360_dr_restore OWNER postgres;
+          SQL
+
+      - name: PostgreSQL disaster-recovery rehearsal to isolated scratch database
+        id: dr_rehearsal
+        continue-on-error: true
+        env:
+          T360_DR_TARGET: STAGING
+          T360_DR_CONFIRM: RUN_T360_POSTGRES_DR_NON_PRODUCTION
+          T360_DR_SOURCE_DATABASE_URL: postgresql://postgres:toko360_ci_password@localhost:5432/toko360_staging?schema=public
+          T360_DR_SOURCE_EXPECTED_HOST: localhost
+          T360_DR_SOURCE_EXPECTED_DATABASE: toko360_staging
+          T360_DR_RESTORE_DATABASE_URL: postgresql://postgres:toko360_ci_password@localhost:5432/toko360_dr_restore?schema=public
+          T360_DR_RESTORE_EXPECTED_HOST: localhost
+          T360_DR_RESTORE_EXPECTED_DATABASE: toko360_dr_restore
+        run: npm run db:dr:rehearse:postgres
+
+      - name: Stage 20 automated readiness
+        id: stage20
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npm run release:readiness:staging:artifact 2>&1 | tee logs/github-uat/90-stage20.log
+          code=${PIPESTATUS[0]}
+          echo "$code" > logs/github-uat/stage20-exit-code.txt
+
+          if [ "$code" -eq 0 ]; then
+            echo "stage20_mode=FULL_PASS" >> "$GITHUB_OUTPUT"
+            exit 0
+          elif [ "$code" -eq 2 ]; then
+            echo "stage20_mode=AUTOMATED_PASS_HUMAN_UAT_PENDING" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "stage20_mode=FAILED" >> "$GITHUB_OUTPUT"
+            exit "$code"
+          fi
+
+      - name: Prove UAT candidate remains fail-closed only because human Stage-20 is pending
+        id: candidate
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          npm run uat:candidate:verify 2>&1 | tee logs/github-uat/100-uat-candidate.log
+          code=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$code" -eq 0 ]; then
+            echo "::error::UAT candidate verifier must not PASS from GitHub automated simulation alone."
+            exit 1
+          fi
+
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+
+          const evidencePath = 'handoff/quality/uat-candidate-latest.json';
+          if (!fs.existsSync(evidencePath)) {
+            throw new Error('UAT candidate evidence tidak ditemukan.');
+          }
+
+          const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
+          if (evidence.status !== 'FAIL' || evidence.uatCandidate !== false) {
+            throw new Error('UAT candidate harus tetap FAIL sampai Human Stage-20 sah.');
+          }
+
+          const stage20 = evidence.checks?.find((item) => item.id === 'STAGE20');
+          const unexpected = (evidence.checks || []).filter(
+            (item) => item.id !== 'STAGE20' && item.status !== 'PASS',
+          );
+
+          if (!stage20 || stage20.status !== 'FAIL' || stage20.reason !== 'Gate evidence belum PASS.') {
+            throw new Error(`Candidate gagal bukan karena Human Stage-20 pending: ${JSON.stringify(stage20)}`);
+          }
+          if (unexpected.length) {
+            throw new Error(`Candidate memiliki failure lain selain Stage-20: ${JSON.stringify(unexpected)}`);
+          }
+
+          console.log('UAT candidate fail-closed assertion PASS: hanya Human Stage-20 yang masih pending.');
+          NODE
+
+      - name: Verify R8 exact-source runtime UAT and release evidence
+        id: r8_release
+        run: npm run ci:r8:probe
+
+      - name: Build GitHub UAT report
+        if: always()
+        shell: bash
+        env:
+          STEP_REPO_AUDIT: ${{ steps.repo_audit.outcome }}
+          STEP_UI_AUDIT: ${{ steps.ui_audit.outcome }}
+          STEP_MIGRATION: ${{ steps.migration_rehearsal.outcome }}
+          STEP_ENV: ${{ steps.env.outcome }}
+          STEP_SCHEMA: ${{ steps.schema.outcome }}
+          STEP_SEED: ${{ steps.seed.outcome }}
+          STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_RECOVERY: ${{ steps.recovery.outcome }}
+          STEP_BROWSER: ${{ steps.browser.outcome }}
+          STEP_BUILT_BROWSER: ${{ steps.built_browser.outcome }}
+          STEP_RUNTIME_SWEEP_START: ${{ steps.runtime_sweep_start.outcome }}
+          STEP_API_SWEEP: ${{ steps.api_sweep.outcome }}
+          STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
+          STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
+          STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
+          STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
+          STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}
+          STEP_R6_SCALE_AI: ${{ steps.r6_scale_ai.outcome }}
+          STEP_P3_PRODUCTIZATION: ${{ steps.p3_productization.outcome }}
+          STEP_P4_CANONICAL_OWNERSHIP: ${{ steps.p4_canonical_ownership.outcome }}
+          STEP_R3_RESIDUAL: ${{ steps.r3_residual.outcome }}
+          STEP_R7_UI: ${{ steps.r7_ui.outcome }}
+          STEP_P5_VISUAL: ${{ steps.p5_visual_rebuild.outcome }}
+          STEP_R8_REPORTING_SECURITY: ${{ steps.r8_reporting_security.outcome }}
+          STEP_R8_RELEASE: ${{ steps.r8_release.outcome }}
+          STEP_PROVIDER_PROBE: ${{ steps.provider_probe.outcome }}
+          STEP_STAGE18: ${{ steps.stage18.outcome }}
+          STEP_STAGE19: ${{ steps.stage19.outcome }}
+          STEP_PAYROLL: ${{ steps.payroll.outcome }}
+          STEP_STAGE20: ${{ steps.stage20.outcome }}
+          STAGE20_MODE: ${{ steps.stage20.outputs.stage20_mode }}
+          STEP_CANDIDATE: ${{ steps.candidate.outcome }}
+        run: node scripts/github-uat-report.mjs
+
+      - name: Publish job summary
+        if: always()
+        run: cat logs/github-uat/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload UAT evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toko360-full-uat-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            logs/
+            handoff/quality/
+            work-items/generated/
+            stage20-uat-results.json
+            stage18-ownership-decisions.json
+
+      - name: Enforce automated UAT result
+        if: always()
+        shell: bash
+        env:
+          STEP_REPO_AUDIT: ${{ steps.repo_audit.outcome }}
+          STEP_UI_AUDIT: ${{ steps.ui_audit.outcome }}
+          STEP_MIGRATION: ${{ steps.migration_rehearsal.outcome }}
+          STEP_ENV: ${{ steps.env.outcome }}
+          STEP_SCHEMA: ${{ steps.schema.outcome }}
+          STEP_SEED: ${{ steps.seed.outcome }}
+          STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_RECOVERY: ${{ steps.recovery.outcome }}
+          STEP_BROWSER: ${{ steps.browser.outcome }}
+          STEP_BUILT_BROWSER: ${{ steps.built_browser.outcome }}
+          STEP_RUNTIME_SWEEP_START: ${{ steps.runtime_sweep_start.outcome }}
+          STEP_API_SWEEP: ${{ steps.api_sweep.outcome }}
+          STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
+          STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
+          STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
+          STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
+          STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}
+          STEP_R6_SCALE_AI: ${{ steps.r6_scale_ai.outcome }}
+          STEP_P3_PRODUCTIZATION: ${{ steps.p3_productization.outcome }}
+          STEP_P4_CANONICAL_OWNERSHIP: ${{ steps.p4_canonical_ownership.outcome }}
+          STEP_R3_RESIDUAL: ${{ steps.r3_residual.outcome }}
+          STEP_R7_UI: ${{ steps.r7_ui.outcome }}
+          STEP_P5_VISUAL: ${{ steps.p5_visual_rebuild.outcome }}
+          STEP_R8_REPORTING_SECURITY: ${{ steps.r8_reporting_security.outcome }}
+          STEP_R8_RELEASE: ${{ steps.r8_release.outcome }}
+          STEP_PROVIDER_PROBE: ${{ steps.provider_probe.outcome }}
+          STEP_STAGE18: ${{ steps.stage18.outcome }}
+          STEP_STAGE19: ${{ steps.stage19.outcome }}
+          STEP_PAYROLL: ${{ steps.payroll.outcome }}
+          STEP_STAGE20: ${{ steps.stage20.outcome }}
+          STAGE20_MODE: ${{ steps.stage20.outputs.stage20_mode }}
+          STEP_CANDIDATE: ${{ steps.candidate.outcome }}
+        run: |
+          set -euo pipefail
+          failed=0
+          check() {
+            if [ "$2" != "success" ]; then
+              echo "::error::$1 = $2"
+              failed=1
+            fi
+          }
+
+          check "Full repository audit" "$STEP_REPO_AUDIT"
+          check "UI interaction audit" "$STEP_UI_AUDIT"
+          check "Expand migration rehearsal" "$STEP_MIGRATION"
+          check "UAT env" "$STEP_ENV"
+          check "PostgreSQL schema" "$STEP_SCHEMA"
+          check "PostgreSQL seed" "$STEP_SEED"
+          check "Build gate" "$STEP_BUILD"
+          check "Payroll recovery fixture" "$STEP_RECOVERY"
+          check "Built Browser UAT" "$STEP_BUILT_BROWSER"
+          check "Browser UAT evidence" "$STEP_BROWSER"
+          check "Runtime sweep start" "$STEP_RUNTIME_SWEEP_START"
+          check "All OpenAPI runtime sweep" "$STEP_API_SWEEP"
+          check "R1 tenant/access runtime probe" "$STEP_R1_TENANT_ACCESS"
+          check "R2 HR/attendance/payroll runtime probe" "$STEP_R2_HR_PAYROLL"
+          check "R4 core-business runtime probe" "$STEP_R4_CORE_BUSINESS"
+          check "P2A mixed-UOM runtime probe" "$STEP_P2A_MULTI_UOM"
+          check "P2 payroll runtime probe" "$STEP_P2_PAYROLL"
+          check "R5 assets/fleet runtime probe" "$STEP_R5_ASSETS_FLEET"
+          check "R6 scale/summary/archive/capability runtime probe" "$STEP_R6_SCALE_AI"
+          check "P3 hidden capability productization and maturity truth" "$STEP_P3_PRODUCTIZATION"
+          check "P4 canonical domain ownership and legacy-surface removal" "$STEP_P4_CANONICAL_OWNERSHIP"
+          check "R3 residual payment/reporting/edge/marketplace runtime probe" "$STEP_R3_RESIDUAL"
+          check "R7 full UI / information architecture probe" "$STEP_R7_UI"
+          check "P5 full visual product rebuild screenshot matrix" "$STEP_P5_VISUAL"
+          check "R8 reporting/security runtime probe" "$STEP_R8_REPORTING_SECURITY"
+          check "R8 exact-source release evidence" "$STEP_R8_RELEASE"
+          check "Telegram/WhatsApp provider probe" "$STEP_PROVIDER_PROBE"
+          check "Stage 18" "$STEP_STAGE18"
+          check "Stage 19" "$STEP_STAGE19"
+          check "Payroll staging" "$STEP_PAYROLL"
+          check "Stage 20 automated" "$STEP_STAGE20"
+          check "UAT candidate fail-closed assertion" "$STEP_CANDIDATE"
+
+          case "${STAGE20_MODE:-}" in
+            FULL_PASS|AUTOMATED_PASS_HUMAN_UAT_PENDING) ;;
+            *)
+              echo "::error::Stage-20 automated readiness belum PASS."
+              failed=1
+              ;;
+          esac
+
+          if [ "$failed" -ne 0 ]; then
+            echo "Automated UAT FAILED. Gunakan artifact logs untuk blocker pertama."
+            exit 1
+          fi
+
+          echo "Automated UAT PASS."
+          echo "Human Stage-20 UAT tetap PENDING sampai direview manusia."
+
+  live-telegram-provider:
+    name: Optional LIVE Telegram Provider
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_telegram }}
+    needs: full-uat
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: provider-uat
+    permissions:
+      contents: read
+    env:
+      GITHUB_ACTIONS: "true"
+      T360_UAT_ENVIRONMENT: GITHUB_LIVE_PROVIDER_UAT
+      T360_LIVE_TELEGRAM_BOT_TOKEN: ${{ secrets.T360_LIVE_TELEGRAM_BOT_TOKEN }}
+      T360_LIVE_TELEGRAM_CHAT_ID: ${{ secrets.T360_LIVE_TELEGRAM_CHAT_ID }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Send protected live Telegram smoke message
+        run: npm run ci:telegram:live
+      - name: Upload live provider evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toko360-live-telegram-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: error
+          path: handoff/quality/github-live-telegram-smoke-latest.json

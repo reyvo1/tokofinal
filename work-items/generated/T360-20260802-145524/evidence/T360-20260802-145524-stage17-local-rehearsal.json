@@ -1,0 +1,70 @@
+{
+  "workItem": "T360-20260802-145524",
+  "stage": 17,
+  "generatedAt": "2026-08-02T15:14:31.184Z",
+  "databaseMutation": "none; migration executed only on snapshot copy",
+  "expandedOnSnapshot": true,
+  "products": {
+    "total": 3,
+    "owned": 3,
+    "unresolved": 0,
+    "multiCompanyCandidates": 0,
+    "noCandidate": 0,
+    "ownershipMismatches": 0
+  },
+  "suppliers": {
+    "total": 1,
+    "owned": 1,
+    "unresolved": 0,
+    "multiCompanyCandidates": 0,
+    "noCandidate": 0,
+    "ownershipMismatches": 0
+  },
+  "restoreTest": {
+    "passed": true,
+    "originalIntegrity": "ok",
+    "restoredIntegrity": "ok",
+    "tableCountsMatch": true
+  },
+  "backfillIdempotent": true,
+  "manualDecisions": {
+    "first": {
+      "source": "stage17-ownership-decisions.json",
+      "requested": 1,
+      "applied": [
+        {
+          "entity": "Supplier",
+          "entityId": "8f827149-7a1f-4868-ac81-4af2890b6ec1",
+          "companyId": "00000000-0000-0000-0000-000000000001",
+          "decision": "ADMIN_EXPLICIT_SINGLE_AVAILABLE_COMPANY_NO_TRANSACTION_EVIDENCE",
+          "rationale": "Supplier demo tidak memiliki PurchaseOrder, GoodsReceipt, PurchaseReturn, atau tax-code evidence. Database rehearsal hanya memiliki satu company, Toko360 Demo. Mapping ini merupakan keputusan administratif eksplisit dan hanya diterapkan pada snapshot rehearsal.",
+          "transactionCandidateCount": 0
+        }
+      ],
+      "alreadyApplied": []
+    },
+    "second": {
+      "source": "stage17-ownership-decisions.json",
+      "requested": 1,
+      "applied": [],
+      "alreadyApplied": [
+        {
+          "entity": "Supplier",
+          "entityId": "8f827149-7a1f-4868-ac81-4af2890b6ec1",
+          "companyId": "00000000-0000-0000-0000-000000000001",
+          "decision": "ADMIN_EXPLICIT_SINGLE_AVAILABLE_COMPANY_NO_TRANSACTION_EVIDENCE",
+          "rationale": "Supplier demo tidak memiliki PurchaseOrder, GoodsReceipt, PurchaseReturn, atau tax-code evidence. Database rehearsal hanya memiliki satu company, Toko360 Demo. Mapping ini merupakan keputusan administratif eksplisit dan hanya diterapkan pada snapshot rehearsal.",
+          "transactionCandidateCount": 0
+        }
+      ]
+    }
+  },
+  "integrity": "ok",
+  "foreignKeyViolationCount": 0,
+  "missingIndexes": [],
+  "gate": {
+    "passed": true,
+    "allowUnresolved": false,
+    "blockingReasons": []
+  }
+}

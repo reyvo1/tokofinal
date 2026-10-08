@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260823-190003",
+  "backlogKey": "w2-pos-payment-production",
+  "title": "Menstabilkan POS shift pembayaran refund dan rekonsiliasi",
+  "type": "feature",
+  "module": "pos",
+  "wave": "W2",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "commerce.pos.productionReady",
+  "dependencies": [
+    "w1-atomic-stock-mutation",
+    "w0-permission-guard-coverage"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "HIGH",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "LOW",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Shift wajib dibuka sebelum transaksi dan ditutup dengan rekonsiliasi kas.",
+    "Refund harus merujuk transaksi asli dan membalik stock, journal, payment, serta pajak secara idempotent."
+  ],
+  "acceptanceCriteria": [
+    "Tunai, transfer, QRIS, kartu, split payment, hold, refund, dan close shift tercatat konsisten.",
+    "Transaksi lokal dapat disinkronkan tanpa duplikasi."
+  ],
+  "testPlan": [
+    "E2E POS sale-payment-stock-journal-tax.",
+    "Payment callback replay test.",
+    "Offline sync retry/conflict test.",
+    "Concurrency dan performance test banyak kasir."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+    "docs/PERFORMANCE-CHECKLIST.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-190003",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T11:00:03.073Z",
+  "updatedAt": "2026-08-23T11:09:02.936Z",
+  "releaseEvidence": [
+    "Endpoint shifts open/close/recap aktif; close menghitung expected cash dari sales COMPLETED dan selisih.",
+    "Build lulus; quality gate batch berikutnya.",
+    "Rollback: git restore."
+  ]
+}

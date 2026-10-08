@@ -1,0 +1,21 @@
+{
+  "version": "1.1.0",
+  "defaultMode": "prepare",
+  "autoInitializeGit": true,
+  "autoCreateBranch": true,
+  "openEditor": true,
+  "preferredEditor": "code",
+  "fallbackEditor": "notepad",
+  "runWorkflowValidation": true,
+  "runRepositoryValidationWhenDependenciesExist": true,
+  "agent": {
+    "enabled": false,
+    "command": "",
+    "args": [
+      "{promptFile}"
+    ],
+    "workingDirectory": "{repositoryRoot}",
+    "autoRunOnPrepare": true,
+    "autoRunOnResume": true
+  }
+}

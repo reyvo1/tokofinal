@@ -1,0 +1,607 @@
+name: Toko360 Full System Simulation
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-system-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-full-system:
+    name: PostgreSQL + six-app + browser + Stage-18/19/20 simulation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: toko360
+          POSTGRES_PASSWORD: toko360_ci_password
+          POSTGRES_DB: toko360_staging
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U toko360 -d toko360_staging"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      CI: 'true'
+      DATABASE_PROFILE: postgresql
+      DATABASE_URL: postgresql://toko360:toko360_ci_password@localhost:5432/toko360_staging?schema=public
+      T360_CI_DATABASE_URL: postgresql://toko360:toko360_ci_password@localhost:5432/toko360_staging?schema=public
+      T360_CI_EXPECTED_HOST: localhost
+      T360_CI_EXPECTED_DATABASE: toko360_staging
+      T360_CI_STAGE18_RESTORE_DATABASE: toko360_stage18_restore
+      T360_CI_DR_RESTORE_DATABASE: toko360_dr_restore
+      JWT_SECRET: github-actions-jwt-secret-2026-change-only-in-ci
+      ORDER_ACCESS_SECRET: github-actions-order-access-secret-2026-only-ci
+      SECRET_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      WEBHOOK_SIGNING_SECRET: github-actions-webhook-signing-secret-2026-only-ci
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      SEED_MODE: bootstrap
+      SEED_COMPANY_ID: 11111111-1111-4111-8111-111111111111
+      SEED_COMPANY_NAME: Toko360 GitHub CI
+      SEED_COMPANY_SLUG: toko360-github-ci
+      SEED_BRANCH_CODE: PUSAT
+      SEED_BRANCH_NAME: Cabang GitHub CI
+      SEED_WAREHOUSE_CODE: GDG-UTAMA
+      SEED_WAREHOUSE_NAME: Gudang GitHub CI
+      SEED_ADMIN_EMAIL: ci-admin@example.invalid
+      SEED_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
+      SEED_EMPLOYEE_EMAIL: ci-employee@example.invalid
+      SEED_EMPLOYEE_PASSWORD: CI-Only-Employee-Password-2026!
+      T360_UAT_ENVIRONMENT: GITHUB_STAGING_SIMULATION
+      T360_UAT_ADMIN_EMAIL: ci-admin@example.invalid
+      T360_UAT_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
+      T360_UAT_PREPARE_EMPLOYEE_SELF: 'true'
+      T360_UAT_PREPARE_SALES: 'true'
+      T360_UAT_PREPARE_P5_STOREFRONT_FIXTURE: 'true'
+      T360_UAT_STOREFRONT_BRANCH_CODE: PUSAT
+      T360_UAT_HR_MUTATIONS: 'true'
+      T360_UAT_EXPECTED_HOST: localhost
+      T360_UAT_EXPECTED_DATABASE: toko360_staging
+      T360_API_URL: http://localhost:4000/api/v1
+      T360_STOREFRONT_URL: http://localhost:3000
+      T360_ADMIN_URL: http://localhost:3001
+      T360_POS_URL: http://localhost:3002
+      T360_EMPLOYEE_URL: http://localhost:3003
+      WEBHOOK_ALLOW_PRIVATE_TARGETS: 'true'
+      T360_CI_TELEGRAM_API_BASE_URL: http://127.0.0.1:4789
+      T360_PROVIDER_SIM_URL: http://127.0.0.1:4789
+      T360_PROVIDER_SIM_LOG: logs/github-runtime/provider-simulator.jsonl
+      DATA_ARCHIVE_STORAGE_PROVIDER: local
+
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install matching PostgreSQL 16 client tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16
+          psql --version
+          pg_dump --version
+          pg_restore --version
+          test "$(pg_dump --version | awk '{print $3}' | cut -d. -f1)" = "16"
+          test "$(pg_restore --version | awk '{print $3}' | cut -d. -f1)" = "16"
+
+      - name: Discover Chromium/Chrome
+        shell: bash
+        run: |
+          BROWSER="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$BROWSER" ]; then
+            echo "No Chromium/Chrome executable found on GitHub runner" >&2
+            exit 1
+          fi
+          echo "T360_CHROMIUM=$BROWSER" >> "$GITHUB_ENV"
+          "$BROWSER" --version
+
+      - name: Prepare fail-closed non-production simulation config
+        run: node scripts/ci-prepare-github-simulation.mjs
+
+      - name: Full repository structural audit
+        id: repo_audit
+        continue-on-error: true
+        run: npm run audit:full:repo
+
+      - name: Four-surface UI source interaction audit
+        id: ui_audit
+        continue-on-error: true
+        run: npm run ci:ui:audit
+
+      - name: Deterministic install + all regression + lint + Prisma validate/generate + six-app build
+        id: build_gate
+        continue-on-error: true
+        run: npm run build:gate
+
+      - name: Record exact source and build artifact identities
+        if: steps.build_gate.outcome == 'success'
+        shell: bash
+        run: |
+          node <<'NODE' >> "$GITHUB_ENV"
+          const fs = require('fs');
+          const build = JSON.parse(fs.readFileSync('handoff/quality/build-gate-latest.json','utf8'));
+          const artifact = JSON.parse(fs.readFileSync('handoff/quality/build-artifact-manifest-latest.json','utf8'));
+          if (build.status !== 'PASS' || artifact.status !== 'PASS' || !artifact.artifact?.id) process.exit(1);
+          console.log(`T360_SOURCE_FINGERPRINT=${build.sourceIdentityAfter.value}`);
+          console.log(`T360_EXPECTED_SOURCE_FINGERPRINT=${build.sourceIdentityAfter.value}`);
+          console.log(`T360_BUILD_ARTIFACT_ID=${artifact.artifact.id}`);
+          console.log(`T360_EXPECTED_BUILD_ARTIFACT_ID=${artifact.artifact.id}`);
+          NODE
+
+      - name: Audit production dependencies for high/critical vulnerabilities
+        if: always()
+        id: dependency_audit
+        continue-on-error: true
+        run: npm run ci:audit:production
+
+      - name: Generate isolated security dependency lock proposal when audit blocks
+        if: always() && steps.dependency_audit.outcome != 'success'
+        id: security_dependency_proposal
+        continue-on-error: true
+        run: npm run ci:security:proposal
+
+      - name: Verify 12 critical UAT scenarios have automated regression coverage
+        if: always()
+        id: critical_coverage
+        continue-on-error: true
+        run: npm run ci:uat:coverage
+
+      - name: Validate CI-only container composition
+        if: always()
+        id: compose_validation
+        continue-on-error: true
+        run: docker compose -f .github/ci/docker-compose.ci.yml config
+
+      - name: Stop artifact-dependent simulation after collecting independent diagnostics when build fails
+        if: steps.build_gate.outcome != 'success'
+        shell: bash
+        run: |
+          echo "Build gate failed. Independent dependency/UAT-coverage/container diagnostics were still collected; artifact-dependent stages are intentionally skipped." >&2
+          exit 1
+
+      - name: Rehearse expand migrations from previous source baseline
+        id: migration_rehearsal
+        shell: bash
+        env:
+          PGPASSWORD: toko360_ci_password
+          T360_MIGRATION_DATABASE_URL: postgresql://toko360:toko360_ci_password@localhost:5432/toko360_migration_rehearsal?schema=public
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.event.before }}"
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE_REF^{commit}" 2>/dev/null; then
+            # `git rev-parse HEAD^` KEGAGALAN pada repo yang hanya punya satu commit (push pertama),
+            # dan dengan `set -e` itu membatalkan seluruh run sebelum satu langkah lain jalan.
+            #Repo ini pernah kosong, jadi kasus itu nyata, bukan hipotetis.
+            BASE_REF="$(git rev-parse --verify --quiet HEAD^ || true)"
+          fi
+          if [ -z "$BASE_REF" ]; then
+            # Tidak ada baseline = tidak ada migrasi untuk direhearse. Melewati LANGKAH INI SAJA
+            # dan mengatakannya, bukan (a) gagalkan run, (b) memakai HEAD sebagai baseline sendiri
+            # yang berarti membandingkan kode dengan dirinya, atau (c) mengarang SHA.
+            # Rehearsal mulai bermakna pada commit kedua; run ini belum punya yang bisa dibuktikan.
+            echo "Tidak ada commit sebelumnya - rehearsal expand migration dilewati pada push pertama."
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          echo "Migration rehearsal baseline: $BASE_REF"
+          psql -h localhost -U toko360 -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='toko360_migration_rehearsal' AND pid <> pg_backend_pid();
+          DROP DATABASE IF EXISTS toko360_migration_rehearsal;
+          CREATE DATABASE toko360_migration_rehearsal OWNER toko360;
+          SQL
+          T360_MIGRATION_BASE_REF="$BASE_REF" npm run db:migrations:rehearse:postgres
+
+      - name: Prepare PostgreSQL staging schema and bootstrap seed without regenerating exact artifact client
+        run: |
+          npm run db:postgres:prepare:artifact
+          npm run test:db:smoke
+
+      - name: Create isolated restore databases
+        id: restore_databases
+        continue-on-error: true
+        shell: bash
+        env:
+          PGPASSWORD: toko360_ci_password
+        run: |
+          psql -h localhost -U toko360 -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('toko360_stage18_restore','toko360_dr_restore') AND pid <> pg_backend_pid();
+          DROP DATABASE IF EXISTS toko360_stage18_restore;
+          DROP DATABASE IF EXISTS toko360_dr_restore;
+          CREATE DATABASE toko360_stage18_restore OWNER toko360;
+          CREATE DATABASE toko360_dr_restore OWNER toko360;
+          SQL
+
+      - name: Stage-18 ownership migration + canonical backup/restore rehearsal
+        id: stage18
+        continue-on-error: true
+        run: npm run db:ownership:stage:postgres
+
+      - name: Payroll adjustment PostgreSQL migration rehearsal
+        id: payroll_migration
+        continue-on-error: true
+        run: npm run db:payroll-adjustment:stage:postgres:artifact
+
+      - name: Stage-19 HTTP/DB tenant integration on exact build artifact
+        id: stage19
+        continue-on-error: true
+        run: npm run test:tenant:staging:artifact
+
+      - name: Built six-process browser UAT on exact artifact
+        id: built_browser
+        continue-on-error: true
+        run: npm run uat:browser:built
+
+      - name: Verify R7 full UI and information architecture on exact browser artifact
+        id: r7_ui
+        continue-on-error: true
+        run: npm run ci:r7:probe
+
+      - name: Verify P5 full visual product rebuild screenshot matrix
+        id: p5_visual_rebuild
+        continue-on-error: true
+        run: npm run ci:p5:probe
+
+      - name: Start exact built runtime for certification and load
+        id: runtime_start
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p logs/github-runtime
+          : > /tmp/t360-runtime-pids
+          setsid node scripts/ci-provider-simulator.mjs > logs/github-runtime/provider-simulator.log 2>&1 &
+          echo $! >> /tmp/t360-runtime-pids
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:4789/health >/dev/null 2>&1; then break; fi
+            if [ "$i" -eq 20 ]; then cat logs/github-runtime/provider-simulator.log || true; exit 1; fi
+            sleep 1
+          done
+          start_service() {
+            local name="$1" workspace="$2"
+            setsid npm run start -w "$workspace" > "logs/github-runtime/${name}.log" 2>&1 &
+            echo $! >> /tmp/t360-runtime-pids
+          }
+          start_service api @toko360/api
+          start_service worker @toko360/worker
+          start_service storefront @toko360/storefront
+          start_service admin @toko360/admin
+          start_service pos @toko360/pos
+          start_service employee @toko360/employee-portal
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:4000/api/v1/health >/tmp/t360-health.json 2>/dev/null; then
+              node -e "const h=require('/tmp/t360-health.json'); if(h.status!=='ok'||h.release?.sourceFingerprint!==process.env.T360_EXPECTED_SOURCE_FINGERPRINT||h.release?.buildArtifactId!==process.env.T360_EXPECTED_BUILD_ARTIFACT_ID) process.exit(1)"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat logs/github-runtime/api.log || true
+          exit 1
+
+      - name: Prove worker consumes queued report job and API serves exact worker output
+        id: worker_probe
+        continue-on-error: true
+        env:
+          T360_WORKER_PROBE_BASE_URL: http://127.0.0.1:4000/api/v1
+        run: npm run ci:worker:probe
+
+      - name: Exercise R1 tenant, branch, access and control-plane lifecycle
+        id: r1_tenant_access
+        continue-on-error: true
+        run: npm run ci:r1:probe
+
+      - name: Exercise R2 HR, attendance, employee self-service and payroll configuration lifecycle
+        id: r2_hr_payroll
+        continue-on-error: true
+        run: npm run ci:r2:probe
+
+      - name: Exercise R4 core-business lifecycle and posting controls
+        id: r4_core_business
+        continue-on-error: true
+        run: npm run ci:r4:probe
+
+      - name: Exercise P2A mixed-UOM order fulfillment and historical return lifecycle
+        id: p2a_multi_uom
+        continue-on-error: true
+        run: npm run ci:p2a:multi-uom-probe
+
+      - name: Exercise P2 payroll methods split-period accounting and recovery lifecycle
+        id: p2_payroll
+        continue-on-error: true
+        run: npm run ci:p2:payroll-probe
+
+      - name: Exercise R5 assets fleet and maintenance lifecycle
+        id: r5_assets_fleet
+        continue-on-error: true
+        run: npm run ci:r5:probe
+
+      - name: Exercise R6 scale summaries retention archive and capability truth
+        id: r6_scale_ai
+        continue-on-error: true
+        run: npm run ci:r6:probe
+
+      - name: Exercise P3 hidden capability productization and maturity truth
+        id: p3_productization
+        continue-on-error: true
+        run: npm run ci:p3:probe
+
+      - name: Exercise P4 canonical domain ownership and legacy-surface removal
+        id: p4_canonical_ownership
+        continue-on-error: true
+        run: npm run ci:p4:probe
+
+      - name: Exercise R3 residual payment reporting edge and marketplace operations
+        id: r3_residual
+        continue-on-error: true
+        run: npm run ci:r3:residual-probe
+
+      - name: Exercise R8 reporting security and owner-digest runtime controls
+        id: r8_reporting_security
+        continue-on-error: true
+        run: npm run ci:r8:reporting-security-probe
+
+      - name: Sweep every documented OpenAPI operation against exact runtime
+        id: api_sweep
+        continue-on-error: true
+        run: npm run ci:api:sweep
+
+      - name: Exercise Telegram, WhatsApp and owner daily-digest delivery end-to-end
+        id: provider_probe
+        continue-on-error: true
+        run: npm run ci:provider:probe
+
+      - name: Staging certification on exact runtime/database/artifact
+        id: staging_certification
+        continue-on-error: true
+        env:
+          STAGING_BASE_URL: http://127.0.0.1:4000
+          STAGING_EXPECTED_HOST: 127.0.0.1
+          STAGING_EXPECTED_DB_HOST: localhost
+          STAGING_EXPECTED_DB_NAME: toko360_staging
+          STAGING_TEST_EMAIL: ci-admin@example.invalid
+          STAGING_TEST_PASSWORD: CI-Only-Strong-Password-2026!
+        run: npm run certify:staging
+
+      - name: Identity-locked load smoke
+        id: load_smoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          node scripts/load-test.mjs \
+            --url http://127.0.0.1:4000/api/v1/health \
+            --requests 600 \
+            --concurrency 30 \
+            --timeout-ms 10000 \
+            --max-p95-ms 1500 \
+            --max-p99-ms 3000 \
+            --max-error-rate 0 \
+            --expected-source-fingerprint "$T360_EXPECTED_SOURCE_FINGERPRINT" \
+            --expected-build-artifact-id "$T360_EXPECTED_BUILD_ARTIFACT_ID" \
+            --expected-db-host localhost \
+            --expected-db-name toko360_staging \
+            --output handoff/quality/load-health-latest.json
+
+      - name: PostgreSQL index profile
+        id: index_profile
+        continue-on-error: true
+        run: node scripts/profile-postgres-indexes.mjs --output handoff/quality/index-profile-latest.json
+
+      - name: Stop persistent runtime before Stage-20 isolated observation
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/t360-runtime-pids ]; then
+            while read -r pid; do
+              kill -TERM -- "-$pid" 2>/dev/null || true
+            done < /tmp/t360-runtime-pids
+            sleep 3
+            while read -r pid; do
+              if kill -0 -- "-$pid" 2>/dev/null; then
+                kill -KILL -- "-$pid" 2>/dev/null || true
+              fi
+            done < /tmp/t360-runtime-pids
+          fi
+
+      - name: PostgreSQL disaster-recovery rehearsal to isolated scratch database
+        id: dr_rehearsal
+        continue-on-error: true
+        env:
+          T360_DR_TARGET: STAGING
+          T360_DR_CONFIRM: RUN_T360_POSTGRES_DR_NON_PRODUCTION
+          T360_DR_SOURCE_DATABASE_URL: postgresql://toko360:toko360_ci_password@localhost:5432/toko360_staging?schema=public
+          T360_DR_SOURCE_EXPECTED_HOST: localhost
+          T360_DR_SOURCE_EXPECTED_DATABASE: toko360_staging
+          T360_DR_RESTORE_DATABASE_URL: postgresql://toko360:toko360_ci_password@localhost:5432/toko360_dr_restore?schema=public
+          T360_DR_RESTORE_EXPECTED_HOST: localhost
+          T360_DR_RESTORE_EXPECTED_DATABASE: toko360_dr_restore
+        run: npm run db:dr:rehearse:postgres
+
+      - name: Prepare Stage-20 indexes without rebuilding tested artifact
+        id: stage20_prepare
+        continue-on-error: true
+        run: node scripts/prepare-stage20-postgres.mjs --env-file stage20-release-readiness.env --preserve-artifact
+
+      - name: Run Stage-20 automated gate while keeping human UAT explicitly pending
+        id: stage20_automated
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          node scripts/run-stage20-release-readiness.mjs --env-file stage20-release-readiness.env --uat-file stage20-uat-ci-pending.json
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then
+            echo "Expected Stage-20 exit 2 (automated PASS, human UAT pending), got $code" >&2
+            exit 1
+          fi
+          npm run ci:stage20:verify-automated
+
+      - name: Prove UAT candidate remains fail-closed without human Stage-20 approval
+        id: candidate_failclosed
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npm run uat:candidate:verify
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "UAT candidate verifier must not PASS from GitHub automated simulation alone" >&2
+            exit 1
+          fi
+          node -e "const fs=require('fs'); const p='handoff/quality/uat-candidate-latest.json'; if(!fs.existsSync(p)) process.exit(1); const d=JSON.parse(fs.readFileSync(p)); if(d.status==='PASS'||d.passed===true) process.exit(1);"
+
+      - name: Verify R8 exact-source runtime UAT and release evidence
+        id: r8_release
+        run: npm run ci:r8:probe
+
+      - name: Verify exact build outputs were not rebuilt or mutated
+        id: artifact_preserved
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { sourceFingerprint } from './scripts/lib/source-fingerprint.mjs';
+          import { readAndVerifyBuildArtifactManifest } from './scripts/lib/build-artifact-identity.mjs';
+          const source = sourceFingerprint(process.cwd());
+          const verified = readAndVerifyBuildArtifactManifest(process.cwd(), 'handoff/quality/build-artifact-manifest-latest.json', source.value);
+          if (verified.current.id !== process.env.T360_EXPECTED_BUILD_ARTIFACT_ID) throw new Error('Exact build artifact changed during GitHub system simulation.');
+          console.log(`Exact artifact preserved: ${verified.current.id}`);
+          NODE
+
+      - name: Upload exact tested runtime build outputs
+        id: upload_runtime
+        if: always() && steps.build_gate.outcome == 'success' && steps.artifact_preserved.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: toko360-tested-runtime-${{ github.sha }}
+          include-hidden-files: true
+          path: |
+            apps/api/dist/**
+            apps/worker/dist/**
+            apps/storefront/.next/**
+            !apps/storefront/.next/cache/**
+            apps/admin/.next/**
+            !apps/admin/.next/cache/**
+            apps/pos/.next/**
+            !apps/pos/.next/cache/**
+            apps/employee-portal/.next/**
+            !apps/employee-portal/.next/cache/**
+            apps/storefront/public/**
+            apps/admin/public/**
+            apps/pos/public/**
+            apps/employee-portal/public/**
+            package.json
+            package-lock.json
+            apps/*/package.json
+            packages/*/package.json
+            apps/api/prisma/schema.prisma
+            apps/api/prisma/schema.sqlite.prisma
+            apps/api/prisma/schema.postgresql.prisma
+            handoff/quality/build-artifact-manifest-latest.json
+            handoff/quality/build-gate-latest.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Record immutable GitHub runtime artifact transport identity
+        if: always() && steps.upload_runtime.outcome == 'success'
+        shell: bash
+        env:
+          T360_GITHUB_ARTIFACT_ID: ${{ steps.upload_runtime.outputs['artifact-id'] }}
+          T360_GITHUB_ARTIFACT_URL: ${{ steps.upload_runtime.outputs['artifact-url'] }}
+          T360_GITHUB_ARTIFACT_DIGEST: ${{ steps.upload_runtime.outputs['artifact-digest'] }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { sourceFingerprint } from './scripts/lib/source-fingerprint.mjs';
+          const digest=String(process.env.T360_GITHUB_ARTIFACT_DIGEST||'').trim();
+          const artifactId=String(process.env.T360_GITHUB_ARTIFACT_ID||'').trim();
+          const artifactUrl=String(process.env.T360_GITHUB_ARTIFACT_URL||'').trim();
+          if (!/^(?:sha256:)?[a-f0-9]{64}$/i.test(digest)) throw new Error(`GitHub artifact digest invalid: ${digest||'<missing>'}`);
+          const normalizedDigest=digest.toLowerCase().startsWith('sha256:')?digest.toLowerCase():`sha256:${digest.toLowerCase()}`;
+          if (!artifactId || !artifactUrl) throw new Error('GitHub artifact transport identity incomplete.');
+          const build=JSON.parse(fs.readFileSync('handoff/quality/build-artifact-manifest-latest.json','utf8'));
+          if (build.status!=='PASS'||!build.artifact?.id) throw new Error('Build artifact manifest must PASS before transport evidence.');
+          const out={
+            generatedAt:new Date().toISOString(), status:'PASS', sourceIdentity:sourceFingerprint(process.cwd()),
+            buildArtifactId:build.artifact.id, github:{runId:process.env.GITHUB_RUN_ID||null, runAttempt:process.env.GITHUB_RUN_ATTEMPT||null, sha:process.env.GITHUB_SHA||null, artifactId, artifactUrl, artifactDigest:normalizedDigest},
+            note:'GitHub immutable artifact transport digest. .next outputs are explicitly included; transient .next/cache is excluded.'
+          };
+          fs.writeFileSync('handoff/quality/github-runtime-artifact-transport-latest.json',JSON.stringify(out,null,2)+'\n');
+          console.log(`GitHub runtime artifact transport PASS: ${normalizedDigest}`);
+          NODE
+
+      - name: Write GitHub full-system summary evidence even on failure
+        if: always()
+        env:
+          T360_CI_JOB_STATUS: ${{ job.status }}
+          T360_CI_STEP_REPO_AUDIT: ${{ steps.repo_audit.outcome }}
+          T360_CI_STEP_UI_AUDIT: ${{ steps.ui_audit.outcome }}
+          T360_CI_STEP_DEPENDENCY_AUDIT: ${{ steps.dependency_audit.outcome }}
+          T360_CI_STEP_CRITICAL_COVERAGE: ${{ steps.critical_coverage.outcome }}
+          T360_CI_STEP_RESTORE_DATABASES: ${{ steps.restore_databases.outcome }}
+          T360_CI_STEP_STAGE18: ${{ steps.stage18.outcome }}
+          T360_CI_STEP_PAYROLL_MIGRATION: ${{ steps.payroll_migration.outcome }}
+          T360_CI_STEP_STAGE19: ${{ steps.stage19.outcome }}
+          T360_CI_STEP_BUILT_BROWSER: ${{ steps.built_browser.outcome }}
+          T360_CI_STEP_RUNTIME_START: ${{ steps.runtime_start.outcome }}
+          T360_CI_STEP_WORKER_PROBE: ${{ steps.worker_probe.outcome }}
+          T360_CI_STEP_API_SWEEP: ${{ steps.api_sweep.outcome }}
+          T360_CI_STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
+          T360_CI_STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
+          T360_CI_STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          T360_CI_STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
+          T360_CI_STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
+          T360_CI_STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}
+          T360_CI_STEP_R6_SCALE_AI: ${{ steps.r6_scale_ai.outcome }}
+          T360_CI_STEP_P3_PRODUCTIZATION: ${{ steps.p3_productization.outcome }}
+          T360_CI_STEP_P4_CANONICAL_OWNERSHIP: ${{ steps.p4_canonical_ownership.outcome }}
+          T360_CI_STEP_R3_RESIDUAL: ${{ steps.r3_residual.outcome }}
+          T360_CI_STEP_R7_UI: ${{ steps.r7_ui.outcome }}
+          T360_CI_STEP_P5_VISUAL: ${{ steps.p5_visual_rebuild.outcome }}
+          T360_CI_STEP_R8_REPORTING_SECURITY: ${{ steps.r8_reporting_security.outcome }}
+          T360_CI_STEP_R8_RELEASE: ${{ steps.r8_release.outcome }}
+          T360_CI_STEP_PROVIDER_PROBE: ${{ steps.provider_probe.outcome }}
+          T360_CI_STEP_STAGING_CERTIFICATION: ${{ steps.staging_certification.outcome }}
+          T360_CI_STEP_LOAD_SMOKE: ${{ steps.load_smoke.outcome }}
+          T360_CI_STEP_INDEX_PROFILE: ${{ steps.index_profile.outcome }}
+          T360_CI_STEP_DR_REHEARSAL: ${{ steps.dr_rehearsal.outcome }}
+          T360_CI_STEP_STAGE20_PREPARE: ${{ steps.stage20_prepare.outcome }}
+          T360_CI_STEP_STAGE20_AUTOMATED: ${{ steps.stage20_automated.outcome }}
+          T360_CI_STEP_CANDIDATE_FAILCLOSED: ${{ steps.candidate_failclosed.outcome }}
+          T360_CI_STEP_RUNTIME_ARTIFACT_UPLOAD: ${{ steps.upload_runtime.outcome }}
+        run: npm run ci:summary:github
+
+      - name: Upload all simulation evidence and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: toko360-full-system-evidence-${{ github.sha }}
+          path: |
+            handoff/quality/*.json
+            handoff/quality/security-dependency-proposal/**
+            logs/**
+            work-items/generated/T360-20260802-145524/evidence/*.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Assert aggregate GitHub simulation result
+        if: always()
+        run: npm run ci:summary:github:assert

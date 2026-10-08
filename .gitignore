@@ -1,0 +1,66 @@
+node_modules/
+.next/
+dist/
+coverage/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
+apps/api/prisma/data/*.db
+apps/api/prisma/data/*.db-journal
+!apps/api/prisma/data/.gitkeep
+uploads/
+
+.env.backup
+logs/*.log
+!logs/.gitkeep
+logs/fresh-state/
+
+# Dynamic chat/session handoff output
+handoff/generated/*
+!handoff/generated/.gitkeep
+handoff/quality/*
+!handoff/quality/.gitkeep
+
+# Stage 18 PostgreSQL staging credentials
+stage18-postgres.env
+
+# Stage 19 staging integration credential file
+stage19-integration.env
+
+# Stage 20 staging release-readiness local inputs
+stage20-release-readiness.env
+stage20-uat-results.json
+
+# Build info & transfer packages
+next-env.d.ts
+tsimples*
+*.tsbuildinfo
+logs/stage17-*/
+logs/stage18-*/
+logs/stage19-*/
+logs/uat-permission-guard.json
+logs/stage20-release-readiness/api.log
+toko360-checkpoint-*.zip
+toko360-source-orders.zip
+backups/
+
+# Local runtime evidence/uploads (never package production evidence in source ZIP)
+runtime/
+
+# Local release approvals/attestations (operator names/target identity; never source-controlled)
+production-promotion-approval.json
+production-deployment-attestation.json
+# P0 product-completion hygiene: local credentials and generated evidence
+payroll-adjustment-postgres-stage.env
+*.recovery-backup
+logs/payroll-adjustment-postgres-stage/
+logs/report-exports/
+logs/stage20-release-readiness/
+handoff/quality/*.json
+handoff/quality/*.md
+logs/browser-uat/

@@ -1,0 +1,106 @@
+name: Toko360 CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-tests:
+    name: Repository and local-profile tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cp .env.local.example .env
+      - run: npm ci
+      - run: npm run workflow:validate
+      - run: npm run validate:repo
+      - name: Generate PostgreSQL Prisma Client for repository tests
+        run: npm run db:postgres:generate
+        env:
+          DATABASE_PROFILE: postgresql
+          DATABASE_URL: postgresql://toko360:toko360@127.0.0.1:5432/toko360_typecheck?schema=public
+      - run: npm test
+      - run: npm run prisma:validate:sqlite -w @toko360/api
+      - name: Validate CI-only Docker Compose
+        run: docker compose -f .github/ci/docker-compose.ci.yml config
+
+  sqlite-integration:
+    name: No-Docker local SQLite integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cp .env.local.example .env
+      - run: npm ci
+      - run: npm run workflow:validate
+      - run: npm run db:local:prepare
+      - run: npm run test:db:smoke
+      - name: Restore PostgreSQL Prisma Client for production build typing
+        run: npm run db:postgres:generate
+        env:
+          DATABASE_PROFILE: postgresql
+          DATABASE_URL: postgresql://toko360:toko360@127.0.0.1:5432/toko360_typecheck?schema=public
+      - run: npm run build
+
+  postgresql-integration:
+    name: GitHub container PostgreSQL integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: toko360
+          POSTGRES_PASSWORD: toko360_dev_password
+          POSTGRES_DB: toko360
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U toko360 -d toko360"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_PROFILE: postgresql
+      DATABASE_URL: postgresql://toko360:toko360_dev_password@localhost:5432/toko360?schema=public
+      JWT_SECRET: github-actions-development-secret-change-me
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+      SEED_MODE: bootstrap
+      SEED_COMPANY_ID: 11111111-1111-4111-8111-111111111111
+      SEED_COMPANY_NAME: Toko360 CI
+      SEED_COMPANY_SLUG: toko360-ci
+      SEED_BRANCH_CODE: PUSAT
+      SEED_BRANCH_NAME: Cabang CI
+      SEED_WAREHOUSE_CODE: GDG-UTAMA
+      SEED_WAREHOUSE_NAME: Gudang CI
+      SEED_ADMIN_EMAIL: ci-admin@example.invalid
+      SEED_ADMIN_PASSWORD: CI-Only-Strong-Password-2026!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cp .env.postgres.example .env
+      - run: npm ci
+      - run: npm run workflow:validate
+      - run: npm run prisma:validate:postgres -w @toko360/api
+      - run: npm run db:postgres:prepare
+      - run: npm run test:db:smoke
+      - run: npm run build

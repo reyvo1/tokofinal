@@ -1,0 +1,69 @@
+{
+  "phase": "P5-V2",
+  "baseline": {
+    "commit": "af7cb87bbdc1ee898f785a072993e79877326b27",
+    "sourceFingerprint": "f7f2c6bf6f1a22c8df42afbe0cda001e0f926a09b9b2a33e27650eb2fc58bd3e",
+    "automatedP5": "PASS",
+    "humanVisualAcceptance": "REJECTED"
+  },
+  "decision": {
+    "reason": "Human review of the real P5 runtime recording rejected the flat, stacked, mostly-black presentation even though exact-source automated Browser UAT was green.",
+    "deliveryBoundary": "ONE_P5_FULL_V2_ATOMIC_WAVE",
+    "businessLogicChangesAllowed": false,
+    "decorativeGradientsAllowed": false,
+    "glassLayeringRequired": true,
+    "elevationRequired": true,
+    "distinctProductThemesRequired": true,
+    "responsiveGeometryMustRemainGreen": true,
+    "humanAcceptanceRequiredAfterAutomation": true
+  },
+  "products": {
+    "admin": {
+      "theme": "deep-indigo-glass-enterprise",
+      "canvas": "#101a33",
+      "accent": "#6ea8ff",
+      "surfaceMode": "translucent-layered",
+      "navigationRule": "compact primary sidebar plus one contextual tab layer",
+      "mustReduceMenuStacking": true
+    },
+    "pos": {
+      "theme": "teal-operations-touch-first",
+      "canvas": "#0d2028",
+      "accent": "#22c6b7",
+      "surfaceMode": "high-contrast-operational",
+      "navigationRule": "four explicit cashier workspaces",
+      "mustKeepTouchPriority": true
+    },
+    "storefront": {
+      "theme": "light-premium-retail",
+      "canvas": "#f5f7fb",
+      "accent": "#4f6df5",
+      "surfaceMode": "light-glass-retail",
+      "navigationRule": "customer journey navigation",
+      "mustNotLookLikeBackOffice": true
+    },
+    "employeePortal": {
+      "theme": "light-violet-self-service",
+      "canvas": "#f4f6ff",
+      "accent": "#6f63e8",
+      "surfaceMode": "light-personal-workspace",
+      "navigationRule": "compact self-service navigation",
+      "mustNotLookLikeAdmin": true
+    }
+  },
+  "requiredVisualPrimitives": [
+    "backdrop-filter",
+    "box-shadow",
+    "data-visual-version=\"p5-v2\"",
+    "prefers-reduced-motion",
+    "pointer:coarse"
+  ],
+  "humanReviewFocus": [
+    "navigation hierarchy is not visually stacked or duplicated",
+    "surfaces have visible depth without decorative gradients",
+    "storefront and employee portal are no longer all-black",
+    "forms and tables have clear hierarchy and states",
+    "desktop tablet and mobile remain readable without overflow",
+    "the four products have visibly different identities"
+  ]
+}

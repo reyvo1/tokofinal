@@ -1,0 +1,62 @@
+{
+  "id": "T360-20260922-145500",
+  "backlogKey": "ui-p2-admin-domain-workspaces",
+  "title": "UI-P2 Admin domain workspaces dan nested operator navigation",
+  "type": "feature",
+  "module": "admin-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p1-admin-application-shell"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Nested route hanya membentuk operator workspace; seluruh mutasi tetap melalui API domain yang sudah ada.",
+    "Sub-workspace tidak menjadi security boundary; backend permission/tenant guard tetap authoritative.",
+    "Route invalid di bawah domain tidak boleh membuka surface yang tidak terdaftar."
+  ],
+  "acceptanceCriteria": [
+    "Nested route tersedia untuk domain master-data, procurement, commerce, inventory-control, operations-control, finance, people, assets-fleet, extensions, dan platform.",
+    "Sticky domain tabs, overview deck, breadcrumb tingkat ketiga, dan contextual header tersedia.",
+    "Direct reload nested route aman dan invalid route kembali ke root domain.",
+    "Existing business forms/tables/API calls tetap dipertahankan."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p2-admin-domain-workspaces.test.mjs",
+    "node --test tests/ui-p1-admin-application-shell.test.mjs tests/ui-final-cleanup.test.mjs",
+    "npm run workflow:validate dan npm run work:status",
+    "npm run test:dependency-free sebelum push; heavy build/browser oleh GitHub Full System Simulation."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P2 menghapus nested domain IA dan mengembalikan UI-P1 tanpa mengubah data/API.",
+  "monitoringPlan": "Pantau Admin Next build, direct nested route, browser UAT, navigation, dan permission-denied behavior pada GitHub Full System Simulation.",
+  "securityNotes": "Sub-workspace visibility adalah UX only; API guard dan tenant context tetap security boundary.",
+  "documentation": [
+    "docs/ADMIN-DOMAIN-WORKSPACES.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T14:55:00+08:00",
+  "updatedAt": "2026-09-22T15:25:00+08:00",
+  "closureEvidence": {
+    "githubCommit": "b1c561d97813f5e0916d194e0146cbec147a741e",
+    "sourceFingerprint": "ff16c90cfd73a4b638ad98c0e560b02d13c18139d307a16ec1b9d3eb9b8ee584",
+    "buildArtifactId": "7988d99b271bb70da0e9236a58299d3e36155aa2a6bea22cafd9c084047808a9",
+    "regression": "683/683 PASS",
+    "humanUat": "PENDING 12/12; candidate verifier remains fail-closed"
+  }
+}

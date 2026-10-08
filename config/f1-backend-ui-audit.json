@@ -1,0 +1,892 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-03T12:04:02.332Z",
+  "source": {
+    "prismaSchema": "apps/api/prisma/schema.prisma",
+    "controllerCount": 43,
+    "routeCount": 509,
+    "prismaModelCount": 195,
+    "uiApps": [
+      "admin",
+      "pos",
+      "storefront",
+      "employee-portal"
+    ]
+  },
+  "classification": {
+    "allowed": [
+      "EXPOSED",
+      "HIDDEN",
+      "PARTIAL",
+      "MISSING",
+      "DEFERRED_BY_DESIGN"
+    ],
+    "unknownCount": 0
+  },
+  "capabilities": [
+    {
+      "id": "F2",
+      "title": "Master Product + Multi-UOM",
+      "targetPhase": "F2",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "Product",
+        "ProductBarcode",
+        "ProductPrice"
+      ],
+      "presentModels": [
+        "Product",
+        "ProductBarcode",
+        "ProductPrice"
+      ],
+      "backendRouteCount": 20,
+      "backendRoutes": [
+        "GET /master-data/references",
+        "POST /master-data/references",
+        "PATCH /master-data/references/:id",
+        "GET /master-data/products/:productId/variants",
+        "POST /master-data/products/:productId/variants",
+        "PATCH /master-data/products/:productId/variants/:id",
+        "GET /master-data/products/:productId/units",
+        "POST /master-data/products/:productId/units",
+        "PATCH /master-data/products/:productId/units/:id",
+        "GET /master-data/products/:productId/barcodes",
+        "POST /master-data/products/:productId/barcodes",
+        "PATCH /master-data/products/:productId/barcodes/:id",
+        "GET /master-data/products/:productId/prices",
+        "POST /master-data/products/:productId/prices",
+        "PATCH /master-data/products/:productId/prices/:id",
+        "GET /products",
+        "GET /products/:id",
+        "POST /products",
+        "PATCH /products/:id",
+        "GET /products/:id/price-history"
+      ],
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "gap": "Multi-UOM berbasis barcode/factor sudah ada, tetapi ProductVariant dan model konversi UOM first-class belum terlihat sebagai model dedicated. F2 harus menormalkan master produk/variant/UOM tanpa merusak POS yang sudah memakai quantityFactor."
+    },
+    {
+      "id": "F3",
+      "title": "Inventory / batch / expiry / condition",
+      "targetPhase": "F3",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "Inventory",
+        "InventoryMovement",
+        "WarehouseLocation",
+        "InventoryLocationBalance",
+        "InventoryBatch",
+        "InventorySerial",
+        "StockTransfer",
+        "StockOpname"
+      ],
+      "presentModels": [
+        "Inventory",
+        "InventoryMovement",
+        "WarehouseLocation",
+        "InventoryLocationBalance",
+        "InventoryBatch",
+        "InventorySerial",
+        "StockTransfer",
+        "StockOpname"
+      ],
+      "backendRouteCount": 24,
+      "backendRoutes": [
+        "GET /advanced-inventory/stock-transfers",
+        "GET /advanced-inventory/transit-balances",
+        "GET /advanced-inventory/reorder-visibility",
+        "POST /advanced-inventory/stock-transfers",
+        "PATCH /advanced-inventory/stock-transfers/:id/approve",
+        "PATCH /advanced-inventory/stock-transfers/:id/ship",
+        "PATCH /advanced-inventory/stock-transfers/:id/receive",
+        "GET /advanced-inventory/location-balances",
+        "POST /advanced-inventory/location-relocations",
+        "GET /advanced-inventory/condition-balances",
+        "POST /advanced-inventory/condition-movements",
+        "GET /advanced-inventory/stock-opnames",
+        "POST /advanced-inventory/stock-opnames",
+        "PATCH /advanced-inventory/stock-opnames/:id/count",
+        "PATCH /advanced-inventory/stock-opnames/:id/submit",
+        "PATCH /advanced-inventory/stock-opnames/:id/complete",
+        "GET /inventory-batches",
+        "POST /inventory-batches",
+        "GET /inventory-serials",
+        "POST /inventory-serials",
+        "GET /inventory/cross-branch-stock/:productId",
+        "GET /inventory",
+        "GET /inventory/movements",
+        "GET /inventory/warehouses"
+      ],
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "gap": "Batch, serial, location, transfer, opname sudah kuat. Condition bucket general seperti AVAILABLE/DAMAGED/QUARANTINE/LOST belum terlihat sebagai inventory condition ledger first-class."
+    },
+    {
+      "id": "F4",
+      "title": "Accounting workspace enterprise",
+      "targetPhase": "F4",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "Account",
+        "JournalEntry",
+        "JournalLine",
+        "AccountingEvent",
+        "AccountingEventLine",
+        "AccountingPostingRule",
+        "AccountingPosting",
+        "AccountingCloseControl"
+      ],
+      "presentModels": [
+        "Account",
+        "JournalEntry",
+        "JournalLine",
+        "AccountingEvent",
+        "AccountingEventLine",
+        "AccountingPostingRule",
+        "AccountingPosting",
+        "AccountingCloseControl"
+      ],
+      "backendRouteCount": 20,
+      "backendRoutes": [
+        "GET /accounting-core/accounts",
+        "POST /accounting-core/accounts",
+        "PATCH /accounting-core/accounts/:id",
+        "GET /accounting-core/events",
+        "GET /accounting-core/events/:id",
+        "GET /accounting-core/tax-codes",
+        "POST /accounting-core/tax-codes",
+        "PATCH /accounting-core/tax-codes/:id/status",
+        "GET /accounting-core/tax-transactions",
+        "GET /accounting-core/tax-documents",
+        "GET /accounting-core/tax-reconciliation",
+        "POST /accounting-core/tax/preview",
+        "GET /accounting-core/posting-rules",
+        "POST /accounting-core/posting-rules",
+        "PATCH /accounting-core/posting-rules/:id/status",
+        "GET /accounting-core/close-controls",
+        "POST /accounting-core/close-controls",
+        "POST /accounting-core/close-controls/:id/close",
+        "POST /accounting-core/close-controls/:id/reopen",
+        "POST /accounting-core/events/post"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Accounting core kuat dan UI ledger sudah ada, tetapi posting rule/account mapping/version management serta source→event→journal→line drill-down belum terbukti lengkap di operator UI."
+    },
+    {
+      "id": "F5",
+      "title": "Tax workspace dinamis",
+      "targetPhase": "F5",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "TaxCode",
+        "TaxTransaction",
+        "TaxDocument",
+        "TaxRuleSet",
+        "TaxRule"
+      ],
+      "presentModels": [
+        "TaxCode",
+        "TaxTransaction",
+        "TaxDocument",
+        "TaxRuleSet",
+        "TaxRule"
+      ],
+      "backendRouteCount": 10,
+      "backendRoutes": [
+        "GET /accounting-core/tax-codes",
+        "POST /accounting-core/tax-codes",
+        "PATCH /accounting-core/tax-codes/:id/status",
+        "GET /accounting-core/tax-transactions",
+        "GET /accounting-core/tax-documents",
+        "GET /accounting-core/tax-reconciliation",
+        "POST /accounting-core/tax/preview",
+        "GET /payroll/tax-rule-sets",
+        "POST /payroll/tax-rule-sets",
+        "POST /payroll/tax-rule-sets/:id/approve"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Tax engine/model tersedia, tetapi tax transaction/document ledger, effective-dated rule management, preview, reconciliation, dan audit trail belum seluruhnya terekspos di UI."
+    },
+    {
+      "id": "F6",
+      "title": "Financial reporting + drill-down",
+      "targetPhase": "F6",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "ReportJob",
+        "DailySalesSummary",
+        "DailyFinanceSummary",
+        "DailyInventorySummary"
+      ],
+      "presentModels": [
+        "ReportJob",
+        "DailySalesSummary",
+        "DailyFinanceSummary",
+        "DailyInventorySummary"
+      ],
+      "backendRouteCount": 29,
+      "backendRoutes": [
+        "GET /reports/daily-digest/config",
+        "POST /reports/daily-digest/config",
+        "GET /reports/daily-digest/preview",
+        "POST /reports/daily-digest/send",
+        "GET /reports/multi-outlet",
+        "GET /reports/dashboard",
+        "GET /reports/analytics",
+        "GET /reports/profit-loss",
+        "GET /reports/trial-balance",
+        "GET /reports/balance-sheet",
+        "GET /reports/general-ledger",
+        "GET /reports/tax-summary",
+        "GET /reports/financial-integrity",
+        "GET /reports/inventory-valuation",
+        "GET /reports/cash-flow",
+        "GET /reports/margin",
+        "GET /reports/period-comparison",
+        "GET /reports/dimension-comparison",
+        "GET /reports/drill-down",
+        "POST /reports/jobs",
+        "GET /reports/jobs",
+        "GET /reports/jobs/:id/download",
+        "GET /reports/schedules",
+        "POST /reports/schedules",
+        "POST /reports/schedules/:id/run-now",
+        "PATCH /reports/schedules/:id",
+        "GET /reports/peak-hours",
+        "GET /reports/dead-stock",
+        "GET /reports/customer-rfm"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "ReportJob dan katalog report tersedia. F6 harus menambah dynamic filters, period comparison, branch/cost-center dimensions, dan report→account→journal→source drill-down."
+    },
+    {
+      "id": "F7",
+      "title": "AR / AP / Cash / Bank / Reconciliation",
+      "targetPhase": "F7",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "BankStatement",
+        "BankStatementLine",
+        "BankReconciliation",
+        "OperationalFinanceTransaction"
+      ],
+      "presentModels": [
+        "BankStatement",
+        "BankStatementLine",
+        "BankReconciliation",
+        "OperationalFinanceTransaction"
+      ],
+      "backendRouteCount": 26,
+      "backendRoutes": [
+        "GET /finance/fiscal-periods",
+        "POST /finance/fiscal-periods",
+        "PATCH /finance/fiscal-periods/:id/soft-close",
+        "PATCH /finance/fiscal-periods/:id/reopen",
+        "PATCH /finance/fiscal-periods/:id/close",
+        "GET /finance/bank-statements",
+        "POST /finance/bank-statements/import",
+        "GET /finance/reconciliations",
+        "POST /finance/reconciliations",
+        "GET /finance/reconciliations/:id/details",
+        "POST /finance/reconciliations/:id/auto-match",
+        "POST /finance/reconciliations/:id/match",
+        "POST /finance/reconciliations/:id/unmatch",
+        "GET /finance-operations/customer-receivables",
+        "GET /finance-operations/supplier-payables",
+        "GET /finance-operations/supplier-refunds",
+        "GET /finance-operations/ar-aging",
+        "GET /finance-operations/ap-aging",
+        "GET /finance-operations/cash-bank-position",
+        "GET /finance-operations/settlement-trace",
+        "GET /finance-operations",
+        "POST /finance-operations",
+        "POST /finance-operations/:id/approve",
+        "POST /finance-operations/:id/reject",
+        "POST /finance-operations/:id/cancel",
+        "POST /finance-operations/:id/post"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Operational AP/AR dan bank reconciliation sudah ada. Aging, statement/detail navigation, settlement trace, dan reconciliation operator flow perlu diperdalam."
+    },
+    {
+      "id": "F8",
+      "title": "Automation + scheduled reports",
+      "targetPhase": "F8",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "BusinessRule",
+        "AutomationJob",
+        "EventOutbox",
+        "ReportJob"
+      ],
+      "presentModels": [
+        "BusinessRule",
+        "AutomationJob",
+        "EventOutbox",
+        "ReportJob"
+      ],
+      "backendRouteCount": 33,
+      "backendRoutes": [
+        "GET /platform/automation-jobs",
+        "GET /platform/automation-jobs/:id",
+        "POST /platform/automation-jobs/:id/cancel",
+        "POST /platform/automation-jobs/:id/replay",
+        "GET /reports/daily-digest/config",
+        "POST /reports/daily-digest/config",
+        "GET /reports/daily-digest/preview",
+        "POST /reports/daily-digest/send",
+        "GET /reports/multi-outlet",
+        "GET /reports/dashboard",
+        "GET /reports/analytics",
+        "GET /reports/profit-loss",
+        "GET /reports/trial-balance",
+        "GET /reports/balance-sheet",
+        "GET /reports/general-ledger",
+        "GET /reports/tax-summary",
+        "GET /reports/financial-integrity",
+        "GET /reports/inventory-valuation",
+        "GET /reports/cash-flow",
+        "GET /reports/margin",
+        "GET /reports/period-comparison",
+        "GET /reports/dimension-comparison",
+        "GET /reports/drill-down",
+        "POST /reports/jobs",
+        "GET /reports/jobs",
+        "GET /reports/jobs/:id/download",
+        "GET /reports/schedules",
+        "POST /reports/schedules",
+        "POST /reports/schedules/:id/run-now",
+        "PATCH /reports/schedules/:id",
+        "GET /reports/peak-hours",
+        "GET /reports/dead-stock",
+        "GET /reports/customer-rfm"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Automation worker tersedia, tetapi scheduler/report schedule first-class dan operator execution history/rule management belum lengkap."
+    },
+    {
+      "id": "F9",
+      "title": "WhatsApp / Telegram notification center",
+      "targetPhase": "F9",
+      "status": "PARTIAL",
+      "requiredModels": [
+        "NotificationTemplate",
+        "Notification",
+        "IntegrationConnection",
+        "EmployeeChannelBinding",
+        "EmployeeNotificationDelivery"
+      ],
+      "presentModels": [
+        "NotificationTemplate",
+        "Notification",
+        "IntegrationConnection",
+        "EmployeeChannelBinding",
+        "EmployeeNotificationDelivery"
+      ],
+      "backendRouteCount": 8,
+      "backendRoutes": [
+        "GET /integrations/:id/mappings",
+        "POST /integrations/:id/mappings",
+        "DELETE /integrations/:id/mappings/:mappingId",
+        "GET /notifications/providers",
+        "GET /notifications/templates",
+        "POST /notifications/templates",
+        "GET /notifications",
+        "POST /notifications"
+      ],
+      "uiApps": [
+        "admin",
+        "employee-portal"
+      ],
+      "gap": "Template, queue, Telegram worker, WhatsApp provider adapter, dan UI queue sudah ada. Provider setup/verification, channel binding UX, scheduled report destinations, retry diagnostics, dan production readiness masih harus dituntaskan."
+    },
+    {
+      "id": "F10",
+      "title": "AI / forecasting / operator assistant",
+      "targetPhase": "F10",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "ForecastRun",
+        "ReorderSuggestion",
+        "OperatorInsight",
+        "AssistantInteraction"
+      ],
+      "presentModels": [
+        "ForecastRun",
+        "ReorderSuggestion",
+        "OperatorInsight",
+        "AssistantInteraction"
+      ],
+      "backendRouteCount": 8,
+      "backendRoutes": [
+        "GET /forecasts",
+        "POST /forecasts/run",
+        "GET /forecasts/:id",
+        "GET /operator-insights",
+        "POST /operator-insights/refresh",
+        "PATCH /operator-insights/:id/status",
+        "GET /operator-assistant/history",
+        "POST /operator-assistant/query"
+      ],
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Source implementation lengkap: explainable forecast/reorder, permission-scoped deterministic operator assistant, anomaly insights, confidence, source links, dan human-confirmation guardrail tersedia. Runtime/browser/human UAT tetap wajib sebelum closure."
+    },
+    {
+      "id": "F11",
+      "title": "Purchase / Sales / POS integration ke UOM baru",
+      "targetPhase": "F11",
+      "status": "EXPOSED",
+      "requiredModels": [
+        "PurchaseOrder",
+        "PurchaseOrderItem",
+        "GoodsReceipt",
+        "GoodsReceiptItem",
+        "Sale",
+        "SaleItem",
+        "ProductBarcode",
+        "ProductPrice"
+      ],
+      "presentModels": [
+        "PurchaseOrder",
+        "PurchaseOrderItem",
+        "GoodsReceipt",
+        "GoodsReceiptItem",
+        "Sale",
+        "SaleItem",
+        "ProductBarcode",
+        "ProductPrice"
+      ],
+      "backendRouteCount": 38,
+      "backendRoutes": [
+        "GET /goods-receipts",
+        "POST /goods-receipts",
+        "POST /goods-receipts/:id/confirm",
+        "POST /goods-receipts/:id/reject",
+        "GET /orders",
+        "GET /orders/:number",
+        "POST /orders",
+        "POST /orders/:number/payment-selection",
+        "POST /orders/:number/mock-pay",
+        "POST /orders/:id/confirm-payment",
+        "POST /orders/:id/authorize-invoice",
+        "POST /orders/:id/pack",
+        "POST /orders/:id/ship",
+        "POST /orders/:id/cancel",
+        "POST /orders/:id/deliver",
+        "GET /purchase-orders",
+        "GET /purchase-orders/:id",
+        "POST /purchase-orders",
+        "GET /purchase-requests",
+        "GET /purchase-requests/:id",
+        "POST /purchase-requests",
+        "POST /purchase-requests/:id/submit",
+        "POST /purchase-requests/:id/decision",
+        "POST /purchase-requests/:id/cancel",
+        "POST /purchase-requests/:id/convert",
+        "GET /sales/cashier-targets",
+        "POST /sales/cashier-targets",
+        "GET /sales",
+        "GET /sales/shifts/current",
+        "POST /sales/shifts/open",
+        "POST /sales/shifts/close",
+        "GET /sales/shifts/:id/recap",
+        "GET /sales/shifts/cash-movements/current",
+        "POST /sales/shifts/cash-movements",
+        "POST /sales/quote",
+        "GET /sales/offline/config",
+        "POST /sales/offline/replay",
+        "POST /sales"
+      ],
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "gap": "Sales/POS multi-UOM sudah jauh lebih matang. Purchase request/PO/receipt masih berbasis orderedQty/unitCost tanpa purchase UOM conversion first-class; ini blocker utama F11."
+    }
+  ],
+  "controllerExposure": [
+    {
+      "controller": "apps/api/src/accounting-core/accounting-core.controller.ts",
+      "routeCount": 20,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/advanced-inventory/advanced-inventory.controller.ts",
+      "routeCount": 16,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/app.controller.ts",
+      "routeCount": 1,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/assets/assets.controller.ts",
+      "routeCount": 15,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/attendance/attendance.controller.ts",
+      "routeCount": 25,
+      "uiApps": [
+        "admin",
+        "employee-portal"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/auth/api-keys.controller.ts",
+      "routeCount": 4,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/auth/auth.controller.ts",
+      "routeCount": 15,
+      "uiApps": [
+        "admin",
+        "pos",
+        "employee-portal"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/branch-continuity/branch-continuity.controller.ts",
+      "routeCount": 15,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/branch-continuity/branch-transfer.controller.ts",
+      "routeCount": 5,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/branch-sync/branch-sync.controller.ts",
+      "routeCount": 20,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/employee-self-service/employee-self-service.controller.ts",
+      "routeCount": 16,
+      "uiApps": [
+        "employee-portal"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/extensions/edge-sync.controller.ts",
+      "routeCount": 3,
+      "uiApps": [],
+      "exposure": "HIDDEN_OR_API_ONLY"
+    },
+    {
+      "controller": "apps/api/src/extensions/extensions.controller.ts",
+      "routeCount": 58,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/finance-operations/finance-operations.controller.ts",
+      "routeCount": 13,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/fleet/fleet.controller.ts",
+      "routeCount": 14,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/goods-receipts/goods-receipts.controller.ts",
+      "routeCount": 4,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/hr/hr.controller.ts",
+      "routeCount": 15,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/inventory/cross-branch-stock.controller.ts",
+      "routeCount": 1,
+      "uiApps": [
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/inventory/inventory.controller.ts",
+      "routeCount": 3,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/kiosk/kiosk.controller.ts",
+      "routeCount": 1,
+      "uiApps": [
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/master-data/master-data.controller.ts",
+      "routeCount": 30,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/mobile-ops/mobile-ops.controller.ts",
+      "routeCount": 10,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/operations-control/operations-control.controller.ts",
+      "routeCount": 13,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/orders/orders.controller.ts",
+      "routeCount": 11,
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/payments/payments.controller.ts",
+      "routeCount": 2,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/payroll/payroll.controller.ts",
+      "routeCount": 30,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/platform/platform.controller.ts",
+      "routeCount": 41,
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront",
+        "employee-portal"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/products/products.controller.ts",
+      "routeCount": 5,
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/promotions/promotions.controller.ts",
+      "routeCount": 4,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/purchase-orders/purchase-orders.controller.ts",
+      "routeCount": 3,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/purchase-orders/purchase-requests.controller.ts",
+      "routeCount": 7,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/reports/daily-digest.controller.ts",
+      "routeCount": 4,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/reports/multi-outlet.controller.ts",
+      "routeCount": 1,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/reports/reports.controller.ts",
+      "routeCount": 24,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/returns/returns.controller.ts",
+      "routeCount": 10,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/returns/storefront-order-returns.controller.ts",
+      "routeCount": 2,
+      "uiApps": [
+        "storefront"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/sales/cashier-target.controller.ts",
+      "routeCount": 2,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/sales/receipt.controller.ts",
+      "routeCount": 1,
+      "uiApps": [
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/sales/sales.controller.ts",
+      "routeCount": 11,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/storefront-customer/storefront-customer.controller.ts",
+      "routeCount": 19,
+      "uiApps": [
+        "storefront"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/supervisor-approval/supervisor-approval.controller.ts",
+      "routeCount": 3,
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/suppliers/suppliers.controller.ts",
+      "routeCount": 4,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    },
+    {
+      "controller": "apps/api/src/users/users.controller.ts",
+      "routeCount": 8,
+      "uiApps": [
+        "admin"
+      ],
+      "exposure": "EXPOSED_OR_PARTIAL"
+    }
+  ],
+  "phaseDecision": {
+    "currentPhase": "F1_AUDIT_COMPLETE_PENDING_REVIEW",
+    "nextPhase": "F2",
+    "note": "F2 baru dibuka setelah audit output direview dan roadmap status diperbarui eksplisit."
+  }
+}

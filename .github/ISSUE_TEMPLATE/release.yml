@@ -1,0 +1,35 @@
+name: Release Candidate
+about: Persiapan rilis dan checkpoint resmi
+labels: ["type:release", "status:release-ready"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versi dan checkpoint
+      placeholder: v0.5.3 / RC0.5.3.1_EMBEDDED_INSTRUCTIONS_DYNAMIC_CHAT_HANDOFF
+    validations:
+      required: true
+  - type: textarea
+    id: workitems
+    attributes:
+      label: Work item yang masuk
+    validations:
+      required: true
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration, backfill, feature flag, dan urutan deployment
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: CI, UAT, performance, security, backup, dan restore evidence
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback dan compensating operation
+    validations:
+      required: true

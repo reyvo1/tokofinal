@@ -1,0 +1,13 @@
+-- TEMPLATE ONLY. Adapt table names, constraints, retention, and migration plan.
+-- Example monthly partition pattern for a future append-only event/ledger table.
+
+-- CREATE TABLE inventory_movements_partitioned (
+--   LIKE inventory_movements INCLUDING DEFAULTS INCLUDING CONSTRAINTS
+-- ) PARTITION BY RANGE (created_at);
+--
+-- CREATE TABLE inventory_movements_2026_07
+-- PARTITION OF inventory_movements_partitioned
+-- FOR VALUES FROM ('2026-07-01') TO ('2026-08-01');
+--
+-- CREATE INDEX CONCURRENTLY inventory_movements_2026_07_warehouse_product_created_idx
+-- ON inventory_movements_2026_07 (warehouse_id, product_id, created_at DESC);

@@ -1,0 +1,66 @@
+{
+  "id": "T360-20260823-231401",
+  "backlogKey": "w6-device-provider-adapters",
+  "title": "Menyelesaikan device bridge dan adapter provider eksternal",
+  "type": "integration",
+  "module": "device-bridge",
+  "wave": "W6",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "integrations.deviceBridge.enabled",
+  "dependencies": [
+    "w6-edge-central-sync",
+    "w0-permission-guard-coverage"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "MEDIUM",
+    "accounting": "LOW",
+    "tax": "LOW",
+    "payment": "HIGH",
+    "payroll": "MEDIUM",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Setiap adapter mengikuti contract, timeout, retry, circuit breaker, dan credential scope.",
+    "Provider callback wajib diverifikasi signature dan diproses idempotent.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Fingerprint, scanner, printer, timbangan, payment, WhatsApp, Telegram, marketplace, dan shipping dapat dipasang melalui adapter.",
+    "Kegagalan provider tidak memblokir transaksi inti yang dapat diantrikan."
+  ],
+  "testPlan": [
+    "Adapter contract test dan simulated timeout.",
+    "Webhook idempotency/retry test.",
+    "Offline device queue conflict test.",
+    "Security test credential rotation dan signature.",
+    "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+    "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/EXTENSION-GUIDE.md",
+    "docs/FINGERPRINT-INTEGRATION.md",
+    "docs/AUTOMATION-RULEBOOK.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-231401",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T15:14:01.978Z",
+  "updatedAt": "2026-08-23T15:15:54.799Z",
+  "releaseEvidence": [
+    "Plugin registry 7 adapter template aktif; fingerprint bridge & device bridge capabilities live.",
+    "Adapter production menunggu vendor credential (keputusan bisnis Rey).",
+    "Audit-only closure."
+  ]
+}

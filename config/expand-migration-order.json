@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "migrations": [
+    "T360-20260923-category-hierarchy",
+    "T360-20260923-product-variant",
+    "T360-20260923-product-multi-uom",
+    "T360-20260923-inventory-condition-ledger",
+    "T360-20260923-inventory-expiry-tracking",
+    "T360-20260923-inventory-serial-receipt",
+    "T360-20260923-f3-transfer-traceability",
+    "T360-20260923-f5-tax-versioning",
+    "T360-20260923-f8-report-schedule",
+    "T360-20260923-f10-operator-ai",
+    "T360-20260923-f11-transaction-uom",
+    "T360-20260924-r1-session-branch-context",
+    "T360-20260924-r4-supplier-lifecycle",
+    "T360-20260925-p2a-transaction-uom-lineage",
+    "T360-20261004-video-parity-expansion",
+    "T360-20261004-dynamic-uom-staff-memo",
+    "T360-20261005-p6a-retail-transaction-completion"
+  ]
+}

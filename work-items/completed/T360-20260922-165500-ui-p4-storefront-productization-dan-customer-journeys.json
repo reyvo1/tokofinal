@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260922-165500",
+  "backlogKey": "ui-p4-storefront-productization",
+  "title": "UI-P4 Storefront productization dan customer journeys",
+  "type": "feature",
+  "module": "storefront-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p3-pos-modernization"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "LOW",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "LOW",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Storefront UI hanya mengubah information architecture dan customer journey; pricing, promo, stock reservation, fulfillment, payment, return, review, favorite, dan loyalty tetap melalui API existing.",
+    "Customer session dan order access token tetap security boundary backend; route/view visibility bukan authorization.",
+    "Human Stage-20 UAT tidak boleh dihasilkan automated simulation dan candidate verifier tetap fail-closed."
+  ],
+  "acceptanceCriteria": [
+    "Reusable StorefrontShell tersedia dengan deep-link route home, catalog, product, cart, dan account.",
+    "Catalog mempunyai search, sort, product detail, stock visibility, add-to-cart, dan favorite.",
+    "Checkout, fulfillment, promo, payment selection, dan server-authoritative total tetap memakai flow/API existing.",
+    "Akun mempunyai login/register, contact verification, saved addresses, loyalty, order tracking, review, dan return."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p4-storefront-productization.test.mjs",
+    "node --test tests/functional-w2-storefront-contact-verification.test.mjs tests/functional-w2-storefront-customer-account.test.mjs tests/functional-w2-storefront-favorites-reviews.test.mjs tests/functional-w2-storefront-fulfillment-address.test.mjs tests/functional-w2-storefront-loyalty-tier.test.mjs tests/functional-w2-storefront-order-return.test.mjs tests/uat-candidate-gate.test.mjs",
+    "Inventory/payment invariant: checkout tetap mengirim item ke orders API untuk server-side stock reservation/pricing dan electronic payment tetap menunggu provider/backoffice confirmation.",
+    "GitHub Full System Simulation untuk build/browser/runtime/exact-artifact/Stage-20 automated."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P4 mengembalikan storefront single-surface tanpa mengubah data/API.",
+  "monitoringPlan": "Pantau Storefront Next build, deep-link route, account/order browser flow, checkout/payment, exact-artifact, dan Stage-20 di GitHub.",
+  "securityNotes": "UI route bukan security boundary; customer-session, order-access-token, tenant/branch, dan server-side commerce validation tetap authoritative.",
+  "documentation": [
+    "docs/STOREFRONT-PRODUCTIZATION.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T16:55:00+08:00",
+  "updatedAt": "2026-09-22T19:30:00+08:00",
+  "closureEvidence": {
+    "githubCommit": "e37f7feee08f44544c38fa508e69af6e6cb8468f",
+    "sourceFingerprint": "37dc4ffade7152b42638c286bfb8cf02cfde689a290a0f58959e71b3e5ff0606",
+    "buildArtifactId": "24223f78fca3492bb32a1c7c00703ca2d7308703db2d71214114ce7214c3cea8",
+    "fullSystemSimulation": "PASS",
+    "builtBrowser": "PASS",
+    "humanUat": "PENDING 12/12; candidate verifier remains fail-closed"
+  }
+}

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Toko360 — Cek Harga</title>
+    <!-- Same rewrite reasoning as the stock-count PWA: this document is served at /kiosk, which leaves
+         the base at the parent directory, so ./app.js would resolve to /app.js and 404. -->
+    <base href="/kiosk/" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <style>
+      :root { --ink: #eef4ff; --muted: #8fa3c4; --accent: #38bdf8; --bad: #f87171; --ok: #4ade80; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: #05070d; color: var(--ink);
+        font: 700 clamp(15px, 1.1vw + 10px, 22px)/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex; flex-direction: column; overflow: hidden; text-align: center;
+      }
+      header { padding: 1.2vh 2vw .8vh; display: flex; gap: 1vw; align-items: center; justify-content: space-between; }
+      #branch { color: var(--muted); font-weight: 600; }
+      #status { font-size: .62em; padding: .35em .8em; border-radius: 999px; letter-spacing: .04em; }
+      #status.up { background: #06301d; color: var(--ok); }
+      #status.down { background: #3b0d10; color: var(--bad); }
+      #status.pending { background: #2a2410; color: #fbbf24; }
+      main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 4vw; min-height: 0; }
+      #idle { color: var(--muted); }
+      #idle .big { font-size: 2.6em; color: var(--ink); display: block; margin-bottom: .2em; }
+      #price-panel { display: none; width: 100%; }
+      #price-panel.on { display: block; }
+      #p-name { font-size: 2.9em; line-height: 1.12; margin: 0 0 .12em; }
+      #p-meta { color: var(--muted); font-size: .78em; margin-bottom: .5em; }
+      #p-price { font-size: 5.4em; line-height: 1; color: var(--accent); letter-spacing: -.01em; }
+      #p-unit { color: var(--muted); font-size: .9em; margin-top: .1em; }
+      #p-promo { margin-top: .7em; color: var(--ok); font-size: 1.05em; }
+      #p-availability { margin-top: .5em; font-size: 1.05em; }
+      #p-availability.tersedia { color: var(--ok); }
+      #p-availability.habis { color: var(--bad); }
+      #p-availability.unknown { color: var(--muted); }
+      footer { padding: 1vh 2vw 2vh; color: var(--muted); font-size: .58em; font-weight: 600; }
+      #log { margin-top: .4em; min-height: 1.2em; }
+      /* The listener is visually obvious on purpose: a scanner that has stopped being heard is the one
+         failure an operator cannot diagnose on their own. */
+      #focus-ring { position: fixed; inset: 0; border: 0 solid transparent; pointer-events: none; transition: border-color .15s; }
+      #focus-ring.listening { border-color: #0d3b52; }
+    </style>
+  </head>
+  <body>
+    <div id="focus-ring"></div>
+    <header>
+      <span id="branch">—</span>
+      <span id="status" class="pending">MENYAMBUNG…</span>
+    </header>
+    <main>
+      <div id="idle"><span class="big">Pindai barcode</span>Pindai produk untuk melihat harga</div>
+      <div id="price-panel">
+        <h1 id="p-name"></h1>
+        <div id="p-meta"></div>
+        <div id="p-price"></div>
+        <div id="p-unit"></div>
+        <div id="p-promo"></div>
+        <div id="p-availability" class="unknown"></div>
+      </div>
+    </main>
+    <footer>
+      <div id="hint">Pindai lagi untuk produk berikutnya · layar kembali sendiri</div>
+      <div id="log"></div>
+    </footer>
+    <script src="./app.js"></script>
+  </body>
+</html>

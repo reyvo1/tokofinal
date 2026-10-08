@@ -1,0 +1,22 @@
+{
+  "name": "Toko360 Cek Harga",
+  "short_name": "Cek Harga",
+  "description": "Pindai barcode untuk melihat harga di toko.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["business", "shopping"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

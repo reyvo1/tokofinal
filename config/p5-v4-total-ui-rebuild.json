@@ -1,0 +1,114 @@
+{
+  "phase": "P5-V4",
+  "trigger": "Human visual acceptance exposed a cross-surface root problem: visual gates could pass while semantic layout classes were unstyled, tenant context was inconsistent, POS/Employee presentation diverged, and useful backend capability could remain undiscoverable.",
+  "decision": {
+    "deliveryBoundary": "ONE_P5_FULL_V4_TOTAL_PRESENTATION_REBUILD",
+    "businessLogicChangesAllowed": false,
+    "apiContractChangesAllowed": false,
+    "permissionContractChangesAllowed": false,
+    "tailwindUtilityFirstRequired": true,
+    "legacyVisualAuthorityAllowed": false,
+    "controlledDecorativeGradientsAllowed": true,
+    "productIdentitySeparationRequired": true,
+    "humanAcceptanceRequired": true,
+    "adminReferenceDashboardContractRequired": true,
+    "adminLightDarkThemeRequired": true,
+    "adminLegacySemanticClassGapsAllowed": false,
+    "crossSurfaceSemanticClassCoverageRequired": true,
+    "tenantBranchContextConsistencyRequired": true,
+    "usefulBackendCapabilityUiExposureAuditRequired": true,
+    "perSurfacePatchBoundaryAllowed": false,
+    "rootRepairBoundary": "P5_V4_7_FULL_UI_ROOT_PRESENTATION_AND_UI_EXPOSURE"
+  },
+  "researchReferences": [
+    "Tailwind CSS official responsive application shells and responsive utility model",
+    "shadcn/ui dashboard + sidebar composition with SidebarInset separation",
+    "Shopify POS UI guidance prioritizing fast touch workflows and device consistency",
+    "Atlassian navigation system separation of Root, SideNav and Main layout regions"
+  ],
+  "products": {
+    "admin": {
+      "theme": "clean-reference-enterprise-dashboard-dual-theme",
+      "canvas": "#f4f7fb",
+      "navigation": "#ffffff",
+      "accent": "#2563eb",
+      "composition": "light inventory-style sidebar + search-first topbar + compact dashboard title + six colored KPI cards + three-column analytics/action surfaces + persisted dark-mode toggle"
+    },
+    "pos": {
+      "theme": "light-touch-retail-cockpit",
+      "canvas": "#f1f5f9",
+      "accent": "#0f766e",
+      "composition": "light tenant-aware touch cashier shell + segmented workspaces + bright product grid + elevated cart + real digital receipt action"
+    },
+    "storefront": {
+      "theme": "premium-natural-retail",
+      "canvas": "#fafaf9",
+      "accent": "#047857",
+      "composition": "retail storefront header + image-led catalog + warm neutral canvas + premium product cards"
+    },
+    "employeePortal": {
+      "theme": "light-violet-self-service-workspace",
+      "canvas": "#f1f5f9",
+      "accent": "#7c3aed",
+      "composition": "light tenant-aware self-service shell + complete seven-view mobile navigation + violet contextual surfaces"
+    }
+  },
+  "runtimeRequirements": {
+    "viewports": [
+      1440,
+      1024,
+      390
+    ],
+    "noHorizontalOverflow": true,
+    "adminDesktopSidebarMin": 240,
+    "adminDesktopSidebarMax": 300,
+    "posRootMustBeLight": true,
+    "distinctProductRootBackgrounds": true,
+    "humanScreenshotReviewRequired": true,
+    "adminDefaultTheme": "light",
+    "adminDarkThemeRequired": true,
+    "adminDashboardMetricCards": 6,
+    "adminDashboardRequiredPanels": [
+      "sales-performance",
+      "top-revenue-drivers",
+      "product-performance",
+      "recent-activity",
+      "stock-watchlist",
+      "quick-actions"
+    ],
+    "adminSemanticClassCoverageRequired": true,
+    "allFourSurfacesSemanticClassCoverageRequired": true,
+    "tenantContextVisibleAcrossAllFourSurfaces": true,
+    "employeeAllConfiguredViewsReachableOnMobile": true,
+    "posDigitalReceiptCapabilityExposed": true,
+    "intentionalApiOnlyControllers": [
+      "apps/api/src/extensions/edge-sync.controller.ts"
+    ],
+    "unexpectedPartialCapabilityIdsAllowed": [
+      "F9",
+      "F10"
+    ]
+  },
+  "verificationInfrastructure": {
+    "nextGeneratedTypeAuthority": "phase-isolated-dev-and-production-types",
+    "isolatedDevBuild": false,
+    "cleanGeneratedOutputBeforeTypecheckAndBuild": true,
+    "concurrentNextDevAndVerificationAllowed": false,
+    "ignoreBuildErrorsAllowed": false,
+    "canonicalCompilerOptionsAuthority": "tsconfig.json",
+    "productionTsconfigPath": "tsconfig.build.json",
+    "productionTsconfigExtendsCanonical": true,
+    "productionDevTypesExcluded": true,
+    "nextConfigPhaseSelectsTsconfig": true,
+    "generatedNextEnvResetBeforeVerification": true,
+    "generatedTsBuildInfoResetBeforeVerification": true,
+    "configurationAuthorityImmutableDuringVerification": true,
+    "exactNextWorkspaceVersionRequired": true,
+    "productionGeneratedTypesMustExcludeDevTree": true,
+    "generatedFilesPatchedAllowed": false,
+    "resolvedProductionTsconfigInspected": true,
+    "resolvedProductionCompilerStrictNoEmitBundlerRequired": true,
+    "verificationEnvForcesProductionTsconfig": true
+  },
+  "revision": "P5-V4.7-FULL-UI-ROOT-WAVE"
+}

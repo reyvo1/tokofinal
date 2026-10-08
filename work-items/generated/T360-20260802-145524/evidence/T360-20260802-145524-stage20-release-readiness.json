@@ -1,0 +1,346 @@
+{
+  "workItem": "T360-20260802-145524",
+  "stage": 20,
+  "generatedAt": "2026-08-23T02:11:38.280Z",
+  "targetMode": "STAGING",
+  "target": {
+    "hostHash": "49960de5880e8c68",
+    "databaseHash": "d52c6f099d1f3613"
+  },
+  "productionTouched": false,
+  "previousEvidence": {
+    "stage18": true,
+    "stage19": true
+  },
+  "uat": {
+    "passed": true,
+    "pending": [],
+    "total": 10,
+    "approver": "Rey (IVO)",
+    "releaseDecision": "GO_FOR_RELEASE_READY",
+    "executedAt": "2026-08-23T00:00:00.000Z",
+    "rollbackOwner": "Rey (IVO)",
+    "monitoringOwner": "Rey (IVO)",
+    "scenarios": [
+      {
+        "id": "UAT-01-AUTH-ACCESS",
+        "status": "PASS",
+        "notes": "semua clear"
+      },
+      {
+        "id": "UAT-02-PUBLIC-CATALOG",
+        "status": "PASS",
+        "notes": "Manifest & katalog via branchCode benar; produk hanya dari company sendiri; branch asing ditolak."
+      },
+      {
+        "id": "UAT-03-SALES-ORDER-PAYMENT",
+        "status": "PASS",
+        "notes": "Order publik + mock-pay lulus; sales POS dengan pajak aktif; inventory movement & accounting event tercipta."
+      },
+      {
+        "id": "UAT-04-PURCHASE-RECEIPT",
+        "status": "PASS",
+        "notes": "Supplier, PO, goods receipt, inspeksi complete+approve, konfirmasi GR semua lulus."
+      },
+      {
+        "id": "UAT-05-INVENTORY-OPERATIONS",
+        "status": "PASS",
+        "notes": "Stock transfer, stock opname, dan inventory movement terbaca pada tenant benar."
+      },
+      {
+        "id": "UAT-06-ACCOUNTING-FINANCE-REPORTS",
+        "status": "PASS",
+        "notes": "Dashboard, profit-loss, inventory valuation, finance list lulus."
+      },
+      {
+        "id": "UAT-07-HR-ATTENDANCE-PAYROLL",
+        "status": "PASS",
+        "notes": "Employee list dan payroll runs terbatas tenant token."
+      },
+      {
+        "id": "UAT-08-OFFLINE-SYNC",
+        "status": "PASS",
+        "notes": "Retry idempoten (id sama), replay payload berubah ditolak 400."
+      },
+      {
+        "id": "UAT-09-AUDIT-DENIAL",
+        "status": "PASS",
+        "notes": "User tenant B ditolak akses produk tenant A (403), audit TENANT_ACCESS_DENIED tercatat di DB."
+      },
+      {
+        "id": "UAT-10-RESTORE-ROLLBACK",
+        "status": "PASS",
+        "notes": "Evidence backup/restore Tahap 18 lengkap, gate lulus, runbook tersedia."
+      }
+    ]
+  },
+  "observation": {
+    "health": {
+      "samplesRequested": 30,
+      "samplesPassed": 30,
+      "errors": 0,
+      "p50Ms": 19.18,
+      "p95Ms": 23.28,
+      "maxMs": 23.41,
+      "budgetP95Ms": 1000
+    },
+    "databaseStats": {
+      "database_name": "toko360_staging",
+      "database_size_bytes": "18308119",
+      "numbackends": 2,
+      "xact_commit": "42705",
+      "xact_rollback": "9",
+      "blks_read": "1384",
+      "blks_hit": "2915212",
+      "temp_files": "0",
+      "temp_bytes": "0",
+      "deadlocks": "0"
+    },
+    "activity": {
+      "connections": 2,
+      "active_connections": 1,
+      "long_running": 0
+    },
+    "ownership": {
+      "productUnresolved": 0,
+      "supplierUnresolved": 0
+    },
+    "recentTenantDenials24h": 0,
+    "queues": {
+      "eventOutbox": [
+        {
+          "_count": {
+            "_all": 10
+          },
+          "status": "PENDING"
+        }
+      ],
+      "webhookDelivery": [],
+      "notification": [],
+      "reportJob": [],
+      "automationJob": [],
+      "offlineTransaction": [
+        {
+          "_count": {
+            "_all": 1
+          },
+          "status": "PENDING"
+        }
+      ]
+    }
+  },
+  "queryPlanReview": {
+    "plans": [
+      {
+        "key": "product_list",
+        "table": "Product",
+        "budgetMs": 300,
+        "planningTimeMs": 0.187,
+        "executionTimeMs": 0.054,
+        "actualRows": 3,
+        "nodeTypes": [
+          "Limit",
+          "Index Scan"
+        ],
+        "indexNames": [
+          "Product_companyId_isActive_name_id_idx"
+        ],
+        "passed": true
+      },
+      {
+        "key": "inventory_list",
+        "table": "Inventory",
+        "budgetMs": 500,
+        "planningTimeMs": 7.795,
+        "executionTimeMs": 0.076,
+        "actualRows": 3,
+        "nodeTypes": [
+          "Limit",
+          "Sort",
+          "Seq Scan"
+        ],
+        "indexNames": [],
+        "passed": true
+      },
+      {
+        "key": "accounting_event_list",
+        "table": "AccountingEvent",
+        "budgetMs": 500,
+        "planningTimeMs": 5.999,
+        "executionTimeMs": 0.066,
+        "actualRows": 7,
+        "nodeTypes": [
+          "Limit",
+          "Index Scan"
+        ],
+        "indexNames": [
+          "AccountingEvent_companyId_branchId_createdAt_id_idx"
+        ],
+        "passed": true
+      },
+      {
+        "key": "payroll_run_list",
+        "table": "PayrollRun",
+        "budgetMs": 1000,
+        "planningTimeMs": 5.187,
+        "executionTimeMs": 0.023,
+        "actualRows": 0,
+        "nodeTypes": [
+          "Limit",
+          "Index Scan"
+        ],
+        "indexNames": [
+          "PayrollRun_companyId_branchId_createdAt_idx"
+        ],
+        "passed": true
+      },
+      {
+        "key": "finance_transaction_list",
+        "table": "OperationalFinanceTransaction",
+        "budgetMs": 500,
+        "planningTimeMs": 6.766,
+        "executionTimeMs": 0.067,
+        "actualRows": 0,
+        "nodeTypes": [
+          "Limit",
+          "Incremental Sort",
+          "Index Scan"
+        ],
+        "indexNames": [
+          "OperationalFinanceTransaction_companyId_branchId_transactio_idx"
+        ],
+        "passed": true
+      }
+    ],
+    "indexCoverage": [
+      {
+        "key": "product_list",
+        "table": "Product",
+        "columns": [
+          "companyId",
+          "isActive",
+          "name",
+          "id"
+        ],
+        "passed": true,
+        "indexes": [
+          "Product_companyId_isActive_name_id_idx"
+        ]
+      },
+      {
+        "key": "warehouse_branch_lookup",
+        "table": "Warehouse",
+        "columns": [
+          "branchId"
+        ],
+        "passed": true,
+        "indexes": [
+          "Warehouse_branchId_idx"
+        ]
+      },
+      {
+        "key": "inventory_list",
+        "table": "Inventory",
+        "columns": [
+          "warehouseId",
+          "updatedAt",
+          "id"
+        ],
+        "passed": true,
+        "indexes": [
+          "Inventory_warehouseId_updatedAt_id_idx"
+        ]
+      },
+      {
+        "key": "accounting_event_list",
+        "table": "AccountingEvent",
+        "columns": [
+          "companyId",
+          "branchId",
+          "createdAt",
+          "id"
+        ],
+        "passed": true,
+        "indexes": [
+          "AccountingEvent_companyId_branchId_createdAt_id_idx"
+        ]
+      },
+      {
+        "key": "payroll_run_list",
+        "table": "PayrollRun",
+        "columns": [
+          "companyId",
+          "branchId",
+          "createdAt"
+        ],
+        "passed": true,
+        "indexes": [
+          "PayrollRun_companyId_branchId_createdAt_idx"
+        ]
+      },
+      {
+        "key": "finance_transaction_list",
+        "table": "OperationalFinanceTransaction",
+        "columns": [
+          "companyId",
+          "branchId",
+          "transactionDate"
+        ],
+        "passed": true,
+        "indexes": [
+          "OperationalFinanceTransaction_companyId_branchId_transactio_idx"
+        ]
+      }
+    ]
+  },
+  "automatedChecks": [
+    {
+      "id": "HEALTH_ERRORS_ZERO",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "id": "HEALTH_P95_BUDGET",
+      "passed": true,
+      "actual": 23.28,
+      "expectedMax": 1000
+    },
+    {
+      "id": "OWNERSHIP_ZERO_UNRESOLVED",
+      "passed": true,
+      "actual": {
+        "productUnresolved": 0,
+        "supplierUnresolved": 0
+      }
+    },
+    {
+      "id": "NO_LONG_RUNNING_QUERY",
+      "passed": true,
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "id": "ACTIVE_CONNECTION_BUDGET",
+      "passed": true,
+      "actual": 1,
+      "expectedMax": 50
+    },
+    {
+      "id": "QUERY_PLAN_BUDGETS",
+      "passed": true,
+      "failed": []
+    },
+    {
+      "id": "CRITICAL_INDEX_COVERAGE",
+      "passed": true,
+      "failed": []
+    }
+  ],
+  "gate": {
+    "automatedPassed": true,
+    "uatPassed": true,
+    "passed": true
+  },
+  "note": "Credential, password, raw database URL, token, dan query text sensitif tidak disimpan."
+}

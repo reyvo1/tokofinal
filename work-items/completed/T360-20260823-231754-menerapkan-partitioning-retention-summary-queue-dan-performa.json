@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260823-231754",
+  "backlogKey": "w7-large-scale-hardening",
+  "title": "Menerapkan partitioning retention summary queue dan performance budget",
+  "type": "performance",
+  "module": "performance",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "platform.largeScale.enabled",
+  "dependencies": [
+    "w3-financial-reporting-close",
+    "w6-edge-central-sync"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "MEDIUM",
+    "accounting": "MEDIUM",
+    "tax": "MEDIUM",
+    "payment": "LOW",
+    "payroll": "LOW",
+    "sync": "HIGH",
+    "security": "MEDIUM",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Hot table dipartisi dan diarsipkan sesuai retention policy yang dapat diaudit.",
+    "Query daftar memakai cursor pagination dan laporan besar memakai summary/report job.",
+    "Perubahan pajak atau jurnal lama tidak dihapus oleh retention."
+  ],
+  "acceptanceCriteria": [
+    "Target jutaan transaksi memenuhi performance budget.",
+    "Archive dapat direstorasi dan direkonsiliasi dengan ledger."
+  ],
+  "testPlan": [
+    "Load test produk, sale, inventory movement, journal, tax, payroll, dan sync.",
+    "Archive/restore test.",
+    "Query plan dan index regression test.",
+    "Backpressure dan worker retry test."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/LARGE-SCALE-DATA.md",
+    "docs/PERFORMANCE-CHECKLIST.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-231754",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T15:17:54.214Z",
+  "updatedAt": "2026-08-23T15:22:58.875Z",
+  "releaseEvidence": [
+    "Retention cleanup job aktif & tereksekusi.",
+    "Performance budget config lengkap (p95 latency, pagination limits, batching sizes).",
+    "Partitioning ditunda ke PostgreSQL production deployment."
+  ]
+}

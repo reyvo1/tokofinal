@@ -1,0 +1,47 @@
+name: Feature / Modul
+about: Usulan fungsi atau modul baru Toko360
+labels: ["type:feature", "status:intake"]
+body:
+  - type: markdown
+    attributes:
+      value: "Isi fakta bisnis secara konkret. Setelah disetujui, buat work item menggunakan workflow CLI."
+  - type: input
+    id: module
+    attributes:
+      label: Modul dan delivery wave
+      placeholder: inventory / W1
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah bisnis
+      description: Siapa terdampak, apa yang terjadi, dan mengapa perlu diperbaiki?
+    validations:
+      required: true
+  - type: textarea
+    id: flow
+    attributes:
+      label: Alur yang diharapkan
+      description: Jelaskan normal flow, failure, cancel, retry, dan approval.
+    validations:
+      required: true
+  - type: textarea
+    id: impacts
+    attributes:
+      label: Dampak lintas modul
+      description: Database, stok, accounting, tax, payment, payroll, sync, security, performance.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria terukur
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Risiko dan rollback awal
+    validations:
+      required: true

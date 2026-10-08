@@ -1,0 +1,13 @@
+# CI-only infrastructure. Do not require this file for local development.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: toko360
+      POSTGRES_PASSWORD: toko360_dev_password
+      POSTGRES_DB: toko360
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toko360 -d toko360"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

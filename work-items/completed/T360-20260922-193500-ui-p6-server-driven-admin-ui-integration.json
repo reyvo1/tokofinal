@@ -1,0 +1,64 @@
+{
+  "id": "T360-20260922-193500",
+  "backlogKey": "ui-p6-server-driven-admin-ui",
+  "title": "UI-P6 Server-driven Admin UI integration",
+  "type": "feature",
+  "module": "admin-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p5-employee-portal-productization"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Runtime manifest module catalog dan feature flags hanya dapat mengurangi nested Admin UI capability yang terlihat; tidak memberi authorization.",
+    "Admin UiSchema hanya dapat hide/relabel/reorder canonical domain view dan tidak dapat membuat route/action baru.",
+    "Role/permission token dipakai untuk visibility UI saja; backend tetap fail-closed authorization boundary.",
+    "Human Stage-20 UAT tetap PENDING dan candidate verifier tidak diubah."
+  ],
+  "acceptanceCriteria": [
+    "resolveDomainViews menggabungkan canonical view, active module, identity visibility, dan UiSchema override secara deterministic.",
+    "Admin shell memakai resolved nested views dan menampilkan active module serta Admin UI schema runtime status.",
+    "Deep-link nested view yang hidden/disabled kembali ke canonical domain root.",
+    "UI-P1 dan UI-P2 behavior tetap kompatibel."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p6-server-driven-admin-ui.test.mjs",
+    "node --test tests/ui-p1-admin-application-shell.test.mjs tests/ui-p2-admin-domain-workspaces.test.mjs",
+    "GitHub Full System Simulation setelah push."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P6 mengembalikan nested domain view hard-coded visibility tanpa mengubah API/data.",
+  "monitoringPlan": "Pantau Admin Next build, navigation visibility, direct nested route, browser runtime, exact-artifact, dan Stage-20 automated.",
+  "securityNotes": "UI visibility bukan authorization; seluruh mutation/read tetap diverifikasi backend dengan auth/tenant/permission existing.",
+  "documentation": [
+    "docs/SERVER-DRIVEN-ADMIN-UI.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T19:35:00+08:00",
+  "updatedAt": "2026-09-22T20:10:00+08:00",
+  "closureEvidence": {
+    "commit": "4cac591f0ba27f571e987e07b7343d85dba40241",
+    "fullSystem": "PASS",
+    "builtBrowserUat": "PASS",
+    "stage20Automated": "PASS",
+    "sourceFingerprint": "3552632796c527f165168a7fb6a1e88c4469df2f28c5c8a97d69e405f6cc9c72",
+    "artifactSha256": "9b49242ebe811f59408c78383ef529da5a6df717c4aed626603c238da5185872",
+    "humanStage20Uat": "PENDING 12/12"
+  }
+}

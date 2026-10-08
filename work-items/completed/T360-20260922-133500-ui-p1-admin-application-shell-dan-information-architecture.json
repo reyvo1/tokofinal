@@ -1,0 +1,61 @@
+{
+  "id": "T360-20260922-133500",
+  "backlogKey": "ui-p1-admin-application-shell",
+  "title": "UI-P1 Admin Application Shell dan information architecture",
+  "type": "feature",
+  "module": "admin-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "w7-production-readiness"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Navigasi Admin hanya menampilkan workspace yang mempunyai implementasi UI nyata dan module runtime aktif.",
+    "JWT role/permission hanya memfilter surface UI; API permission guard tetap menjadi otoritas akses.",
+    "Runtime UiSchemaDefinition untuk surface admin boleh mengubah visibility, label, dan order workspace tanpa membuat business workflow baru."
+  ],
+  "acceptanceCriteria": [
+    "Canonical route tersedia untuk 12 workspace Admin dan direct route tetap memakai authenticated Admin shell.",
+    "Navigation resolver menggabungkan module catalog, feature flags, role/permission JWT, dan UiSchemaDefinition.",
+    "Sidebar collapsible/searchable, mobile selector, breadcrumb, company/branch context, page header, dan workspace rail tersedia.",
+    "Existing Admin operational views dan fail-closed backend access tetap dipertahankan."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p1-admin-application-shell.test.mjs",
+    "node --test tests/ui-final-cleanup.test.mjs tests/functional-w0-w1-master-data-api-key.test.mjs tests/functional-w1-purchase-request.test.mjs tests/procurement-integrity.test.mjs",
+    "npm run workflow:validate dan npm run work:status.",
+    "npm run test:dependency-free sebelum push; Next/build/browser divalidasi ulang oleh GitHub Full System Simulation."
+  ],
+  "migrationPlan": "Tidak ada perubahan database atau schema; UI-P1 hanya mengubah Admin information architecture dan runtime navigation consumption.",
+  "rollbackPlan": "Rollback commit UI-P1 mengembalikan single-page navigation lama tanpa mengubah API, schema, data, atau business transaction state.",
+  "monitoringPlan": "Pantau GitHub Full System Simulation, Admin browser UAT, route load failures, permission-denied responses, dan client-side navigation regressions setelah push.",
+  "securityNotes": "Visibility UI mengikuti role/permission claim tetapi bukan security boundary; seluruh otorisasi tetap diwajibkan oleh API guard dan tenant scope server.",
+  "documentation": [
+    "docs/ADMIN-APPLICATION-SHELL.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T13:35:00+08:00",
+  "updatedAt": "2026-09-22T14:55:00+08:00",
+  "completionEvidence": {
+    "githubCommit": "f8f79fda8aa10f98c0df332cb56951a89a98ebf0",
+    "githubFullSystem": "PASS",
+    "sourceFingerprint": "7e02fd289e53336f9853791b571d5b17b2eef2a817731ae5dbd0503842c41786",
+    "buildArtifactId": "c9da2ae679b5b6ed98409cf31559cd32fc430afbb886269f41a02ed0da666fe5"
+  }
+}

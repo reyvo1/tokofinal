@@ -1,0 +1,4 @@
+ALTER TABLE "SaleItem" ADD COLUMN "unitCode" TEXT;
+ALTER TABLE "SaleItem" ADD COLUMN "unitQuantity" INTEGER;
+ALTER TABLE "SaleItem" ADD COLUMN "quantityFactor" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "SaleItem" ADD COLUMN "sourceBarcode" TEXT;

@@ -1,0 +1,70 @@
+{
+  "environment": "STAGING",
+  "approver": "",
+  "executedAt": "",
+  "releaseDecision": "PENDING",
+  "rollbackOwner": "",
+  "monitoringOwner": "",
+  "scenarios": [
+    {
+      "id": "UAT-01-AUTH-ACCESS",
+      "status": "PENDING",
+      "notes": "Login, role, disabled user, dan pembatasan branch."
+    },
+    {
+      "id": "UAT-02-PUBLIC-CATALOG",
+      "status": "PENDING",
+      "notes": "Katalog publik memakai branchCode dan tidak bocor lintas company."
+    },
+    {
+      "id": "UAT-03-SALES-ORDER-PAYMENT",
+      "status": "PENDING",
+      "notes": "Order, pembayaran, stok, pajak, dan jurnal pada branch yang benar."
+    },
+    {
+      "id": "UAT-04-PURCHASE-RECEIPT",
+      "status": "PENDING",
+      "notes": "Supplier, PO, inspection, goods receipt, gate pass, dan konfirmasi."
+    },
+    {
+      "id": "UAT-05-INVENTORY-OPERATIONS",
+      "status": "PENDING",
+      "notes": "Transfer, opname, batch/serial, return, dan inventory movement."
+    },
+    {
+      "id": "UAT-06-ACCOUNTING-FINANCE-REPORTS",
+      "status": "PENDING",
+      "notes": "Finance, tax, accounting event, dashboard, P&L, valuation, dan report job."
+    },
+    {
+      "id": "UAT-07-HR-ATTENDANCE-PAYROLL",
+      "status": "PENDING",
+      "notes": "Employee, attendance, payroll, approval, posting, dan payslip."
+    },
+    {
+      "id": "UAT-08-OFFLINE-SYNC",
+      "status": "PENDING",
+      "notes": "Retry idempoten, replay berubah ditolak, dan device tenant benar."
+    },
+    {
+      "id": "UAT-09-AUDIT-DENIAL",
+      "status": "PENDING",
+      "notes": "Percobaan lintas tenant menghasilkan structured error dan audit denial."
+    },
+    {
+      "id": "UAT-10-RESTORE-ROLLBACK",
+      "status": "PENDING",
+      "notes": "Evidence backup/restore Tahap 18 dan rollback deployment direview."
+    },
+    {
+      "id": "UAT-11-DELIVERY-LIFECYCLE",
+      "status": "PENDING",
+      "notes": "Trip -> vehicle/driver/shipment -> manifest/loading scan -> pre-trip -> Gate Pass -> dispatch -> POD/COD atau failed/return -> post-trip -> close trip."
+    },
+    {
+      "id": "UAT-12-PAYROLL-ADJUSTMENT-RECOVERY",
+      "status": "PENDING",
+      "notes": "Koreksi payroll POSTED/PAID melalui differential adjustment, signed posting, settlement chain, employee recovery bila sudah terbayar, audit, cancellation pre-posting, dan payslip/report lineage."
+    }
+  ]
+}

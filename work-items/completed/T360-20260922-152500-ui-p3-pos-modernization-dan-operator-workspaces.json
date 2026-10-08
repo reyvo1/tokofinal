@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260922-152500",
+  "backlogKey": "ui-p3-pos-modernization",
+  "title": "UI-P3 POS modernization dan operator workspaces",
+  "type": "feature",
+  "module": "pos-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p2-admin-domain-workspaces"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "LOW",
+    "accounting": "NONE",
+    "tax": "LOW",
+    "payment": "LOW",
+    "payroll": "NONE",
+    "sync": "LOW",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "POS workspace hanya mengubah presentation dan operator flow; quote, payment, stock, shift, return, dan sync tetap authoritative pada logic/API lama.",
+    "Mode offline tetap dibatasi fail-closed: cash-only, tanpa promo/loyalty/pack conversion, dengan reservation stok lokal dan replay idempotent.",
+    "Human Stage-20 UAT tidak boleh dipenuhi oleh automated simulation dan candidate verifier tetap harus FAIL sampai human evidence sah."
+  ],
+  "acceptanceCriteria": [
+    "POS mempunyai shell reusable dan workspace Penjualan, Shift & Kas, Retur, dan Sinkronisasi.",
+    "Catalog/cart/payment tetap satu operator flow fokus dan cart tetap sticky pada desktop tanpa mengubah transaksi.",
+    "Shift, cash movement, return/refund, dan offline queue tidak lagi bercampur dalam satu surface panjang.",
+    "Existing payment guard, idempotency, offline reservation/replay conflict, tenant/auth behavior, dan human-UAT fail-closed tetap dipertahankan."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p3-pos-modernization.test.mjs",
+    "node --test tests/core-pos-transaction-integrity.test.mjs tests/functional-w0-w2-pos-completeness.test.mjs tests/functional-w0-w2-return-workflow.test.mjs tests/functional-w1-pos-barcode-conversion.test.mjs tests/offline-pos-replay.test.mjs tests/browser-uat-pos-runtime.test.mjs tests/uat-candidate-gate.test.mjs",
+    "Invariant stok/movement: reservation stok offline, available stock per warehouse, dan replay tidak boleh menggandakan inventory movement.",
+    "npm run test:dependency-free sebelum push; GitHub Full System Simulation untuk build/browser/runtime."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P3 mengembalikan POS single-surface tanpa mengubah data atau API.",
+  "monitoringPlan": "Pantau POS Next build, browser UAT, payment/shift/offline replay, dan exact-artifact gates di GitHub.",
+  "securityNotes": "UI workspace bukan security boundary; API/auth/tenant/payment guards tetap authoritative.",
+  "documentation": [
+    "docs/POS-MODERNIZATION.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T15:25:00+08:00",
+  "updatedAt": "2026-09-22T16:50:00+08:00",
+  "closureEvidence": {
+    "githubCommit": "be8007ba2f7ba7f8d98a09a3acb6a2c783599988",
+    "sourceFingerprint": "086b5a8bbeaa7a29453e67a741ac842ee5d51f97e7ced6cf3e4ae333a066d1ba",
+    "buildArtifactId": "af2f1e612b05ca9a1f9dd2c47cd6729a3c132c33731719036c48ae42aced64e8",
+    "fullSystemSimulation": "PASS",
+    "builtBrowser": "PASS",
+    "humanUat": "PENDING 12/12; candidate verifier remains fail-closed"
+  }
+}

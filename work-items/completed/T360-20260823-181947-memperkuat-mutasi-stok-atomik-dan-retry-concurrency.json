@@ -1,0 +1,65 @@
+{
+  "id": "T360-20260823-181947",
+  "backlogKey": "w1-atomic-stock-mutation",
+  "title": "Memperkuat mutasi stok atomik dan retry concurrency",
+  "type": "feature",
+  "module": "inventory",
+  "wave": "W1",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "inventory.atomicMutation.enabled",
+  "dependencies": [
+    "w0-idempotency-all-mutations"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "HIGH",
+    "accounting": "MEDIUM",
+    "tax": "LOW",
+    "payment": "LOW",
+    "payroll": "NONE",
+    "sync": "HIGH",
+    "security": "MEDIUM",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Saldo stok hanya berubah melalui inventory movement append-only.",
+    "Pengurangan stok atomik gagal bila available quantity tidak mencukupi.",
+    "Retry serializable dibatasi dan dicatat untuk monitoring.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Dua kasir tidak dapat menjual unit terakhir secara bersamaan.",
+    "Saldo inventory sama dengan agregasi movement untuk sampel dan rekonsiliasi penuh."
+  ],
+  "testPlan": [
+    "Concurrency test penjualan barang terakhir.",
+    "Inventory movement invariant test.",
+    "Offline sync retry dan conflict test.",
+    "Journal inventory posting balance test."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/LARGE-SCALE-DATA.md",
+    "docs/PERFORMANCE-CHECKLIST.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-181947",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T10:19:47.708Z",
+  "updatedAt": "2026-08-23T10:47:26.381Z",
+  "releaseEvidence": [
+    "UAT concurrency nyata: 8 order paralel qty 2 pada stok 10 -> 5 sukses tepat 10 unit, 3 ditolak 400 dengan pesan stok tidak cukup, zero oversell.",
+    "serializableTx helper dengan retry P2034/P2002/timeout + backoff eksponensial.",
+    "quality:fast pass; build lulus.",
+    "Rollback: git restore commit ini; serializableTx terisolasi di common/."
+  ]
+}

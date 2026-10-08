@@ -1,0 +1,67 @@
+{
+  "id": "T360-20260922-201000",
+  "backlogKey": "ui-p7-final-interface-hardening",
+  "title": "UI-P7 Final visual responsive accessibility browser cleanup",
+  "type": "feature",
+  "module": "admin-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "LOW",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p6-server-driven-admin-ui"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Presentation/accessibility only; backend business authority and authorization remain unchanged.",
+    "Existing browser UAT literals are preserved; tests/gates are not weakened.",
+    "Human Stage-20 UAT remains PENDING/fail-closed."
+  ],
+  "acceptanceCriteria": [
+    "Four main frontends expose keyboard skip links and focusable primary content.",
+    "Reduced-motion and focus-visible behavior are consistent across applications.",
+    "Mobile touch targets and horizontal workspace navigation remain usable on coarse pointers.",
+    "Built Browser UAT and prior UI-P1..P6 contracts remain green."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p7-final-interface-hardening.test.mjs tests/ui-final-cleanup.test.mjs",
+    "node --test tests/ui-p1-admin-application-shell.test.mjs tests/ui-p2-admin-domain-workspaces.test.mjs tests/ui-p3-pos-modernization.test.mjs tests/ui-p4-storefront-productization.test.mjs tests/ui-p5-employee-portal-productization.test.mjs tests/ui-p6-server-driven-admin-ui.test.mjs",
+    "GitHub Full System Simulation setelah push."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P7 mengembalikan presentation/accessibility layer tanpa mengubah data/API.",
+  "monitoringPlan": "Pantau Next build, browser UAT, responsive navigation, focus behavior, exact artifact, dan Stage-20 automated.",
+  "securityNotes": "Accessibility semantics tidak menggantikan backend authorization.",
+  "documentation": [
+    "docs/UI-UX-FINAL-CLEANUP.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T20:10:00+08:00",
+  "updatedAt": "2026-09-22T20:25:00+08:00",
+  "closureEvidence": {
+    "commit": "97346eafe34b1cad9eb24f3072f04d7fd2c0150d",
+    "fullSystem": "PASS",
+    "regression": "708 PASS",
+    "builtBrowserUat": "PASS",
+    "stage18": "PASS",
+    "stage19": "PASS",
+    "stage20Automated": "PASS",
+    "sourceFingerprint": "328cc5695ff3ab82fa8aaa5dffbbe5828a5e48c1b1f191e852a0881fd7a6c8ad",
+    "artifactSha256": "3e5c9d075d12974b4a0e79ae90a639a23ce087549b5aaa4a4616467630b9cbe9",
+    "humanStage20Uat": "PENDING 12/12",
+    "uatCandidateVerify": "FAIL-CLOSED until valid human evidence exists"
+  }
+}

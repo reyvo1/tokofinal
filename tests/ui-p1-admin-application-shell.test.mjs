@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const page=readFileSync(new URL('../apps/admin/app/page.tsx',import.meta.url),'utf8');
+const navigation=readFileSync(new URL('../apps/admin/app/navigation.ts',import.meta.url),'utf8');
+const shell=readFileSync(new URL('../apps/admin/app/app-shell.tsx',import.meta.url),'utf8');
+const css=readFileSync(new URL('../apps/admin/app/globals.css',import.meta.url),'utf8');
+const dynamicRoute=readFileSync(new URL('../apps/admin/app/[section]/page.tsx',import.meta.url),'utf8');
+const expectedRoutes=['/dashboard','/commerce','/procurement','/inventory-control','/operations-control','/master-data','/finance','/reports','/people','/assets-fleet','/intelligence','/integrations','/organization','/settings'];
+
+test('UI-P1 gives every implemented Admin workspace a canonical route',()=>{for(const route of expectedRoutes) assert.match(navigation,new RegExp(`route: '${route.replaceAll('/','\\/')}'`));assert.match(dynamicRoute,/export \{ default \} from '\.\.\/page'/);assert.match(page,/usePathname\(\)/);assert.match(page,/router\.push\(route\)/);});
+test('UI-P1 primary navigation keeps backend permission and UiSchema authority intact',()=>{assert.doesNotMatch(navigation,/enabledModuleCodes|activeModules/);assert.match(navigation,/\['SUPER_ADMIN', 'OWNER', 'ADMIN'\]\.includes\(role\)/);assert.match(navigation,/identity\.permissions/);assert.match(navigation,/identity\.roles/);assert.match(navigation,/manifest\?\.uiSchemas/);assert.match(navigation,/override\?\.hidden !== true && hasPermission\(identity, workspace\)/);assert.match(page,/resolveAdminNavigation\(manifest, identity\)/);});
+test('UI-P1 V4 has one semantic side navigation and one bounded content workspace',()=>{assert.match(shell,/Cari domain atau subdomain/);assert.match(shell,/adminV4Layout/);assert.match(css,/@media \(width >= 1024px\)[\s\S]*grid-template-columns: 246px minmax\(0,1fr\)/);assert.match(shell,/aside className={`adminV4Sidebar/);assert.match(shell,/adminV4Main/);assert.match(css,/max-width: 1720px/);assert.match(shell,/Tenant aktif/);assert.match(shell,/data-visual-generation="p5-v4"/);assert.doesNotMatch(shell,/compatibility source marker|workspaceRail|domainDeck|breadcrumbs|sidebarCollapsed/);});
+test('UI-P1 preserves fail-closed backend authorization while token claims only affect visibility',()=>{assert.match(navigation,/identityFromAccessToken/);assert.match(navigation,/window\.atob/);assert.doesNotMatch(navigation,/fetch\(/);assert.match(page,/authFetch/);});
+test('UI-P1 V4 uses Tailwind-first layered enterprise surfaces with controlled gradients',()=>{assert.match(css,/@import "tailwindcss"/);assert.match(css,/linear-gradient\(135deg,#10b981,#2563eb\)/);assert.match(css,/backdrop-filter:\s*blur/);assert.match(css,/--admin-shadow-md:/);assert.match(css,/linear-gradient|radial-gradient/);assert.match(css,/color-scheme:\s*light/);});
+
+test('UI-P1 Admin reference dashboard and theme controls are structural rather than decorative markers',()=>{assert.match(shell,/data-theme=\{theme\}/);assert.match(shell,/className="adminPageHeader"/);assert.match(shell,/Cari domain atau subdomain/);assert.match(shell,/Aktifkan mode gelap/);assert.match(css,/\.adminV4\[data-theme='dark'\]/);assert.match(css,/\.stack(?:,|\s*\{)/);assert.match(css,/\.grid2(?:,|\s*\{)/);assert.match(css,/\.actionRow/);assert.match(css,/\.notice\s*\{/);});

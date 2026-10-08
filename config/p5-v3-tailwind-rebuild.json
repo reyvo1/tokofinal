@@ -1,0 +1,67 @@
+{
+  "phase": "P5-V3",
+  "baseline": {
+    "commit": "fd2d29d9a8d7d6bd0db3c1e085fb4e376440f6bc",
+    "sourceFingerprint": "8526da44eee5325f40a833e03d461533bb0ddf72bc35a781d560260ddb684e68",
+    "automatedP5": "PASS",
+    "humanVisualAcceptance": "REJECTED"
+  },
+  "decision": {
+    "deliveryBoundary": "ONE_P5_FULL_V3_TOTAL_UI_REBUILD",
+    "businessLogicChangesAllowed": false,
+    "apiContractChangesAllowed": false,
+    "tailwindUtilityFirstRequired": true,
+    "legacyCompatibilityLayerTailwindOnly": true,
+    "p5V2OverrideBlocksForbidden": true,
+    "decorativeGradientsAllowed": false,
+    "humanAcceptanceRequired": true
+  },
+  "products": {
+    "admin": {
+      "theme": "light-enterprise-command-center",
+      "canvas": "#f5f7fb",
+      "navigation": "#0b1220",
+      "accent": "#0284c7",
+      "composition": "dark command sidebar + light bounded workspace + responsive contextual grid",
+      "chartPalette": [
+        "#0284c7",
+        "#10b981",
+        "#6366f1",
+        "#e11d48"
+      ]
+    },
+    "pos": {
+      "theme": "teal-transaction-cockpit",
+      "canvas": "#eef4f6",
+      "accent": "#0f766e",
+      "composition": "high-contrast touch workspace + dominant cart/payment action + four fixed workspaces"
+    },
+    "storefront": {
+      "theme": "light-premium-retail",
+      "canvas": "#f7f7f5",
+      "accent": "#15261f",
+      "composition": "retail header + product-first grid + image-led cards + mobile bottom navigation"
+    },
+    "employeePortal": {
+      "theme": "calm-violet-self-service",
+      "canvas": "#f6f7fb",
+      "accent": "#7c3aed",
+      "composition": "calm sidebar + self-service cards + compact status hierarchy + mobile bottom navigation"
+    }
+  },
+  "visualRules": [
+    "Shell utama wajib memakai Tailwind utility classes langsung; globals.css bukan tempat override versi berlapis.",
+    "Legacy module classes hanya boleh dipertahankan sebagai compatibility layer berbasis @apply Tailwind.",
+    "Tidak boleh ada selector data-visual-version=p5-v2 untuk menimpa desain lama.",
+    "Satu halaman tidak boleh memiliki tiga lapis navigasi visual yang sama kuat.",
+    "Cards, forms, tables, empty states, status, modal, charts dan mobile navigation harus memiliki hierarchy yang konsisten.",
+    "Storefront harus customer-facing dan terang; POS harus touch-first; Employee Portal harus calm self-service; Admin harus enterprise command center.",
+    "Semua viewport tetap tanpa horizontal overflow pada 1440, 1024 dan 390.",
+    "Admin desktop layout wajib memakai dedicated two-column wrapper; auxiliary/fixed nodes tidak boleh ikut CSS-grid auto-placement, dan Browser UAT wajib memverifikasi posisi sidebar serta lebar main workspace.",
+    "Human visual acceptance tetap authority terakhir P5."
+  ],
+  "externalReferencePatterns": [
+    "Tailwind CSS official responsive sidebar application shells",
+    "shadcn/ui dashboard blocks with sidebar, cards, charts and data tables"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "T360-20260823-232348",
+  "backlogKey": "w7-production-readiness",
+  "title": "Melaksanakan backup restore monitoring security dan production readiness",
+  "type": "release",
+  "module": "backup-recovery",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "",
+  "dependencies": [
+    "w7-large-scale-hardening",
+    "w6-device-provider-adapters"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "MEDIUM",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "HIGH",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Tidak ada production release tanpa backup teruji, restore drill, monitoring, alert, dan rollback plan.",
+    "Data accounting, tax, payroll, dan audit mempunyai retensi serta akses yang sesuai.",
+    "Restore backup wajib mempertahankan tax rule version dan periode pajak berlaku agar audit trail konsisten."
+  ],
+  "acceptanceCriteria": [
+    "Restore drill memenuhi RPO/RTO yang ditetapkan.",
+    "Security review, load test, failover, dan release checklist disetujui."
+  ],
+  "testPlan": [
+    "Full restore dan reconciliation inventory/journal/tax/payroll test.",
+    "Failover serta offline sync recovery test.",
+    "Security penetration checklist dan credential rotation test.",
+    "Peak load performance test."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/QUALITY-GATES.md",
+    "docs/PERFORMANCE-CHECKLIST.md",
+    "docs/PROJECT-CHECKPOINTS.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-232348",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T15:23:48.459Z",
+  "updatedAt": "2026-08-25T03:28:45.246Z",
+  "releaseEvidence": [
+    "Backup/restore drill LULUS: integrity ok, table counts match.",
+    "Monitoring: health + observability + performance budget aktif.",
+    "Security batch W0 semua RELEASED.",
+    "Production rollout menunggu infrastruktur & keputusan owner."
+  ],
+  "taxRuleNote": "Backup/restore tidak mengubah tarif atau periode pajak; tax rule versioned tetap utuh dan dipertahankan pada restore."
+}

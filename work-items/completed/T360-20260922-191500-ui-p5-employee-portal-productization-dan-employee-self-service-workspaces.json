@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260922-191500",
+  "backlogKey": "ui-p5-employee-portal-productization",
+  "title": "UI-P5 Employee Portal productization dan employee self-service workspaces",
+  "type": "feature",
+  "module": "employee-portal-ui",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "",
+  "dependencies": [
+    "ui-p3-pos-modernization"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Employee Portal UI hanya mengubah presentation dan information architecture; employee self-scope, attendance evidence validation, leave/overtime approval, dan payslip publication tetap authoritative di backend.",
+    "GPS, selfie, geofence, operationId, employee/company/branch context, dan attendance event tetap dikirim melalui flow API existing tanpa bypass.",
+    "Human Stage-20 UAT tidak boleh dihasilkan automated simulation dan uat:candidate:verify tetap fail-closed sampai human evidence sah."
+  ],
+  "acceptanceCriteria": [
+    "Reusable EmployeePortalShell tersedia dengan workspace home, attendance, leave, overtime, payslips, history, dan profile.",
+    "Route deep-link Employee Portal mempertahankan login/auth refresh contract dan authenticated shell lama yang dibutuhkan browser UAT.",
+    "Attendance/cuti/lembur/slip/riwayat memakai API existing dan tidak mengubah server authorization atau approval behavior.",
+    "Desktop sidebar dan mobile navigation memberikan progressive disclosure yang konsisten dengan UI productization foundation."
+  ],
+  "testPlan": [
+    "node --test tests/ui-p5-employee-portal-productization.test.mjs",
+    "node --test tests/browser-uat-employee-runtime.test.mjs tests/browser-uat-launcher.test.mjs",
+    "Static invariant: TOKO360 HR, Portal Karyawan, Employee Portal authenticated self-service, /employee/me, attendance event, leave/overtime, dan payslip contract tetap ada.",
+    "GitHub Full System Simulation untuk Next build, authenticated employee browser runtime, exact-artifact, Stage-20 automated; Human UAT tetap manual."
+  ],
+  "migrationPlan": "Tidak ada database/schema migration.",
+  "rollbackPlan": "Rollback commit UI-P5 mengembalikan Employee Portal single-surface tanpa mengubah employee/attendance/payroll data.",
+  "monitoringPlan": "Pantau Employee Portal Next build, authenticated browser runtime, attendance self-service, leave/overtime, payslip, exact-artifact, dan Stage-20 di GitHub.",
+  "securityNotes": "UI route bukan security boundary; employee token refresh, employee self-scope, tenant/branch, attendance evidence, dan payslip access tetap diverifikasi backend.",
+  "documentation": [
+    "docs/EMPLOYEE-PORTAL-PRODUCTIZATION.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "UI-DESIGN-SYSTEM.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-22T19:15:00+08:00",
+  "updatedAt": "2026-09-22T19:30:00+08:00",
+  "closureEvidence": {
+    "githubCommit": "e37f7feee08f44544c38fa508e69af6e6cb8468f",
+    "sourceFingerprint": "37dc4ffade7152b42638c286bfb8cf02cfde689a290a0f58959e71b3e5ff0606",
+    "buildArtifactId": "24223f78fca3492bb32a1c7c00703ca2d7308703db2d71214114ce7214c3cea8",
+    "fullSystemSimulation": "PASS",
+    "builtBrowser": "PASS",
+    "humanUat": "PENDING 12/12; candidate verifier remains fail-closed"
+  }
+}

@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@source "./**/*.{js,ts,jsx,tsx,mdx}";
+
+@theme { --font-sans: Inter, Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+*{box-sizing:border-box}html{background:#fafaf9;color-scheme:light}
+/* The shell only covers its own box, so the light html background was visible below the fold in
+   dark mode. The html/:root level needs its own dark background. */
+html[data-t360-theme='dark']{background:#0a0f1a;color-scheme:dark}body{margin:0;min-width:0;overflow-x:hidden;background:#fafaf9;color:#0f172a;font-family:var(--font-sans)}button,input,select,textarea{font:inherit}button{cursor:pointer}::selection{background:#a7f3d0;color:#064e3b}
+
+@layer components{
+  .skipLink{@apply fixed left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-xl transition-transform focus:translate-y-0;}
+  .srOnly{@apply sr-only;}
+  .storefrontMain{@apply mx-auto w-full max-w-[1500px] min-w-0 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8;}
+  .mobileNav{@apply fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 gap-1 rounded-[22px] border border-white/80 bg-white/95 p-1.5 shadow-[0_20px_60px_rgba(15,23,42,.18)] backdrop-blur-2xl md:hidden;}
+  .mobileNav button{@apply flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border border-transparent text-[9px] font-semibold text-stone-500;}
+  .mobileNav button.active{@apply border-emerald-100 bg-emerald-50 text-emerald-800;}
+  .mobileNav small{@apply max-w-full truncate;}
+
+  .hero,.storefrontHero{@apply relative overflow-hidden rounded-[32px] border border-white/80 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,.09)] sm:p-8 lg:p-10;}
+  .hero::before,.storefrontHero::before{content:"";@apply pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-200/55 blur-3xl;}
+  .hero::after,.storefrontHero::after{content:"";@apply pointer-events-none absolute -bottom-28 right-40 h-60 w-60 rounded-full bg-amber-200/40 blur-3xl;}
+  .hero>* , .storefrontHero>*{@apply relative;}
+
+  .catalog,.productGrid{@apply grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5;}
+  .productCard,.productTile{@apply relative min-w-0 overflow-hidden rounded-[24px] border border-stone-200/80 bg-white p-3 shadow-[0_10px_28px_rgba(15,23,42,.05)] transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-[0_20px_44px_rgba(5,150,105,.12)];}
+  .productImage,.productMedia{@apply relative grid aspect-square w-full place-items-center overflow-hidden rounded-[18px] bg-gradient-to-br from-stone-100 to-emerald-50 text-stone-400 transition;}
+  .productCard:hover .productImage,.productTile:hover .productMedia{@apply from-emerald-50 to-teal-50;}
+  .productCard h3,.productTile h3{@apply mt-3 line-clamp-2 text-sm font-semibold leading-5 text-slate-950;}
+  .productCard p,.productTile p{@apply mt-1 text-[10px] leading-4 text-stone-500;}
+  .price,.productPrice{@apply mt-2 text-base font-bold tracking-[-.03em] text-slate-950;}
+  .stock,.stockBadge{@apply mt-2 inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-700;}
+
+  .toolbar,.catalogToolbar{@apply mb-4 flex min-w-0 flex-col gap-3 rounded-[24px] border border-white bg-white/90 p-3 shadow-[0_12px_34px_rgba(15,23,42,.05)] backdrop-blur-xl sm:flex-row sm:items-center;}
+  .search,.catalogSearch{@apply h-11 min-w-0 flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm text-slate-900 outline-none placeholder:text-stone-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100;}
+  .filters,.filterRow{@apply flex min-w-0 flex-wrap gap-2;}
+  .filters button,.filterRow button{@apply min-h-10 rounded-full border border-stone-200 bg-white px-3 text-[10px] font-semibold text-stone-600 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700;}
+
+  .cart,.cartPanel,.accountPanel,.orderPanel,.productDetail{@apply min-w-0 rounded-[28px] border border-white/80 bg-white/95 p-5 shadow-[0_20px_58px_rgba(15,23,42,.08)] backdrop-blur-xl sm:p-6;}
+  .cartItem,.orderItem{@apply rounded-2xl border border-stone-200 bg-stone-50/70 p-3;}
+  input,select,textarea{@apply min-w-0 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-xs text-slate-800 shadow-sm outline-none placeholder:text-stone-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100;}
+  button.primary,.primaryButton,.checkoutButton{@apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-gradient-to-r from-emerald-800 to-teal-800 px-4 text-xs font-semibold text-white shadow-[0_12px_30px_rgba(6,95,70,.20)] transition hover:-translate-y-px hover:shadow-[0_16px_36px_rgba(6,95,70,.26)];}
+  button.secondary,.secondaryButton{@apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-xs font-semibold text-stone-600 shadow-sm hover:bg-stone-50;}
+  .emptyState{@apply grid min-h-48 place-items-center rounded-[24px] border border-dashed border-stone-200 bg-white/70 p-8 text-center text-sm text-stone-500;}
+  .notice,.alert{@apply rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-800;}
+  .login,.loginShell{@apply relative grid min-h-screen place-items-center overflow-hidden bg-stone-50 p-4;}
+  .login::before,.loginShell::before{content:"";@apply pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-emerald-200/60 blur-3xl;}
+  .login form,.loginCard{@apply relative z-10 w-full max-w-md rounded-[30px] border border-white/80 bg-white/95 p-6 shadow-[0_28px_80px_rgba(15,23,42,.12)] backdrop-blur-2xl sm:p-8;}
+}
+.storefrontV4{background:radial-gradient(circle at 90% 0%,rgba(16,185,129,.06),transparent 26%),linear-gradient(180deg,#fafaf9 0%,#f5f5f4 100%);color:#0f172a;}
+/* The dark palette themed panels, buttons and borders but never the shell background itself, so the
+   page kept its light emerald-tinted gradient under dark text — the green cast that was reported. */
+.storefrontV4[data-theme='dark']{background:radial-gradient(circle at 90% 0%,rgba(16,185,129,.05),transparent 26%),linear-gradient(180deg,#0b1220 0%,#0a0f1a 100%);color:#e2e8f0;color-scheme:dark}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms;animation-duration:.01ms;animation-iteration-count:1}}
+:focus-visible{outline:2px solid #059669;outline-offset:2px}@media(pointer:coarse){button,input,select{min-height:44px}}
+
+/* P5 V4.11 ROOT PRESENTATION AUTHORITY — one layer, product-scoped light/dark. */
+
+/* Semantic text tokens. The P5 block below was written with literal hex values (#0f172a, #78716c,
+   #047857, #a8a29e) and had no dark counterpart, so in dark mode light-grey text sat on a light
+   background — measured contrast ratios of 1.0 and 1.18, i.e. effectively invisible. The shell
+   background is themed, so these tokens are the single place a colour has to flip. */
+.storefrontV4{
+  --sf-text:#0f172a;
+  --sf-text-muted:#57534e;
+  --sf-text-subtle:#78716c;
+  --sf-text-faint:#a8a29e;
+  --sf-accent:#047857;
+  --sf-accent-soft:#d1fae5;
+  --sf-surface:#fff;
+  --sf-surface-soft:#fafaf9;
+  --sf-border:#e7e5e4;
+}
+.storefrontV4[data-theme='dark'],.storefrontV4[data-t360-theme='dark']{
+  --sf-text:#e8eef7;
+  --sf-text-muted:#a9b6c4;
+  --sf-text-subtle:#94a3b8;
+  --sf-text-faint:#7c8ea1;
+  --sf-accent:#34d399;
+  --sf-accent-soft:#064e3b;
+  --sf-surface:#0e1a2b;
+  --sf-surface-soft:#0b1626;
+  --sf-border:#243349;
+}
+.storefrontViewBody{min-width:0}.homeDeck{display:grid;min-width:0;gap:1.25rem}.homeIntro{position:relative;min-width:0}.homeSubtitle{margin-top:.75rem;max-width:42rem;color:var(--sf-text-subtle);font-size:14px;line-height:1.7}.homeActions{margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:.5rem}.metricDeck{display:grid;min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+/* Each metric stacks its value above its label. Without this the <strong> and <span>
+   stay inline and render as "3produk tersedia" with no separation. */
+.metricDeck>article{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.metricDeck>article>strong{display:block;font-size:1.15rem;line-height:1.2}
+.metricDeck>article>span{display:block;font-size:.62rem;line-height:1.35}.panel{min-width:0;border:1px solid rgba(255,255,255,.8);border-radius:24px;background:rgba(255,255,255,.95);padding:1.25rem;box-shadow:0 18px 50px rgba(15,23,42,.07)}.sectionTitle{margin-bottom:1rem;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:.75rem}.sectionTitle h2{font-size:18px;font-weight:800;letter-spacing:-.03em;color:var(--sf-text)}.sectionTitle>span{font-size:12px;font-weight:700;color:var(--sf-text-subtle)}.eyebrow{font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--sf-accent)}.textAction{display:inline-flex;align-items:center;gap:.375rem;border:0;background:transparent;padding:0;color:var(--sf-accent);font-size:12px;font-weight:700}.compactGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.catalogControls{margin-bottom:1rem;display:flex;min-width:0;flex-direction:column;gap:.75rem;border:1px solid #e7e5e4;border-radius:20px;background:#fff;padding:.75rem;box-shadow:0 8px 24px rgba(15,23,42,.05)}.sortControl{min-width:11rem}.cardActions{margin-top:.75rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.favoriteAction{margin-top:.5rem;width:100%}.priceRow{margin-top:.75rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem}.priceRow strong{font-size:16px;font-weight:800;color:var(--sf-text)}.priceRow span{font-size:10px;font-weight:700;color:var(--sf-accent)}.productSku{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sf-text-faint)}.productDetailBody,.checkoutGrid{display:grid;min-width:0;gap:1.25rem;align-items:start}.productDetailVisual{display:grid;min-height:18rem;place-items:center;border-radius:24px;background:linear-gradient(135deg,#f5f5f4,#ecfdf5);color:var(--sf-text-faint)}.detailPrice{margin-top:1rem;font-size:24px;font-weight:800;letter-spacing:-.04em;color:var(--sf-text)}.detailPrice small{font-size:12px;font-weight:700;color:var(--sf-text-subtle)}.cartRow{display:flex;min-width:0;flex-direction:column;gap:.75rem;border:1px solid #e7e5e4;border-radius:16px;background:#fafaf9;padding:.75rem}.cartRow small{display:block;margin-top:.25rem;color:var(--sf-text-subtle);font-size:10px}.qty{display:flex;align-items:center;gap:.5rem}.qty button{display:grid;height:36px;width:36px;place-items:center;border:1px solid #e7e5e4;border-radius:12px;background:#fff;color:#475569}.total{margin-top:1rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #e7e5e4;padding-top:1rem;font-size:14px}.total strong{font-size:20px;font-weight:800;color:var(--sf-text)}.paymentChooser{display:grid;gap:.5rem}.inventoryList{margin-top:1rem;display:flex;flex-direction:column;gap:.5rem}.emptyIcon{margin:0 auto .75rem;display:grid;height:48px;width:48px;place-items:center;border:1px solid #e7e5e4;border-radius:16px;background:#fff;color:var(--sf-text-faint);box-shadow:0 4px 14px rgba(15,23,42,.06)}.skeletonBlock{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite;border-radius:16px;background:#f5f5f4}.compact{min-height:40px;padding-left:.75rem;padding-right:.75rem}.tall{min-height:7rem}.storefrontViewBody form,.login form{min-width:0}.storefrontViewBody form:not(.inlineForm),.login form{display:grid;gap:.85rem;align-content:start}.storefrontViewBody label,.login form label{display:grid;min-width:0;gap:.38rem;align-content:start;color:var(--sf-text-muted);font-size:11px;font-weight:700;line-height:1.35}.storefrontViewBody label>input,.storefrontViewBody label>select,.storefrontViewBody label>textarea,.login form label>input,.login form label>select,.login form label>textarea{width:100%;max-width:100%;margin:0}.storefrontViewBody button:not([class]),.login form button:not([class]){display:inline-flex;min-height:42px;width:max-content;max-width:100%;align-items:center;justify-content:center;gap:.45rem;border:1px solid #047857;border-radius:12px;background:linear-gradient(90deg,#047857,#0f766e);padding:.65rem 1rem;color:#fff;font-size:12px;font-weight:700;line-height:1;box-shadow:0 10px 24px rgba(6,95,70,.16)}.storefrontViewBody button:not([class]):disabled,.login form button:not([class]):disabled{cursor:not-allowed;opacity:.55;box-shadow:none}.storefrontViewBody form>button,.login form>button{justify-self:start}.checkoutGrid>*,.productDetailBody>*{height:auto;align-self:start}.accountForm,.checkoutForm{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:.75rem;align-items:start}.accountForm>*,.checkoutForm>*{min-width:0}.storefrontThemeToggle{display:grid;height:40px;width:40px;place-items:center;border:1px solid #e7e5e4;border-radius:999px;background:#fff;color:var(--sf-text-muted);box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.storefrontV4[data-theme='dark']>div:first-of-type{background:#050a08;color:var(--sf-text-muted)}.storefrontV4[data-theme='dark'] header{background:rgba(7,17,14,.94);border-color:#20362f}.storefrontV4[data-theme='dark'] .desktopNav button{color:#9fb0aa}.storefrontV4[data-theme='dark'] .desktopNav button:hover{background:#13231d;color:#f0fdf4}.storefrontV4[data-theme='dark'] .desktopNav button.bg-slate-950{background:#d1fae5;color:#052e16}.storefrontV4[data-theme='dark'] .panel,.storefrontV4[data-theme='dark'] .hero,.storefrontV4[data-theme='dark'] .storefrontHero,.storefrontV4[data-theme='dark'] .cart,.storefrontV4[data-theme='dark'] .cartPanel,.storefrontV4[data-theme='dark'] .accountPanel,.storefrontV4[data-theme='dark'] .orderPanel,.storefrontV4[data-theme='dark'] .productDetail,.storefrontV4[data-theme='dark'] .productCard,.storefrontV4[data-theme='dark'] .productTile,.storefrontV4[data-theme='dark'] .catalogControls{background:#101c18;border-color:#294038;color:#e7eee9;box-shadow:0 18px 42px rgba(2,8,23,.28)}.storefrontV4[data-theme='dark'] h1,.storefrontV4[data-theme='dark'] h2,.storefrontV4[data-theme='dark'] h3,.storefrontV4[data-theme='dark'] strong,.storefrontV4[data-theme='dark'] .price,.storefrontV4[data-theme='dark'] .productPrice,.storefrontV4[data-theme='dark'] .priceRow strong,.storefrontV4[data-theme='dark'] .detailPrice,.storefrontV4[data-theme='dark'] .total strong{color:#f8fafc}.storefrontV4[data-theme='dark'] p,.storefrontV4[data-theme='dark'] small,.storefrontV4[data-theme='dark'] label{color:#9fb0aa}.storefrontV4[data-theme='dark'] input,.storefrontV4[data-theme='dark'] select,.storefrontV4[data-theme='dark'] textarea,.storefrontV4[data-theme='dark'] .search,.storefrontV4[data-theme='dark'] .catalogSearch,.storefrontV4[data-theme='dark'] .storefrontThemeToggle,.storefrontV4[data-theme='dark'] .storefrontAccountButton{background:#0a1511;border-color:#355249;color:#e7eee9;color-scheme:dark}.storefrontV4[data-theme='dark'] .cartRow,.storefrontV4[data-theme='dark'] .cartItem,.storefrontV4[data-theme='dark'] .orderItem,.storefrontV4[data-theme='dark'] .emptyState,.storefrontV4[data-theme='dark'] .qty button{background:#0b1713;border-color:#2c473e;color:#9fb0aa}.storefrontV4[data-theme='dark'] .mobileNav{background:rgba(10,21,17,.96);border-color:#294038}.storefrontV4[data-theme='dark'] .mobileNav button{color:#8fa39a}.storefrontV4[data-theme='dark'] .mobileNav button.active{background:#123126;color:#a7f3d0}.storefrontV4[data-theme='dark'] .productImage,.storefrontV4[data-theme='dark'] .productMedia,.storefrontV4[data-theme='dark'] .productDetailVisual{background:linear-gradient(135deg,#13211c,#123126);color:#6ee7b7}
+@media(width>=640px){.catalogControls{flex-direction:row;align-items:center}.cartRow{flex-direction:row;align-items:center;justify-content:space-between}.paymentChooser{grid-template-columns:repeat(2,minmax(0,1fr))}.accountForm,.checkoutForm{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(width>=1024px){.compactGrid{grid-template-columns:repeat(4,minmax(0,1fr))}.homeDeck{grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr)}.metricDeck{grid-template-columns:repeat(4,minmax(0,1fr))}.productDetailBody{grid-template-columns:minmax(300px,.8fr) minmax(0,1.2fr)}.checkoutGrid{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}}

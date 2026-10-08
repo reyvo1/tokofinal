@@ -1,0 +1,47 @@
+name: Runtime UAT Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      checkpoint:
+        description: Official checkpoint name
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  full-system-gate:
+    name: Reuse exact full-system simulation
+    uses: ./.github/workflows/full-system-simulation.yml
+
+  source-checkpoint:
+    name: Package source only after full-system gate
+    needs: full-system-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create source archive and checksum
+        shell: bash
+        run: |
+          VERSION="$(cat VERSION)"
+          CHECKPOINT="${{ inputs.checkpoint || github.ref_name }}"
+          SAFE_CHECKPOINT="$(echo "$CHECKPOINT" | tr -cd 'A-Za-z0-9._-')"
+          test -n "$SAFE_CHECKPOINT"
+          git archive --format=zip --output="toko360-${VERSION}-${SAFE_CHECKPOINT}-full-system-gated-source.zip" HEAD
+          sha256sum "toko360-${VERSION}-${SAFE_CHECKPOINT}-full-system-gated-source.zip" > "toko360-${VERSION}-${SAFE_CHECKPOINT}-full-system-gated-source.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toko360-full-system-gated-source-${{ github.sha }}
+          path: |
+            toko360-*-full-system-gated-source.zip
+            toko360-*-full-system-gated-source.sha256
+          if-no-files-found: error
+          retention-days: 30

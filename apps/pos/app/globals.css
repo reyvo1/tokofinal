@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@source "./**/*.{js,ts,jsx,tsx,mdx}";
+
+@theme { --font-sans: Inter, Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+*{box-sizing:border-box} html{background:#f1f5f9;color-scheme:light}
+html[data-t360-theme='dark']{background:#07111f;color-scheme:dark} body{margin:0;min-width:0;overflow-x:hidden;background:#f1f5f9;color:var(--pos-text);font-family:var(--font-sans)} button,input,select,textarea{font:inherit} button{cursor:pointer} button:disabled{cursor:not-allowed;opacity:.55} ::selection{background:#99f6e4;color:#134e4a}
+
+@layer components {
+  .skipLink{@apply fixed left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white shadow-xl transition-transform focus:translate-y-0;}
+  .posTopbarActions select,.posTopbarActions button{@apply min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 shadow-sm outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-100;}
+  .posTopbarActions label{@apply flex min-w-0 flex-[1_1_13rem] items-center gap-2 text-[10px] font-semibold text-slate-500 lg:flex-none;}
+  .posTopbarActions label select{@apply min-w-0 flex-1 lg:max-w-[14rem];}
+  .posTopbarActions button{@apply min-w-0 flex-1 lg:flex-none;}
+
+  .posWorkspaceNav{@apply grid min-w-0 grid-cols-4 gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5 shadow-inner shadow-slate-200/40;}
+  .posWorkspaceNav button{@apply relative flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-transparent px-2 text-[10px] font-semibold text-slate-500 transition hover:bg-white hover:text-slate-900 hover:shadow-sm sm:text-[11px];}
+  .posWorkspaceNav button.active{@apply border-teal-200 bg-white text-teal-800 shadow-[0_8px_22px_rgba(15,118,110,.10)];}
+  .posWorkspaceNav button b{@apply absolute right-2 top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[9px] text-white;}
+
+  .posWorkspaceSurface{@apply min-w-0 rounded-[30px] border border-white/80 bg-white/95 p-4 shadow-[0_22px_70px_rgba(15,23,42,.09)] backdrop-blur-xl sm:p-5 lg:p-6;}
+  .posWorkspaceHeader{@apply mb-5 flex min-w-0 flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-end sm:justify-between;}
+  .posWorkspaceStatus{@apply inline-flex shrink-0 items-center rounded-full border px-3 py-1.5 text-[10px] font-semibold;}
+  .posWorkspaceStatus.ok{@apply border-emerald-200 bg-emerald-50 text-emerald-700;}
+  .posWorkspaceStatus.warn{@apply border-amber-200 bg-amber-50 text-amber-700;}
+  .posWorkspaceBody{@apply min-w-0;}
+
+  .layout{@apply grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_400px];}
+  .catalog{@apply min-w-0 rounded-[24px] border border-slate-200/80 bg-slate-50/70 p-3 shadow-inner shadow-slate-200/30 sm:p-4;}
+  .searchWrap{@apply relative mb-3 flex min-w-0 items-center;}
+  .searchIcon{@apply pointer-events-none absolute left-3.5 text-slate-400;}
+  .search{@apply h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-100;}
+  .chips{@apply mb-3 flex flex-wrap gap-2;}
+  .chips button{@apply min-h-9 rounded-full border border-slate-200 bg-white px-3 text-[10px] font-semibold text-slate-600 shadow-sm transition hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700;}
+  .chips button.active{@apply border-teal-600 bg-teal-600 text-white;}
+  .products{@apply grid min-w-0 grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-4;}
+  .product{@apply relative flex min-h-[150px] min-w-0 flex-col justify-between overflow-hidden rounded-[22px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_10px_28px_rgba(15,23,42,.05)] transition hover:-translate-y-1 hover:border-teal-200 hover:shadow-[0_18px_38px_rgba(15,118,110,.12)];}
+  .product::after{content:"";@apply pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-teal-500 via-cyan-400 to-sky-500 opacity-0 transition-opacity;}
+  .product:hover::after{@apply opacity-100;}
+  .productMain{@apply flex min-w-0 items-start gap-3;}
+  .productIcon{@apply grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 text-teal-700 ring-1 ring-teal-100;}
+  .product strong{@apply block truncate text-xs font-semibold text-slate-950;}
+  .product small{@apply mt-1 block text-[9px] leading-4 text-slate-500;}
+  .unitActions{@apply mt-3 flex flex-wrap gap-1.5;}
+  /* Pemilih jenis: satu produk dengan beberapa jenis (mis. ukuran atau varian rasa) harus bisa
+     diganti dari layar kasir. Labelnya screen-reader-only supaya tidak menambah tinggi kartu,
+     karena yang terlihat sudah nama jenis pada option-nya sendiri. */
+  .variantPick{@apply mt-2 block min-w-0;}
+  .variantPick select{@apply w-full max-w-full min-h-[40px] cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900;}
+  .srOnly{@apply absolute h-px w-px overflow-hidden whitespace-nowrap p-0;}
+  /* Nama jenis pada baris keranjang: tanpa ini dua jenis produk yang sama tampil sebagai teks
+     yang identik dan kasir tidak bisa memverifikasi apa yang dia jual. */
+  .variantTag{@apply font-medium text-slate-500;}
+
+  .cart{@apply min-w-0 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_18px_46px_rgba(15,23,42,.08)] xl:sticky xl:top-[164px] xl:self-start;}
+  .cartTitle{@apply mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-3;}
+  .cartTitle h2{@apply text-sm font-bold tracking-[-.02em] text-slate-950;}
+  .items{@apply max-h-[40vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin];}
+  .item{@apply rounded-2xl border border-slate-200 bg-slate-50/70 p-3;}
+  .item strong{@apply text-xs font-semibold text-slate-900;}
+  .qty,.rowActions{@apply mt-2 flex flex-wrap items-center gap-2;}
+  .summary{@apply mt-4 space-y-2 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3 text-xs text-slate-600;}
+  .summary>div{@apply flex items-center justify-between gap-3;}
+  .grand{@apply border-t border-slate-200 pt-2 text-base font-bold text-slate-950;}
+
+  .paymentModeHeader{@apply mt-4 flex flex-wrap items-center justify-between gap-2;}
+  .splitPayments{@apply mt-2 space-y-2;}
+  .splitRow{@apply grid min-w-0 grid-cols-[minmax(0,1fr)_120px_40px] gap-2;}
+  .pay{@apply mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-teal-700 bg-gradient-to-r from-teal-700 to-cyan-700 px-4 text-sm font-bold text-white shadow-[0_14px_32px_rgba(15,118,110,.24)] transition hover:-translate-y-px hover:shadow-[0_18px_38px_rgba(15,118,110,.3)];}
+
+  input,select,textarea{@apply min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-100;}
+  button.clear,button.secondary,.clear,.secondary{@apply rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50;}
+  .iconOnly{@apply grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm;}
+  .inlineIcon{@apply inline-flex items-center gap-1.5;}
+  .notice,.toastLike{@apply rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-800;}
+  .toastLike.success,.notice.success{@apply border-emerald-200 bg-emerald-50 text-emerald-700;}
+  .toastLike.error,.notice.error{@apply border-rose-200 bg-rose-50 text-rose-700;}
+  .fieldWarning,.quoteError{@apply mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] leading-4 text-amber-800;}
+  .shiftPanel,.returnPanel,.offlinePanel,.heldPanel{@apply mt-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,.05)];}
+  .shiftIdentity{@apply mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3;}
+  .shiftActions,.cashMovementBar,.returnWorkspace{@apply flex min-w-0 flex-wrap gap-2;}
+  .returnItems{@apply mt-3 grid min-w-0 gap-2 sm:grid-cols-2;}
+  .returnItems label{@apply rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600;}
+  .offlinePanel{@apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;}
+  .offlinePanel.conflict{@apply border-rose-200 bg-rose-50;}
+  .syncEmpty,.emptyState{@apply grid min-h-36 place-items-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50/70 p-6 text-center text-xs text-slate-500;}
+  .emptyIcon{@apply mx-auto mb-2 grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm;}
+  .heldList{@apply mt-3 space-y-2;}
+  .heldItem{@apply flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3;}
+  /* `items-start` + a scrollable overlay instead of `place-items-center`.
+     `place-items-center` centres a child that is TALLER than the viewport, which pushes the top and
+     the bottom off-screen symmetrically. The Click & Collect dialog measured 723x1490 inside a
+     900px viewport, so its header was clipped off the top and the "Buat voucher" button sat below
+     the fold with no way to scroll to it — the dialog was unusable on a real till. The overlay now
+     scrolls, and the card is capped and scrolls internally when its own content is long. */
+  .modalOverlay{@apply fixed inset-0 z-[90] grid items-start justify-items-center overflow-y-auto overscroll-contain bg-slate-950/55 p-4 pt-[6vh] backdrop-blur-sm;}
+  .modalCard{@apply my-auto flex max-h-[88vh] w-full max-w-lg flex-col overflow-y-auto rounded-[28px] border border-white/70 bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,.28)] sm:p-6;}
+  .modalKicker{@apply text-[9px] font-bold uppercase tracking-[.16em] text-teal-700;}
+  .modalActions{@apply mt-5 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4;}
+  .login{@apply relative grid min-h-screen place-items-center overflow-hidden bg-slate-100 p-4;}
+  .login::before{content:"";@apply pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-teal-200/55 blur-3xl;}
+  .login>form,.login>.card{@apply relative z-10 w-full max-w-md rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_28px_80px_rgba(15,23,42,.13)] backdrop-blur-2xl;}
+}
+
+.posV4{background:radial-gradient(circle at 12% 0%,rgba(45,212,191,.10),transparent 28%),linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:var(--pos-text);}
+/* Semantic text tokens. Every colour in this stylesheet was a literal hex repeated across rules,
+   with the dark counterpart living in a separate [data-theme='dark'] block. Defining them once
+   per theme keeps the pairing explicit and stops a component from picking a colour that only
+   exists in one theme. */
+.posV4{
+  --pos-text:#0f172a;
+  --pos-text-muted:#334155;
+  --pos-text-subtle:#64748b;
+  --pos-accent:#0f766e;
+  --pos-surface:#fff;
+  --pos-border:#cbd5e1;
+  --pos-danger:#be123c;
+  --pos-warn:#92400e;
+}
+.posV4[data-theme='dark'],.posV4[data-t360-theme='dark']{
+  --pos-text:#e5edf6;
+  --pos-text-muted:#c7d3e2;
+  --pos-text-subtle:#94a3b8;
+  --pos-accent:#99f6e4;
+  --pos-surface:#0e1a2d;
+  --pos-border:#2a3a53;
+  --pos-danger:#fda4af;
+  --pos-warn:#fde68a;
+}
+.posBrandTitle{color:var(--pos-text);overflow-wrap:anywhere}
+.posBrandEyebrow{color:var(--pos-accent)}
+.posV4[data-theme='dark'] .posConnectivity{color:var(--pos-accent)}
+.posV4[data-theme='dark'] .posConnectivity.text-amber-700{color:var(--pos-warn)}
+.posV4 .layout,.posV4 .catalog,.posV4 .cart,.posV4 .product,.posV4 .posWorkspaceSurface{color-scheme:light;}
+
+@media(max-width:767px){.posTopbarActions label{width:100%}.posWorkspaceNav{@apply gap-1 p-1}.posWorkspaceNav button{@apply min-h-[52px] flex-col gap-1 px-1 text-[9px]}.layout{@apply grid-cols-1}.products{@apply grid-cols-2}.cart{@apply static}.splitRow{@apply grid-cols-1}}
+@media(pointer:coarse){button,select,input{min-height:44px}.product{min-height:148px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+:focus-visible{outline:2px solid #0f766e;outline-offset:2px}
+
+/* P5 V4.11 ROOT PRESENTATION AUTHORITY — one layer, no override accretion. */
+.logout,.syncButton{display:inline-flex;min-height:40px;align-items:center;justify-content:center;gap:.5rem;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:.6rem .85rem;color:var(--pos-text-muted);font-size:11px;font-weight:700;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.syncButton{border-color:var(--pos-accent);background:#f0fdfa;color:var(--pos-accent)}.shiftClose{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border:1px solid #fecdd3;border-radius:12px;background:#fff1f2;padding:.65rem 1rem;color:#be123c;font-size:12px;font-weight:800}.redeem{margin-top:.75rem;display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:.5rem;border:1px solid #fde68a;border-radius:16px;background:#fffbeb;padding:.75rem;color:#92400e;font-size:11px;font-weight:700}.redeem input{margin-left:auto;width:7rem;border-color:#fde68a;background:#fff;text-align:right}.receiptReady{margin-bottom:1rem;display:flex;min-width:0;flex-direction:column;gap:.75rem;border:1px solid #a7f3d0;border-radius:20px;background:#ecfdf5;padding:1rem;color:#064e3b;box-shadow:0 12px 28px rgba(5,150,105,.10)}.receiptReady strong{display:block;font-size:12px;font-weight:800}.receiptReady small{display:block;margin-top:.25rem;color:#047857;font-size:10px;line-height:1.5}
+
+.posWorkspaceBody form,.login>form{min-width:0}.posWorkspaceBody form:not(.inlineForm),.login>form{display:grid;gap:.8rem;align-content:start}.posWorkspaceBody label:not(.redeem),.login>form label{display:grid;min-width:0;gap:.38rem;align-content:start;color:var(--pos-text-subtle);font-size:11px;font-weight:700;line-height:1.35}.posWorkspaceBody label:not(.redeem)>input,.posWorkspaceBody label:not(.redeem)>select,.posWorkspaceBody label:not(.redeem)>textarea,.login>form label>input,.login>form label>select,.login>form label>textarea{width:100%;max-width:100%;margin:0}.posWorkspaceBody button:not([class]),.login>form button:not([class]){display:inline-flex;min-height:40px;width:max-content;max-width:100%;align-items:center;justify-content:center;gap:.45rem;border:1px solid #0f766e;border-radius:12px;background:linear-gradient(90deg,#0f766e,#0e7490);padding:.62rem .95rem;color:#fff;font-size:12px;font-weight:700;line-height:1;box-shadow:0 10px 24px rgba(15,118,110,.16)}.posWorkspaceBody button:not([class]):disabled,.login>form button:not([class]):disabled{cursor:not-allowed;opacity:.55;box-shadow:none}.layout{align-items:start}.layout>*,.catalog,.cart{height:auto;align-self:start}.login>form>button{justify-self:start}.shiftControlGrid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:1rem;align-items:start}.shiftControlGrid>.shiftPanel{margin-top:0;height:auto;align-self:start}.shiftRecapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.shiftRecapGrid>div{min-width:0;border:1px solid #e2e8f0;border-radius:16px;background:#f8fafc;padding:.85rem}.shiftRecapGrid span,.shiftRecapGrid small{display:block;color:var(--pos-text-subtle);font-size:10px;line-height:1.45}.shiftRecapGrid strong{display:block;margin:.25rem 0;color:var(--pos-text);font-size:13px}.cashMovementList{display:flex;flex-direction:column;gap:.55rem}
+.posThemeToggle,.loginThemeToggle{display:grid;place-items:center;height:40px;width:40px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#475569;box-shadow:0 6px 18px rgba(15,23,42,.06)}.loginThemeToggle{position:fixed;right:18px;top:18px;z-index:120;height:42px;width:42px;border-radius:14px}
+html[data-t360-theme='dark'] .login,html[data-theme='dark'] .login{background:radial-gradient(circle at 20% 0%,rgba(20,184,166,.14),transparent 35%),#07111f;color:var(--pos-text)}
+
+.posV4[data-theme='dark']{background:radial-gradient(circle at 12% 0%,rgba(45,212,191,.10),transparent 28%),linear-gradient(180deg,#07111f 0%,#0b1220 100%);color:var(--pos-text);color-scheme:dark}.posV4[data-theme='dark']>header{background:rgba(7,17,31,.94);border-color:#223047}.posV4[data-theme='dark'] .posTopbarActions,.posV4[data-theme='dark'] .posWorkspaceNav{background:#0e1a2c;border-color:#2a3a53;box-shadow:none}.posV4[data-theme='dark'] .posWorkspaceNav button{color:var(--pos-text-subtle)}.posV4[data-theme='dark'] .posWorkspaceNav button:hover{background:#142238;color:#f8fafc}.posV4[data-theme='dark'] .posWorkspaceNav button.active{background:#123049;color:var(--pos-accent);border-color:var(--pos-accent);box-shadow:none}.posV4[data-theme='dark'] .posWorkspaceSurface,.posV4[data-theme='dark'] .catalog,.posV4[data-theme='dark'] .cart,.posV4[data-theme='dark'] .product,.posV4[data-theme='dark'] .shiftPanel,.posV4[data-theme='dark'] .returnPanel,.posV4[data-theme='dark'] .offlinePanel,.posV4[data-theme='dark'] .heldPanel,.posV4[data-theme='dark'] .modalCard,.posV4[data-theme='dark'] .heldItem,.posV4[data-theme='dark'] .item,.posV4[data-theme='dark'] .shiftIdentity{background:#0f1a2a;border-color:#2a3a53;color:var(--pos-text);box-shadow:0 18px 42px rgba(2,8,23,.28)}.posV4[data-theme='dark'] .productIcon,.posV4[data-theme='dark'] .emptyIcon{background:#13273a;border-color:#28415a;color:#5eead4}.posV4[data-theme='dark'] .product strong,.posV4[data-theme='dark'] .cartTitle h2,.posV4[data-theme='dark'] .posWorkspaceHeader h2,.posV4[data-theme='dark'] .shiftRecapGrid strong{color:#f8fafc}.posV4[data-theme='dark'] .product small,.posV4[data-theme='dark'] .posWorkspaceHeader p,.posV4[data-theme='dark'] .shiftRecapGrid span,.posV4[data-theme='dark'] .shiftRecapGrid small{color:var(--pos-text-subtle)}.posV4[data-theme='dark'] input,.posV4[data-theme='dark'] select,.posV4[data-theme='dark'] textarea,.posV4[data-theme='dark'] .search,.posV4[data-theme='dark'] .posTopbarActions select,.posV4[data-theme='dark'] .posTopbarActions button,.posV4[data-theme='dark'] .logout,.posV4[data-theme='dark'] .syncButton,.posV4[data-theme='dark'] .posThemeToggle{background:#0b1422;border-color:var(--pos-text-muted);color:#e2e8f0;color-scheme:dark}.posV4[data-theme='dark'] .chips button{background:#111e30;border-color:var(--pos-text-muted);color:#cbd5e1}.posV4[data-theme='dark'] .chips button.active{background:#0f766e;border-color:#14b8a6;color:#fff}.posV4[data-theme='dark'] .syncEmpty,.posV4[data-theme='dark'] .emptyState,.posV4[data-theme='dark'] .returnItems label,.posV4[data-theme='dark'] .shiftRecapGrid>div{background:#0b1422;border-color:var(--pos-text-muted);color:var(--pos-text-subtle)}.posV4[data-theme='dark'] .modalActions,.posV4[data-theme='dark'] .cartTitle,.posV4[data-theme='dark'] .posWorkspaceHeader{border-color:#223047}
+html[data-t360-theme='dark'] .login{background:radial-gradient(circle at 20% 0%,rgba(20,184,166,.14),transparent 35%),#07111f;color:var(--pos-text)}html[data-t360-theme='dark'] .login>form,html[data-t360-theme='dark'] .login>.card{background:#0f1a2a;border-color:#2a3a53;color:var(--pos-text)}/* The login screen renders as <main class="login">, outside .posV4, so the tokens had no scope
+   there and every var() in the form fell back to the literal declared in whatever rule won. Scope
+   the same tokens to the login root. */
+.login{
+  --pos-text:#0f172a;
+  --pos-text-muted:#334155;
+  --pos-text-subtle:#64748b;
+  --pos-accent:#0f766e;
+  --pos-surface:#fff;
+  --pos-border:#cbd5e1;
+}
+html[data-t360-theme='dark'] .login,html[data-theme='dark'] .login{
+  --pos-text:#e5edf6;
+  --pos-text-muted:#c7d3e2;
+  --pos-text-subtle:#cbd5e1;
+  --pos-accent:#99f6e4;
+  --pos-surface:#0b1626;
+  --pos-border:#2a3a53;
+}
+html[data-t360-theme='dark'] .loginThemeToggle{background:#0e1a2d;border-color:var(--pos-text-muted);color:#dbe6f4}
+/* The dark palette covered the card, the shell and the toggle, but not the form controls, so the
+   login form kept three bright white input boxes inside an otherwise dark screen. */
+html[data-t360-theme='dark'] .login>form label>input,
+html[data-t360-theme='dark'] .login>form label>select,
+html[data-t360-theme='dark'] .login>form label>textarea,
+html[data-theme='dark'] .login>form label>input,
+html[data-theme='dark'] .login>form label>select,
+html[data-theme='dark'] .login>form label>textarea{background:#0b1626;border-color:#2b3a52;color:#e2e8f0}
+html[data-t360-theme='dark'] .login>form label>input::placeholder,
+html[data-theme='dark'] .login>form label>input::placeholder{color:var(--pos-text-subtle)}
+
+@media(width>=640px){.receiptReady{flex-direction:row;align-items:center;justify-content:space-between}}@media(width>=1024px){.shiftControlGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Personal memo is server-backed; no cashier note is stored in browser localStorage. */
+.posV4 .staffMemoWidget{margin:0 0 .75rem;border:1px solid var(--pos-border);border-radius:14px;background:var(--pos-surface);color:var(--pos-text)}.posV4 .staffMemoWidget>summary{display:flex;cursor:pointer;justify-content:space-between;gap:.75rem;padding:.7rem .85rem}.posV4 .staffMemoWidget>summary span{color:var(--pos-text-subtle);font-size:.75rem}.posV4 .staffMemoBody{display:grid;gap:.65rem;border-top:1px solid var(--pos-border);padding:.8rem}.posV4 .staffMemoForm{display:grid;grid-template-columns:minmax(140px,.7fr) minmax(180px,1.3fr) auto;gap:.55rem;align-items:end}.posV4 .staffMemoList{display:grid;gap:.5rem}.posV4 .staffMemoCard{display:flex;justify-content:space-between;gap:.75rem;border:1px solid var(--pos-border);border-radius:10px;background:var(--pos-surface);padding:.65rem}.posV4 .staffMemoCard p{margin:.3rem 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--pos-text-subtle)}@media(max-width:760px){.posV4 .staffMemoForm{grid-template-columns:1fr}.posV4 .staffMemoCard{display:grid}}

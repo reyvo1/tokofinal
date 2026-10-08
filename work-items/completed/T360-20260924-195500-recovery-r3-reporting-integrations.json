@@ -1,0 +1,80 @@
+{
+  "id": "T360-20260924-195500",
+  "title": "R3 reporting owner digest notifications providers marketplace and edge integrations",
+  "type": "feature",
+  "module": "integrations",
+  "wave": "W6",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-022400"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "LOW",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "MEDIUM",
+    "payroll": "NONE",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Owner digest mutations require explicit permission and disabled configuration cannot send manually.",
+    "Owner digest recipients must resolve to verified non-revoked Telegram bindings; raw destination strings are not configuration authority.",
+    "Low-stock digest compares actual branch inventory against each product minStock without a hard-coded prefilter.",
+    "Provider, payment diagnostic, marketplace, and edge operations remain tenant scoped, auditable, retryable, and fail closed.",
+    "R3 CRITICAL/HIGH findings require live GitHub runtime evidence before CLOSED.",
+    "Residual closure for F37/F39/F42/F43 adds operator surfaces and tenant-scoped diagnostics only; R7 remains blocked until exact-source PostgreSQL runtime evidence passes."
+  ],
+  "acceptanceCriteria": [
+    "F22 owner digest has an operator configuration surface.",
+    "F23 owner digest mutations are permission protected.",
+    "F24 disabled digest cannot be manually sent.",
+    "F25 low-stock digest does not miss products whose minStock exceeds 10.",
+    "F29 ExternalMapping has runtime lifecycle and operator surface.",
+    "F37 payment provider diagnostics has operator UI.",
+    "F39 digest/multi-outlet/cashier-target reports are discoverable.",
+    "F42 edge device/sync operations have complete operator workflow.",
+    "F43 marketplace order operations have Admin UI.",
+    "F44 owner digest uses verified recipient bindings rather than raw recipient strings.",
+    "GitHub provider/runtime probe exercises verified recipient plus digest delivery on PostgreSQL exact source.",
+    "F42 device diagnostics read path is tenant/branch scoped and exposes receipt/offline transaction status required for acknowledgement and requeue operations.",
+    "Both GitHub PostgreSQL workflows run ci:r3:residual-probe and aggregate evidence requires the residual R3 probe PASS."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r3-reporting-integrations.test.mjs",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run test:dependency-free",
+    "Inventory low-stock regression verifies branch stock/minStock reporting without inventory movement mutation.",
+    "Edge sync regression verifies idempotency, retry, duplicate packet, conflict, receipt acknowledgement, and dead-letter requeue.",
+    "GitHub full-system runtime/provider/browser evidence",
+    "npm run ci:r3:residual-probe",
+    "GitHub ci:r3:residual-probe on exact PostgreSQL runtime"
+  ],
+  "migrationPlan": "No schema change in the first R3 cluster; reuse EmployeeChannelBinding, SystemSetting, Notification, IntegrationConnection, and existing edge/payment/marketplace models. Any later schema requirement must be expand-only and parity-safe.",
+  "rollbackPlan": "Revert R3 source while preserving existing verified bindings, notification history, and integration records. Do not delete delivery/audit history.",
+  "monitoringPlan": "Provider simulation, notification delivery status/attempts/lastError, sync receipts/dead-letter, payment provider events, and aggregate GitHub evidence remain authoritative.",
+  "securityNotes": "Raw provider recipients are not trusted configuration. Secrets remain encrypted/redacted; tenant context comes from authenticated identity.",
+  "documentation": [
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md",
+    "docs/FULL-GITHUB-UAT.md"
+  ],
+  "createdAt": "2026-09-24T19:55:00+08:00",
+  "updatedAt": "2026-09-25T02:30:00+08:00",
+  "releaseEvidence": [
+    "Commit abac92662cab4cc7352de4f9f9d2e2419aad9c29 on origin/main",
+    "Source fingerprint 5006faaa354e32cdcfd952388a8dff76c712693835178ff53ff918875bf22615",
+    "GitHub Full System Simulation PASS",
+    "GitHub Full Automated UAT PASS",
+    "ci:r3:residual-probe PASS for F37/F39/F42/F43",
+    "Owner daily digest configuration and verified-recipient chain present and exercised",
+    "Stage-20 automated PASS; Human Stage-20 remains PENDING"
+  ]
+}

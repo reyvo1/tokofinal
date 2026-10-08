@@ -1,0 +1,650 @@
+{
+  "version": "2026-09-25-r3-residual.1",
+  "sourceSnapshot": {
+    "gitHead": "bd4abf386c56bce283f10c08ff988ea109909b54",
+    "branch": "main",
+    "workingTree": "DIRTY_R3_RESIDUAL_UNCOMMITTED",
+    "prismaModels": 180,
+    "apiHandlers": 456,
+    "uiInteractiveElements": 341,
+    "fullRepositoryAuditFiles": 955,
+    "repoValidationFiles": 955,
+    "tailwindcss": "4.3.3",
+    "postcss": "8.5.28"
+  },
+  "status": "R3_RESIDUAL_VERIFICATION",
+  "findingCount": 48,
+  "unmappedFindingCount": 0,
+  "waves": [
+    {
+      "id": "R0",
+      "name": "Truth Reset, Audit Closure, and Work Governance",
+      "dependsOn": []
+    },
+    {
+      "id": "R1",
+      "name": "Tenant, Branch, Identity, Access, and Control Plane",
+      "dependsOn": [
+        "R0"
+      ]
+    },
+    {
+      "id": "R2",
+      "name": "HRIS, Attendance, Employee Self-Service, and Payroll",
+      "dependsOn": [
+        "R1"
+      ]
+    },
+    {
+      "id": "R3",
+      "name": "Reporting, Owner Digest, Notifications, Providers, Marketplace, and Edge Integrations",
+      "dependsOn": [
+        "R1"
+      ]
+    },
+    {
+      "id": "R4",
+      "name": "Core Business Hidden and Partial Flows",
+      "dependsOn": [
+        "R1"
+      ]
+    },
+    {
+      "id": "R5",
+      "name": "Assets, Fleet, Maintenance, and Operational Lifecycle",
+      "dependsOn": [
+        "R1"
+      ]
+    },
+    {
+      "id": "R6",
+      "name": "Scale, Summaries, Retention/Archive, and AI Capability Truth",
+      "dependsOn": [
+        "R0"
+      ]
+    },
+    {
+      "id": "R7",
+      "name": "Full Tailwind UI / Information Architecture Rebuild",
+      "dependsOn": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6"
+      ]
+    },
+    {
+      "id": "R8",
+      "name": "GitHub Full Runtime UAT and Release Evidence",
+      "dependsOn": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5",
+        "R6",
+        "R7"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "CRITICAL",
+      "domain": "TRUTH",
+      "title": "F1 audit belum selesai menurut source of truth",
+      "primaryWave": "R0",
+      "secondaryWave": null,
+      "status": "OPEN_REVALIDATION_REQUIRED",
+      "closureRequirement": "Regenerate F1 audit from latest source and make it the only current completeness baseline.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F02",
+      "severity": "CRITICAL",
+      "domain": "TRUTH",
+      "title": "Audit F1 lama kontradiktif dengan datanya sendiri",
+      "primaryWave": "R0",
+      "secondaryWave": null,
+      "status": "OPEN_REVALIDATION_REQUIRED",
+      "closureRequirement": "Replace contradictory HIDDEN/API-only counts with generated current-source classifications.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F03",
+      "severity": "HIGH",
+      "domain": "WORKFLOW",
+      "title": "Tidak ada work item aktif pada snapshot",
+      "primaryWave": "R0",
+      "secondaryWave": null,
+      "status": "OPEN_REVALIDATION_REQUIRED",
+      "closureRequirement": "Keep one explicit recovery work item active and make dependent UI work BLOCKED until its prerequisites close.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F04",
+      "severity": "CRITICAL",
+      "domain": "UAT",
+      "title": "Mayoritas regression adalah source-contract, bukan eksekusi bisnis",
+      "primaryWave": "R8",
+      "secondaryWave": "R0",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Separate source-contract tests from runtime evidence; critical/high findings require runtime evidence before closure.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F05",
+      "severity": "CRITICAL",
+      "domain": "UAT",
+      "title": "Critical UAT coverage hanya memetakan skenario ke file",
+      "primaryWave": "R8",
+      "secondaryWave": "R0",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Critical UAT coverage must execute/reference scenario evidence, not only test filenames.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F06",
+      "severity": "HIGH",
+      "domain": "UAT",
+      "title": "Browser UAT resmi sengaja read-only",
+      "primaryWave": "R8",
+      "secondaryWave": "R7",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Expand browser UAT from read-only checks to safe mutation journeys in R8.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F07",
+      "severity": "CRITICAL",
+      "domain": "TENANT",
+      "title": "Tidak ada Company/Tenant administration CRUD",
+      "primaryWave": "R1",
+      "secondaryWave": null,
+      "status": "RUNTIME_CLOSED_R1",
+      "closureRequirement": "Implement tenant/company administration or document a deliberate constrained product model with operator control.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F08",
+      "severity": "HIGH",
+      "domain": "TENANT",
+      "title": "Tidak ada branch switcher operasional di Admin",
+      "primaryWave": "R1",
+      "secondaryWave": null,
+      "status": "RUNTIME_CLOSED_R1",
+      "closureRequirement": "Implement authorized branch switching/context with tenant-safe enforcement.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F09",
+      "severity": "HIGH",
+      "domain": "ACCESS",
+      "title": "User/role API lebih lengkap daripada UI",
+      "primaryWave": "R1",
+      "secondaryWave": null,
+      "status": "RUNTIME_CLOSED_R1",
+      "closureRequirement": "Expose role/permission/user-role/user-status administration.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F10",
+      "severity": "HIGH",
+      "domain": "PLATFORM",
+      "title": "Banyak control-plane API tidak punya operator UI",
+      "primaryWave": "R1",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R1",
+      "closureRequirement": "Expose and permission platform settings/custom fields/webhooks/approvals/audit/outbox/ui-schema/ops-health surfaces.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F11",
+      "severity": "CRITICAL",
+      "domain": "HR",
+      "title": "WorkShift ada di database tetapi tidak punya workflow runtime",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement WorkShift CRUD and operator UI.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F12",
+      "severity": "CRITICAL",
+      "domain": "HR",
+      "title": "EmployeeSchedule nyaris hanya dipakai sebagai hitungan",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement EmployeeSchedule/roster lifecycle.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F13",
+      "severity": "CRITICAL",
+      "domain": "HR",
+      "title": "AttendanceCorrection menjadi blocker tanpa workflow koreksi",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement AttendanceCorrection submit-review-approve/reject-payroll-unblock flow.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F14",
+      "severity": "HIGH",
+      "domain": "HR",
+      "title": "EmployeeAssignment tidak diimplementasikan",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement EmployeeAssignment/effective-dated placement lifecycle.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F15",
+      "severity": "HIGH",
+      "domain": "HR",
+      "title": "AttendancePolicy tidak punya management API/UI",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement AttendancePolicy management.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F16",
+      "severity": "HIGH",
+      "domain": "HR",
+      "title": "Geofence/device/biometric API tidak punya Admin workflow",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement geofence/device/biometric/fingerprint operator management.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F17",
+      "severity": "HIGH",
+      "domain": "HR",
+      "title": "Portal karyawan tidak mengekspos binding Telegram/WhatsApp",
+      "primaryWave": "R2",
+      "secondaryWave": "R3",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Expose employee channel verification and notification preferences.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F18",
+      "severity": "CRITICAL",
+      "domain": "PAYROLL",
+      "title": "Employee tax/social profile tidak punya management API/UI",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement tax/social profile management used by payroll.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F19",
+      "severity": "CRITICAL",
+      "domain": "PAYROLL",
+      "title": "PayrollAccountingMapping dibaca tetapi tidak dapat dikelola operator",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement payroll accounting mapping management.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F20",
+      "severity": "HIGH",
+      "domain": "PAYROLL",
+      "title": "Gross-up/net belum diimplementasikan",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_FAIL_CLOSED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Support documented payroll tax methods or fail closed with truthful capability state.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F21",
+      "severity": "HIGH",
+      "domain": "PAYROLL",
+      "title": "Split-period/proration payroll belum tersedia",
+      "primaryWave": "R2",
+      "secondaryWave": null,
+      "status": "SOURCE_FAIL_CLOSED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Implement split-period/proration where required by effective-dated payroll rules.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F22",
+      "severity": "CRITICAL",
+      "domain": "REPORTING",
+      "title": "Owner Telegram daily digest tidak punya UI konfigurasi",
+      "primaryWave": "R3",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R3",
+      "closureRequirement": "Build owner daily digest config/preview/send UI.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F23",
+      "severity": "CRITICAL",
+      "domain": "SECURITY",
+      "title": "Owner daily digest mutation tidak punya permission decorator",
+      "primaryWave": "R3",
+      "secondaryWave": "R8",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Add explicit permissions/roles and denial tests to owner digest mutations.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F24",
+      "severity": "HIGH",
+      "domain": "REPORTING",
+      "title": "Daily digest enabled flag tidak mencegah manual send",
+      "primaryWave": "R3",
+      "secondaryWave": "R8",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Make enabled flag authoritative for dispatch unless a deliberate override contract exists.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F25",
+      "severity": "HIGH",
+      "domain": "REPORTING",
+      "title": "Low-stock digest bisa melewatkan stok menipis",
+      "primaryWave": "R3",
+      "secondaryWave": "R8",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Fix low-stock digest query to compare available stock against item minStock correctly.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F26",
+      "severity": "HIGH",
+      "domain": "AI",
+      "title": "Label AI lebih besar dari capability aktual",
+      "primaryWave": "R6",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R6",
+      "closureRequirement": "Align AI labels to deterministic capability or implement provider-neutral AI if it is a real product requirement.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F27",
+      "severity": "HIGH",
+      "domain": "SCALE",
+      "title": "DailySalesSummary/DailyFinanceSummary tidak dipakai runtime",
+      "primaryWave": "R6",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R6",
+      "closureRequirement": "Implement and verify sales/finance summary materialization/read paths.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F28",
+      "severity": "HIGH",
+      "domain": "SCALE",
+      "title": "Retention/archive hanya model",
+      "primaryWave": "R6",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R6",
+      "closureRequirement": "Implement retention/archive runtime lifecycle or downgrade/remove the implementation claim.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F29",
+      "severity": "HIGH",
+      "domain": "INTEGRATION",
+      "title": "ExternalMapping model tidak dipakai runtime",
+      "primaryWave": "R3",
+      "secondaryWave": "R6",
+      "status": "RUNTIME_CLOSED_R6",
+      "closureRequirement": "Implement ExternalMapping lifecycle where adapters need it or deprecate the stale contract.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F30",
+      "severity": "MEDIUM",
+      "domain": "ACCOUNTING",
+      "title": "AccountingCloseControl tidak dipakai runtime",
+      "primaryWave": "R4",
+      "secondaryWave": "R6",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Define AccountingCloseControl canonical role; implement runtime use or safely replace/deprecate it.",
+      "runtimeEvidenceRequired": false
+    },
+    {
+      "id": "F31",
+      "severity": "HIGH",
+      "domain": "ASSET",
+      "title": "AssetMaintenancePlan hanya hidup di worker",
+      "primaryWave": "R5",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R5",
+      "closureRequirement": "Expose AssetMaintenancePlan management.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F32",
+      "severity": "HIGH",
+      "domain": "FLEET",
+      "title": "VehicleDriverAssignment tidak diimplementasikan",
+      "primaryWave": "R5",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R5",
+      "closureRequirement": "Implement VehicleDriverAssignment lifecycle.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F33",
+      "severity": "HIGH",
+      "domain": "ASSET",
+      "title": "Assign/transfer/dispose backend tidak terekspos UI",
+      "primaryWave": "R5",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R5",
+      "closureRequirement": "Expose asset assign/transfer/dispose operator flow.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F34",
+      "severity": "MEDIUM",
+      "domain": "INVENTORY",
+      "title": "Canonical inventory movement ledger tidak terekspos",
+      "primaryWave": "R4",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Expose canonical inventory movement ledger/drill-down.",
+      "runtimeEvidenceRequired": false,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F35",
+      "severity": "MEDIUM",
+      "domain": "PROCUREMENT",
+      "title": "Goods receipt reject tidak terekspos UI",
+      "primaryWave": "R4",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Expose Goods Receipt reject flow.",
+      "runtimeEvidenceRequired": false,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F36",
+      "severity": "MEDIUM",
+      "domain": "MASTER",
+      "title": "Supplier master hanya list/create",
+      "primaryWave": "R4",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Add supplier update/deactivate lifecycle.",
+      "runtimeEvidenceRequired": false,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F37",
+      "severity": "HIGH",
+      "domain": "PAYMENT",
+      "title": "Payment provider event diagnostics tidak punya UI",
+      "primaryWave": "R3",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R3",
+      "closureRequirement": "Expose payment provider event diagnostics.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F38",
+      "severity": "MEDIUM",
+      "domain": "REPORTING",
+      "title": "General Ledger report tidak dipanggil UI",
+      "primaryWave": "R4",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Expose General Ledger report and drill-down.",
+      "runtimeEvidenceRequired": false,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F39",
+      "severity": "HIGH",
+      "domain": "REPORTING",
+      "title": "Daily digest, multi-outlet, cashier target tersembunyi",
+      "primaryWave": "R3",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R3",
+      "closureRequirement": "Expose daily digest/multi-outlet/cashier-target reporting in IA.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F40",
+      "severity": "HIGH",
+      "domain": "STOREFRONT",
+      "title": "Storefront dikunci ke satu branch lewat environment",
+      "primaryWave": "R4",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Add Storefront outlet/branch selection if multi-outlet public catalog remains a product requirement.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F41",
+      "severity": "MEDIUM",
+      "domain": "PROMOTION",
+      "title": "Advanced promotion masih eksplisit open",
+      "primaryWave": "R4",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R4",
+      "closureRequirement": "Close advanced promotion semantics or mark unsupported behavior explicitly.",
+      "runtimeEvidenceRequired": false,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F42",
+      "severity": "HIGH",
+      "domain": "EDGE",
+      "title": "Device/sync backend lebih dalam daripada UI",
+      "primaryWave": "R3",
+      "secondaryWave": "R8",
+      "status": "RUNTIME_CLOSED_R3",
+      "closureRequirement": "Expose device sync/conflict/dead-letter/replay operations.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F43",
+      "severity": "HIGH",
+      "domain": "MARKETPLACE",
+      "title": "MarketplaceOrder API tidak punya Admin UI",
+      "primaryWave": "R3",
+      "secondaryWave": "R7",
+      "status": "RUNTIME_CLOSED_R3",
+      "closureRequirement": "Expose marketplace import/list/error/replay flow.",
+      "runtimeEvidenceRequired": true,
+      "evidenceCommit": "abac92662cab4cc7352de4f9f9d2e2419aad9c29"
+    },
+    {
+      "id": "F44",
+      "severity": "HIGH",
+      "domain": "NOTIFICATION",
+      "title": "Owner report recipient memakai raw string tanpa binding verification",
+      "primaryWave": "R3",
+      "secondaryWave": "R8",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING_R8",
+      "closureRequirement": "Add verified owner recipient binding lifecycle.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F45",
+      "severity": "MEDIUM",
+      "domain": "UI",
+      "title": "Design system chart requirement tidak diikuti",
+      "primaryWave": "R7",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_R7_VERIFICATION_PENDING",
+      "closureRequirement": "Adopt canonical chart component/library strategy; remove ad-hoc simplistic chart contract.",
+      "runtimeEvidenceRequired": false
+    },
+    {
+      "id": "F46",
+      "severity": "HIGH",
+      "domain": "UI",
+      "title": "Information architecture terlalu menggabungkan domain besar",
+      "primaryWave": "R7",
+      "secondaryWave": null,
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_EVIDENCE_PENDING",
+      "closureRequirement": "Rebuild IA so all operator-facing domains are discoverable without stacked navigation.",
+      "runtimeEvidenceRequired": true
+    },
+    {
+      "id": "F47",
+      "severity": "MEDIUM",
+      "domain": "DOC",
+      "title": "Dokumen status saling bertentangan",
+      "primaryWave": "R0",
+      "secondaryWave": null,
+      "status": "OPEN_REVALIDATION_REQUIRED",
+      "closureRequirement": "Reconcile contradictory status docs into one current recovery truth.",
+      "runtimeEvidenceRequired": false
+    },
+    {
+      "id": "F48",
+      "severity": "HIGH",
+      "domain": "DOC",
+      "title": "F1 audit lama sudah stale",
+      "primaryWave": "R0",
+      "secondaryWave": null,
+      "status": "OPEN_REVALIDATION_REQUIRED",
+      "closureRequirement": "Regenerate F1/recovery audit after each material wave and prevent stale counts in CI.",
+      "runtimeEvidenceRequired": true
+    }
+  ],
+  "closureRules": [
+    "A finding cannot close from source/regex evidence alone when runtimeEvidenceRequired=true.",
+    "Operator-facing capability requires discoverable menu/route/form/action and failure/empty/success states.",
+    "Tenant identity must come from trusted context; branch/warehouse scope and permission must be tested.",
+    "Retriable mutations require idempotency where applicable.",
+    "Inventory/accounting/tax/payroll invariants remain authoritative.",
+    "Human Stage-20 remains separate and cannot auto-pass.",
+    "R7 final UI closure is blocked until R1-R6 functional prerequisites are stable.",
+    "R8 final evidence must bind one exact commit/source fingerprint/build artifact."
+  ],
+  "updatedAt": "2026-09-25T14:30:00+08:00",
+  "statusAuthority": "config/product-completeness.json",
+  "lifecycle": "HISTORICAL_AUTOMATED_RECOVERY_EVIDENCE"
+}

@@ -1,0 +1,62 @@
+{
+  "id": "T360-20260823-224526",
+  "backlogKey": "w4-payroll-production",
+  "title": "Menyelesaikan payroll approval pajak jurnal slip dan pembayaran",
+  "type": "feature",
+  "module": "payroll",
+  "wave": "W4",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "hr.payroll.productionReady",
+  "dependencies": [
+    "w4-attendance-biometric-location",
+    "w3-accounting-tax-end-to-end"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "NONE",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "HIGH",
+    "sync": "MEDIUM",
+    "security": "HIGH",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Payroll posted tidak diedit langsung; koreksi melalui adjustment.",
+    "Pajak payroll memakai rule version dan periode berlaku yang disetujui.",
+    "Slip gaji hanya dapat diakses pemilik akun atau role berwenang."
+  ],
+  "acceptanceCriteria": [
+    "Absensi, lembur, komponen, pajak, jaminan sosial, jurnal, pembayaran, dan slip gaji terhubung.",
+    "Batch payroll dapat diulang tanpa posting ganda."
+  ],
+  "testPlan": [
+    "Payroll calculation dan tax period test.",
+    "Journal debit-credit serta payment settlement test.",
+    "Idempotency retry test payroll posting.",
+    "Security test payslip self-scope dan audit."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/HRIS-ATTENDANCE-PAYROLL.md",
+    "docs/PAYROLL-TAX-INDONESIA.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-224526",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T14:45:26.733Z",
+  "updatedAt": "2026-08-23T14:46:47.259Z",
+  "releaseEvidence": [
+    "Payroll end-to-end terverifikasi: calculate/approve/post/publish + permission granular + configurable tax & social security.",
+    "Audit-only closure tanpa perubahan source."
+  ]
+}

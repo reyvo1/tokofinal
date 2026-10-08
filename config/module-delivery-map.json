@@ -1,0 +1,191 @@
+{
+  "version": "1.0.0",
+  "waves": [
+    {
+      "id": "W0",
+      "name": "Platform foundation",
+      "modules": [
+        "platform",
+        "configuration",
+        "identity",
+        "tenant",
+        "audit",
+        "security",
+        "database"
+      ],
+      "exitCriteria": [
+        "tenant isolation tested",
+        "role-permission enforced",
+        "audit trail active",
+        "SQLite/PostgreSQL schema parity"
+      ]
+    },
+    {
+      "id": "W1",
+      "name": "Master and inventory core",
+      "modules": [
+        "products",
+        "suppliers",
+        "customers",
+        "warehouses",
+        "inventory",
+        "batch-serial",
+        "stock-transfer",
+        "stock-opname"
+      ],
+      "dependsOn": [
+        "W0"
+      ],
+      "exitCriteria": [
+        "inventory movements append-only",
+        "atomic stock mutation",
+        "negative-stock policy tested",
+        "pagination and indexes verified"
+      ]
+    },
+    {
+      "id": "W2",
+      "name": "Commerce channels",
+      "modules": [
+        "pos",
+        "storefront",
+        "orders",
+        "payments",
+        "returns",
+        "promotions",
+        "loyalty"
+      ],
+      "dependsOn": [
+        "W1"
+      ],
+      "exitCriteria": [
+        "idempotent checkout",
+        "payment callbacks replay-safe",
+        "stock reservation tested",
+        "refund reversal tested"
+      ]
+    },
+    {
+      "id": "W3",
+      "name": "Accounting and tax core",
+      "modules": [
+        "accounting-core",
+        "tax-core",
+        "cash-bank",
+        "receivables",
+        "payables",
+        "financial-reporting"
+      ],
+      "dependsOn": [
+        "W1",
+        "W2"
+      ],
+      "exitCriteria": [
+        "journal debit equals credit",
+        "posting idempotent",
+        "fiscal-period lock enforced",
+        "tax rules versioned"
+      ]
+    },
+    {
+      "id": "W4",
+      "name": "HR and payroll",
+      "modules": [
+        "hris",
+        "attendance",
+        "leave-overtime",
+        "payroll",
+        "employee-portal",
+        "employee-notification"
+      ],
+      "dependsOn": [
+        "W0",
+        "W3"
+      ],
+      "exitCriteria": [
+        "employee self-scope enforced",
+        "attendance evidence protected",
+        "payroll approval and posting tested",
+        "payslip access audited"
+      ]
+    },
+    {
+      "id": "W5",
+      "name": "Assets, fleet, and operational control",
+      "modules": [
+        "assets",
+        "depreciation",
+        "fleet",
+        "delivery-trip",
+        "inbound-inspection",
+        "outbound-inspection",
+        "gate-pass"
+      ],
+      "dependsOn": [
+        "W1",
+        "W3"
+      ],
+      "exitCriteria": [
+        "asset lifecycle journaled",
+        "vehicle blocking checks enforced",
+        "goods receipt inspection required",
+        "manifest reconciliation tested"
+      ]
+    },
+    {
+      "id": "W6",
+      "name": "Hybrid edge-cloud and integrations",
+      "modules": [
+        "edge-node",
+        "central-node",
+        "sync-protocol",
+        "device-bridge",
+        "marketplace",
+        "shipping",
+        "whatsapp",
+        "telegram",
+        "payment-adapters"
+      ],
+      "dependsOn": [
+        "W0",
+        "W1",
+        "W2",
+        "W3"
+      ],
+      "exitCriteria": [
+        "bidirectional sync idempotent",
+        "conflict policy tested",
+        "offline recovery tested",
+        "credentials rotatable"
+      ]
+    },
+    {
+      "id": "W7",
+      "name": "Scale, analytics, and production hardening",
+      "modules": [
+        "report-jobs",
+        "summaries",
+        "archive-retention",
+        "forecasting",
+        "monitoring",
+        "backup-recovery",
+        "performance",
+        "admin-ui",
+        "pos-ui",
+        "storefront-ui",
+        "employee-portal-ui"
+      ],
+      "dependsOn": [
+        "W1",
+        "W2",
+        "W3"
+      ],
+      "exitCriteria": [
+        "performance budget passed",
+        "restore drill passed",
+        "large exports asynchronous",
+        "hot tables retention configured"
+      ]
+    }
+  ]
+}

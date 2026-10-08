@@ -1,0 +1,426 @@
+{
+  "version": 4,
+  "phase": "P5-V4.9-FOUR-PRODUCT-ROOT-DESIGN-SYSTEM",
+  "sourceScan": {
+    "apiControllers": 43,
+    "apiRoutes": 509,
+    "prismaModels": 195,
+    "adminPrimaryWorkspaces": 15,
+    "adminContextualViews": 70,
+    "posViews": 4,
+    "storefrontViews": 5,
+    "employeeViews": 7,
+    "interactiveControls": 503
+  },
+  "presentation": {
+    "admin": {
+      "fileCount": 50,
+      "lineCount": 10291,
+      "requiredSemanticClassCount": 34,
+      "missingSemanticClasses": []
+    },
+    "pos": {
+      "fileCount": 9,
+      "lineCount": 1697,
+      "requiredSemanticClassCount": 5,
+      "missingSemanticClasses": []
+    },
+    "storefront": {
+      "fileCount": 7,
+      "lineCount": 969,
+      "requiredSemanticClassCount": 30,
+      "missingSemanticClasses": []
+    },
+    "employee-portal": {
+      "fileCount": 11,
+      "lineCount": 1096,
+      "requiredSemanticClassCount": 21,
+      "missingSemanticClasses": []
+    }
+  },
+  "controls": {
+    "admin": {
+      "buttons": 388,
+      "links": 2,
+      "inertButtons": 0,
+      "implicitSubmitButtons": 32,
+      "inertLinks": 0
+    },
+    "pos": {
+      "buttons": 48,
+      "links": 1,
+      "inertButtons": 0,
+      "implicitSubmitButtons": 1,
+      "inertLinks": 0
+    },
+    "storefront": {
+      "buttons": 42,
+      "links": 1,
+      "inertButtons": 0,
+      "implicitSubmitButtons": 0,
+      "inertLinks": 0
+    },
+    "employee-portal": {
+      "buttons": 20,
+      "links": 1,
+      "inertButtons": 0,
+      "implicitSubmitButtons": 1,
+      "inertLinks": 0
+    }
+  },
+  "admin": {
+    "primaryWorkspaceCount": 15,
+    "primaryWorkspaces": [
+      {
+        "key": "dashboard",
+        "route": "/dashboard",
+        "label": "Dashboard"
+      },
+      {
+        "key": "commerce",
+        "route": "/commerce",
+        "label": "Penjualan & Order"
+      },
+      {
+        "key": "procurement",
+        "route": "/procurement",
+        "label": "Pembelian"
+      },
+      {
+        "key": "manufacturing",
+        "route": "/manufacturing",
+        "label": "Produksi"
+      },
+      {
+        "key": "inventory-control",
+        "route": "/inventory-control",
+        "label": "Persediaan"
+      },
+      {
+        "key": "operations-control",
+        "route": "/operations-control",
+        "label": "Kontrol Operasional"
+      },
+      {
+        "key": "master-data",
+        "route": "/master-data",
+        "label": "Produk & Master Data"
+      },
+      {
+        "key": "finance",
+        "route": "/finance",
+        "label": "Keuangan"
+      },
+      {
+        "key": "reports",
+        "route": "/reports",
+        "label": "Laporan & Analitik"
+      },
+      {
+        "key": "people",
+        "route": "/people",
+        "label": "HRIS & Payroll"
+      },
+      {
+        "key": "assets-fleet",
+        "route": "/assets-fleet",
+        "label": "Aset & Armada"
+      },
+      {
+        "key": "intelligence",
+        "route": "/intelligence",
+        "label": "Forecast & Otomasi"
+      },
+      {
+        "key": "integrations",
+        "route": "/integrations",
+        "label": "Integrasi & Notifikasi"
+      },
+      {
+        "key": "organization",
+        "route": "/organization",
+        "label": "Tenant & Organisasi"
+      },
+      {
+        "key": "settings",
+        "route": "/settings",
+        "label": "Pengaturan & Akses"
+      }
+    ],
+    "contextualViewCount": 70,
+    "expectedContextualViewCount": 70,
+    "contextualViews": {
+      "master-data": [
+        "catalog",
+        "customers",
+        "products",
+        "pricing",
+        "references",
+        "bulk-labels"
+      ],
+      "organization": [
+        "organization",
+        "locations",
+        "references"
+      ],
+      "procurement": [
+        "requests",
+        "orders",
+        "receipts",
+        "supplier"
+      ],
+      "commerce": [
+        "orders",
+        "fulfillment",
+        "returns",
+        "channels"
+      ],
+      "inventory-control": [
+        "overview",
+        "traceability",
+        "transfers",
+        "stocktake",
+        "returns"
+      ],
+      "operations-control": [
+        "inspections",
+        "evidence",
+        "gate-pass",
+        "delivery"
+      ],
+      "finance": [
+        "ledger",
+        "tax",
+        "fiscal",
+        "payables",
+        "receivables",
+        "banking"
+      ],
+      "reports": [
+        "financial",
+        "operations",
+        "scheduled",
+        "owner"
+      ],
+      "people": [
+        "employees",
+        "attendance",
+        "payroll",
+        "compliance"
+      ],
+      "assets-fleet": [
+        "assets",
+        "maintenance",
+        "vehicles",
+        "trips"
+      ],
+      "intelligence": [
+        "ai",
+        "forecast",
+        "automation",
+        "schedules"
+      ],
+      "integrations": [
+        "providers",
+        "notifications",
+        "connections",
+        "devices",
+        "loyalty",
+        "ppob"
+      ],
+      "settings": [
+        "features",
+        "users",
+        "platform",
+        "custom-fields",
+        "approvals",
+        "webhooks",
+        "ui-config",
+        "audit-ops",
+        "security",
+        "api-keys",
+        "data-governance",
+        "branch-sync",
+        "mobile-ops",
+        "setup"
+      ],
+      "manufacturing": [
+        "recipes",
+        "orders"
+      ]
+    }
+  },
+  "configuredViews": {
+    "pos": [
+      "sale",
+      "shift",
+      "returns",
+      "sync"
+    ],
+    "storefront": [
+      "home",
+      "catalog",
+      "product",
+      "cart",
+      "account"
+    ],
+    "employeePortal": [
+      "home",
+      "attendance",
+      "leave",
+      "overtime",
+      "payslips",
+      "history",
+      "profile"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "F2",
+      "title": "Master Product + Multi-UOM",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "gap": "Multi-UOM berbasis barcode/factor sudah ada, tetapi ProductVariant dan model konversi UOM first-class belum terlihat sebagai model dedicated. F2 harus menormalkan master produk/variant/UOM tanpa merusak POS yang sudah memakai quantityFactor."
+    },
+    {
+      "id": "F3",
+      "title": "Inventory / batch / expiry / condition",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin",
+        "pos"
+      ],
+      "gap": "Batch, serial, location, transfer, opname sudah kuat. Condition bucket general seperti AVAILABLE/DAMAGED/QUARANTINE/LOST belum terlihat sebagai inventory condition ledger first-class."
+    },
+    {
+      "id": "F4",
+      "title": "Accounting workspace enterprise",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Accounting core kuat dan UI ledger sudah ada, tetapi posting rule/account mapping/version management serta source→event→journal→line drill-down belum terbukti lengkap di operator UI."
+    },
+    {
+      "id": "F5",
+      "title": "Tax workspace dinamis",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Tax engine/model tersedia, tetapi tax transaction/document ledger, effective-dated rule management, preview, reconciliation, dan audit trail belum seluruhnya terekspos di UI."
+    },
+    {
+      "id": "F6",
+      "title": "Financial reporting + drill-down",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "ReportJob dan katalog report tersedia. F6 harus menambah dynamic filters, period comparison, branch/cost-center dimensions, dan report→account→journal→source drill-down."
+    },
+    {
+      "id": "F7",
+      "title": "AR / AP / Cash / Bank / Reconciliation",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Operational AP/AR dan bank reconciliation sudah ada. Aging, statement/detail navigation, settlement trace, dan reconciliation operator flow perlu diperdalam."
+    },
+    {
+      "id": "F8",
+      "title": "Automation + scheduled reports",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Automation worker tersedia, tetapi scheduler/report schedule first-class dan operator execution history/rule management belum lengkap."
+    },
+    {
+      "id": "F9",
+      "title": "WhatsApp / Telegram notification center",
+      "status": "PARTIAL",
+      "uiApps": [
+        "admin",
+        "employee-portal"
+      ],
+      "gap": "Template, queue, Telegram worker, WhatsApp provider adapter, dan UI queue sudah ada. Provider setup/verification, channel binding UX, scheduled report destinations, retry diagnostics, dan production readiness masih harus dituntaskan."
+    },
+    {
+      "id": "F10",
+      "title": "AI / forecasting / operator assistant",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin"
+      ],
+      "gap": "Source implementation lengkap: explainable forecast/reorder, permission-scoped deterministic operator assistant, anomaly insights, confidence, source links, dan human-confirmation guardrail tersedia. Runtime/browser/human UAT tetap wajib sebelum closure."
+    },
+    {
+      "id": "F11",
+      "title": "Purchase / Sales / POS integration ke UOM baru",
+      "status": "EXPOSED",
+      "uiApps": [
+        "admin",
+        "pos",
+        "storefront"
+      ],
+      "gap": "Sales/POS multi-UOM sudah jauh lebih matang. Purchase request/PO/receipt masih berbasis orderedQty/unitCost tanpa purchase UOM conversion first-class; ini blocker utama F11."
+    }
+  ],
+  "apiOnlyControllers": [
+    "apps/api/src/extensions/edge-sync.controller.ts"
+  ],
+  "intentionalApiOnlyControllers": [
+    "apps/api/src/extensions/edge-sync.controller.ts"
+  ],
+  "contracts": {
+    "adminThemeToggle": true,
+    "posLightFirst": true,
+    "tenantContextVisible": [
+      "admin",
+      "pos",
+      "storefront",
+      "employee-portal"
+    ],
+    "employeeAllSevenViewsReachableOnMobile": true,
+    "digitalReceiptExposedInPos": true,
+    "edgeSyncApiOnlyByDesign": true,
+    "rootUiFoundation": {
+      "admin": "P5-V4.11",
+      "pos": "P5-V4.11",
+      "storefront": "P5-V4.11",
+      "employeePortal": "P5-V4.11"
+    },
+    "reactHookOrderFailClosed": true,
+    "freshIsolatedDevOutput": true,
+    "rawFormPrimitivesStyled": true,
+    "gridItemsAlignStart": true,
+    "adminSearchableHierarchicalNavigation": true
+  },
+  "remainingTruth": [
+    {
+      "id": "F9",
+      "status": "PARTIAL_BY_BACKEND_READINESS",
+      "detail": "WhatsApp/Telegram operator UI exists, but external provider production readiness/setup/verification/retry diagnostics remain incomplete."
+    },
+    {
+      "id": "F10",
+      "status": "SOURCE_IMPLEMENTED_RUNTIME_PENDING",
+      "detail": "Explainable forecast/reorder, permission-scoped deterministic operator assistant, anomaly insights, confidence, source links, history, and human-confirmation guardrails are implemented; runtime/browser/human evidence remains pending."
+    },
+    {
+      "id": "edge-sync",
+      "status": "API_ONLY_BY_DESIGN",
+      "detail": "Device/system synchronization is intentionally not an operator UI domain."
+    }
+  ],
+  "limitations": [
+    "Static source audits do not replace real browser click/runtime validation.",
+    "Real production build and Human Visual Acceptance remain mandatory before P5 closure."
+  ]
+}

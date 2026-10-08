@@ -1,0 +1,64 @@
+{
+  "id": "T360-20260823-225046",
+  "backlogKey": "w5-delivery-inspection-gatepass",
+  "title": "Menyelesaikan trip manifest outbound inspection gate pass COD dan retur",
+  "type": "feature",
+  "module": "delivery-trip",
+  "wave": "W5",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "operations.deliveryControl.enabled",
+  "dependencies": [
+    "w5-assets-fleet-lifecycle",
+    "w2-online-order-fulfillment"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "HIGH",
+    "accounting": "HIGH",
+    "tax": "MEDIUM",
+    "payment": "HIGH",
+    "payroll": "LOW",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Barang tidak keluar sebelum scan sama dengan manifest dan gate pass disetujui.",
+    "Kendaraan gagal inspeksi blocking tidak dapat dispatch.",
+    "COD, barang kembali, kerusakan, dan selisih diposting secara idempotent.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Trip, driver, vehicle, manifest, loading, gate pass, proof of delivery, COD, dan return terhubung.",
+    "Inventory movement mengikuti setiap perubahan custody barang."
+  ],
+  "testPlan": [
+    "E2E order-outbound inventory movement-trip-delivery-COD-journal.",
+    "Vehicle blocking inspection test.",
+    "Offline sync retry/conflict test.",
+    "Payment dan accounting idempotency test."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/ASSET-FLEET-OPERATIONS.md",
+    "docs/INBOUND-OUTBOUND-CONTROL.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-225046",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T14:50:46.538Z",
+  "updatedAt": "2026-08-23T15:00:18.710Z",
+  "releaseEvidence": [
+    "Trip/inspection/gate-pass/COD/returns flow terverifikasi lengkap via audit source.",
+    "UAT HTTP Tahap 20 sebelumnya: GR confirm via inspection PASS.",
+    "Audit-only closure."
+  ]
+}

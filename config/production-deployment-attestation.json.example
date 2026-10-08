@@ -1,0 +1,27 @@
+{
+  "decision": "PRODUCTION_DEPLOYMENT_VERIFIED",
+  "approvedBy": "REPLACE_WITH_APPROVER",
+  "approvedAt": "2026-09-12T00:00:00.000Z",
+  "sourceFingerprint": "REPLACE_WITH_CURRENT_64_HEX_SOURCE_FINGERPRINT",
+  "buildArtifactId": "REPLACE_WITH_PROMOTED_64_HEX_BUILD_ARTIFACT_ID",
+  "productionTarget": {
+    "applicationHostHash": "REPLACE_WITH_PRODUCTION_SMOKE_APPLICATION_HOST_HASH",
+    "databaseTarget": {
+      "hostHash": "REPLACE_WITH_PRODUCTION_DB_HOST_HASH",
+      "databaseHash": "REPLACE_WITH_PRODUCTION_DB_NAME_HASH"
+    }
+  },
+  "checks": {
+    "preDeployBackupVerified": "PASS",
+    "preDeployBackupProtected": "PASS",
+    "migrationsApplied": "PASS",
+    "schemaContractReviewed": "PASS",
+    "sixServicesHealthy": "PASS",
+    "webSurfacesHealthy": "PASS",
+    "monitoringGreen": "PASS",
+    "queueHealthGreen": "PASS",
+    "rollbackReady": "PASS",
+    "smokeReviewed": "PASS",
+    "financialIntegrityReviewed": "PASS"
+  }
+}

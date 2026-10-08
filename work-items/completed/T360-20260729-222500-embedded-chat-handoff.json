@@ -1,0 +1,55 @@
+{
+  "id": "T360-20260729-222500",
+  "title": "Menanam instruksi sistem dan chat handoff dinamis",
+  "type": "feature",
+  "module": "platform",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "repository-maintainer",
+  "featureFlag": "",
+  "dependencies": [
+    "development-workflow",
+    "one-click-work-automation"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "MEDIUM",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Instruksi sistem canonical tidak boleh melebihi 8000 karakter.",
+    "Chat pertama harus dibangun dari keadaan repository aktual dan tidak boleh menyalin credential atau nilai secret.",
+    "Output handoff adalah snapshot, bukan sumber kebenaran baru."
+  ],
+  "acceptanceCriteria": [
+    "Instruksi canonical dan seluruh adapter identik serta lolos batas karakter.",
+    "Satu tombol menyiapkan instruksi sistem dan chat pertama melalui clipboard.",
+    "Generator memuat checkpoint, Git, work item, database profile tersensor, backlog, dan quality gate.",
+    "Paket konteks diperbarui oleh launcher workflow utama."
+  ],
+  "testPlan": [
+    "Validasi batas 8000 karakter dan checksum adapter.",
+    "Jalankan generator dan periksa output chat/context.",
+    "Pastikan output tidak mengandung DATABASE_URL, JWT_SECRET, atau token provider.",
+    "Jalankan seluruh repository tests, workflow validation, dan repository validation."
+  ],
+  "migrationPlan": "Tidak ada perubahan database.",
+  "rollbackPlan": "Hapus launcher dan generator handoff, kembalikan adapter instruksi serta Project State tanpa mengubah data bisnis.",
+  "monitoringPlan": "Pantau kegagalan generator, pelanggaran batas karakter, clipboard failure, dan perbedaan adapter melalui repository tests.",
+  "securityNotes": "Generator hanya membaca metadata aman; nilai secret, credential, URL database, biometric mentah, dan data pribadi tidak dimasukkan ke output.",
+  "documentation": [
+    "instructions/SYSTEM-INSTRUCTIONS.md",
+    "docs/CHAT-HANDOFF-AUTOMATION.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/PROJECT-STATE.md"
+  ],
+  "createdAt": "2026-07-29T14:25:00.000Z",
+  "updatedAt": "2026-07-29T14:25:00.000Z"
+}

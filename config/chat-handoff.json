@@ -1,0 +1,27 @@
+{
+  "version": "1.2.1",
+  "timezone": "Asia/Makassar",
+  "systemInstructionMaxChars": 8000,
+  "outputDirectory": "handoff/generated",
+  "includeMaximumActiveItems": 3,
+  "includeMaximumGitChanges": 20,
+  "includeNextReadyBacklog": true,
+  "copyToClipboardOnWindows": true,
+  "openGeneratedFilesOnWindows": true,
+  "includeHandoffMaxChars": 5000,
+  "includeChecklistMaxChars": 3000,
+  "redactedEnvironmentKeys": [
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "ENCRYPTION_KEY",
+    "WEBHOOK_SIGNING_SECRET",
+    "TELEGRAM_BOT_TOKEN",
+    "WHATSAPP_PROVIDER_TOKEN",
+    "API_KEY",
+    "PASSWORD",
+    "SECRET",
+    "TOKEN"
+  ],
+  "checkpointFilePrefix": "toko360-checkpoint",
+  "chatUrl": "https://chatgpt.com/"
+}

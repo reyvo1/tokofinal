@@ -1,0 +1,1133 @@
+{
+  "version": "1.0.0",
+  "description": "Backlog machine-readable yang diturunkan dari Development Kit dan Implementation Roadmap. Urutan tugas mengikuti dependency dan priority.",
+  "items": [
+    {
+      "key": "w0-tenant-branch-isolation",
+      "priority": 10,
+      "title": "Menegakkan isolasi company dan branch di seluruh endpoint",
+      "type": "security",
+      "module": "tenant",
+      "wave": "W0",
+      "risk": "CRITICAL",
+      "dependencies": [],
+      "featureFlag": "platform.tenantIsolation.enforced",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "MEDIUM",
+        "accounting": "MEDIUM",
+        "tax": "MEDIUM",
+        "payment": "MEDIUM",
+        "payroll": "MEDIUM",
+        "sync": "MEDIUM",
+        "security": "HIGH",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Company dan branch selalu berasal dari identitas terverifikasi, bukan parameter bebas pengguna.",
+        "Query lintas tenant ditolak dan dicatat pada audit log.",
+        "Background worker wajib membawa tenant context yang eksplisit.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Seluruh endpoint operasional menerapkan company/branch scope.",
+        "Pengguna cabang A tidak dapat membaca atau mengubah data cabang B.",
+        "Worker dan report job tidak memproses data di luar tenant context."
+      ],
+      "testPlan": [
+        "Integration test akses silang tenant pada produk, stok, jurnal, pajak, payroll, dan pembayaran.",
+        "Security test token tanpa branch assignment.",
+        "Sync retry test memastikan envelope tenant tetap idempotent."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/DEVELOPMENT-WORKFLOW.md",
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+      ]
+    },
+    {
+      "key": "w0-permission-guard-coverage",
+      "priority": 20,
+      "title": "Menerapkan permission guard pada seluruh endpoint mutasi",
+      "type": "security",
+      "module": "security",
+      "wave": "W0",
+      "risk": "HIGH",
+      "dependencies": [
+        "w0-tenant-branch-isolation"
+      ],
+      "featureFlag": "platform.permissions.enforced",
+      "impacts": {
+        "database": "LOW",
+        "inventory": "MEDIUM",
+        "accounting": "MEDIUM",
+        "tax": "MEDIUM",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "LOW",
+        "security": "HIGH",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Setiap mutasi mempunyai permission spesifik dan audit trail.",
+        "Approval tidak boleh dilakukan oleh pembuat transaksi jika segregation of duties aktif.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Tidak ada endpoint mutasi tanpa permission metadata.",
+        "Role dinamis dapat diberi atau dicabut permission tanpa perubahan source code."
+      ],
+      "testPlan": [
+        "Unit test permission mapping.",
+        "Integration test akses ditolak pada stock adjustment, journal posting, tax posting, payment refund, dan payroll approval.",
+        "Sync idempotency, retry, offline, dan conflict test sesuai scope pekerjaan."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/QUALITY-GATES.md"
+      ]
+    },
+    {
+      "key": "w0-atomic-number-sequence",
+      "priority": 30,
+      "title": "Membuat nomor dokumen atomik per company branch dan jenis dokumen",
+      "type": "feature",
+      "module": "database",
+      "wave": "W0",
+      "risk": "HIGH",
+      "dependencies": [
+        "w0-tenant-branch-isolation"
+      ],
+      "featureFlag": "platform.atomicNumberSequence.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "LOW",
+        "accounting": "LOW",
+        "tax": "LOW",
+        "payment": "LOW",
+        "payroll": "LOW",
+        "sync": "MEDIUM",
+        "security": "LOW",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Nomor dokumen unik per company, branch, jenis dokumen, dan periode.",
+        "Retry atau sync ulang tidak boleh mengonsumsi nomor baru untuk operation yang sama."
+      ],
+      "acceptanceCriteria": [
+        "Tidak terjadi nomor duplikat pada transaksi paralel.",
+        "Format nomor dapat dikonfigurasi tanpa mengubah ID UUID."
+      ],
+      "testPlan": [
+        "Concurrency test 100 generator nomor pada branch yang sama.",
+        "Idempotency retry test untuk operation yang sama.",
+        "Migration test expand-only pada SQLite dan PostgreSQL.",
+        "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+        "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/LARGE-SCALE-DATA.md"
+      ]
+    },
+    {
+      "key": "w0-idempotency-all-mutations",
+      "priority": 40,
+      "title": "Menerapkan idempotency pada seluruh transaksi mutasi utama",
+      "type": "feature",
+      "module": "platform",
+      "wave": "W0",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w0-tenant-branch-isolation",
+        "w0-atomic-number-sequence"
+      ],
+      "featureFlag": "platform.idempotency.required",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "HIGH",
+        "security": "MEDIUM",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Operation ID yang sama menghasilkan receipt yang sama dan tidak membuat transaksi kedua.",
+        "Versi dan periode pajak pada replay harus sama dengan posting awal.",
+        "Receipt idempotency mempunyai masa retensi sesuai jenis transaksi."
+      ],
+      "acceptanceCriteria": [
+        "Penjualan, penerimaan supplier, pembayaran, retur, payroll, aset, dan inspeksi aman terhadap retry.",
+        "Duplicate request menghasilkan respons konsisten tanpa stock movement atau journal baru."
+      ],
+      "testPlan": [
+        "Idempotency test penjualan dan inventory movement.",
+        "Retry test payment webhook dan sync offline.",
+        "Journal debit-credit test memastikan tidak ada posting ganda.",
+        "Tax transaction replay test berdasarkan versi aturan berlaku."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/AUTOMATION-RULEBOOK.md",
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+      ]
+    },
+    {
+      "key": "w1-atomic-stock-mutation",
+      "priority": 50,
+      "title": "Memperkuat mutasi stok atomik dan retry concurrency",
+      "type": "feature",
+      "module": "inventory",
+      "wave": "W1",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w0-idempotency-all-mutations"
+      ],
+      "featureFlag": "inventory.atomicMutation.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "HIGH",
+        "accounting": "MEDIUM",
+        "tax": "LOW",
+        "payment": "LOW",
+        "payroll": "NONE",
+        "sync": "HIGH",
+        "security": "MEDIUM",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Saldo stok hanya berubah melalui inventory movement append-only.",
+        "Pengurangan stok atomik gagal bila available quantity tidak mencukupi.",
+        "Retry serializable dibatasi dan dicatat untuk monitoring.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Dua kasir tidak dapat menjual unit terakhir secara bersamaan.",
+        "Saldo inventory sama dengan agregasi movement untuk sampel dan rekonsiliasi penuh."
+      ],
+      "testPlan": [
+        "Concurrency test penjualan barang terakhir.",
+        "Inventory movement invariant test.",
+        "Offline sync retry dan conflict test.",
+        "Journal inventory posting balance test."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/LARGE-SCALE-DATA.md",
+        "docs/PERFORMANCE-CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "w1-inbound-inspection-complete",
+      "priority": 60,
+      "title": "Menyelesaikan inspeksi barang masuk supplier sampai posting",
+      "type": "feature",
+      "module": "inbound-inspection",
+      "wave": "W5",
+      "risk": "HIGH",
+      "dependencies": [
+        "w1-atomic-stock-mutation",
+        "w0-permission-guard-coverage"
+      ],
+      "featureFlag": "operations.inboundInspection.enabled",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "LOW",
+        "payroll": "NONE",
+        "sync": "MEDIUM",
+        "security": "MEDIUM",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Goods receipt belum menambah stok sebelum inspeksi dan konfirmasi selesai.",
+        "Barang rusak atau ditolak tidak masuk stok tersedia.",
+        "Pajak masukan memakai tax rule version yang berlaku pada dokumen supplier."
+      ],
+      "acceptanceCriteria": [
+        "PO, scan, kondisi, batch, bukti, approval, stok, utang, pajak, dan jurnal terhubung.",
+        "Selisih blocking menahan posting sampai disetujui."
+      ],
+      "testPlan": [
+        "Integration test PO-inspection-stock movement-payable-journal-tax.",
+        "Inventory test barang rusak tidak menambah available stock.",
+        "Journal debit-credit dan tax period test.",
+        "Idempotency retry test konfirmasi penerimaan."
+      ],
+      "documentation": [
+        "docs/INBOUND-OUTBOUND-CONTROL.md",
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+      ]
+    },
+    {
+      "key": "w2-pos-payment-production",
+      "priority": 70,
+      "title": "Menstabilkan POS shift pembayaran refund dan rekonsiliasi",
+      "type": "feature",
+      "module": "pos",
+      "wave": "W2",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w1-atomic-stock-mutation",
+        "w0-permission-guard-coverage"
+      ],
+      "featureFlag": "commerce.pos.productionReady",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "LOW",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Shift wajib dibuka sebelum transaksi dan ditutup dengan rekonsiliasi kas.",
+        "Refund harus merujuk transaksi asli dan membalik stock, journal, payment, serta pajak secara idempotent."
+      ],
+      "acceptanceCriteria": [
+        "Tunai, transfer, QRIS, kartu, split payment, hold, refund, dan close shift tercatat konsisten.",
+        "Transaksi lokal dapat disinkronkan tanpa duplikasi."
+      ],
+      "testPlan": [
+        "E2E POS sale-payment-stock-journal-tax.",
+        "Payment callback replay test.",
+        "Offline sync retry/conflict test.",
+        "Concurrency dan performance test banyak kasir."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+        "docs/PERFORMANCE-CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "w2-online-order-fulfillment",
+      "priority": 80,
+      "title": "Menyelesaikan order website reservasi fulfillment dan pengiriman",
+      "type": "feature",
+      "module": "orders",
+      "wave": "W2",
+      "risk": "HIGH",
+      "dependencies": [
+        "w1-atomic-stock-mutation",
+        "w2-pos-payment-production"
+      ],
+      "featureFlag": "commerce.onlineOrder.enabled",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "NONE",
+        "sync": "HIGH",
+        "security": "MEDIUM",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Checkout mereservasi stok dengan expiry dan membebaskan reservasi ketika pembayaran gagal.",
+        "Status fulfillment mengikuti state machine dan tidak dapat dilompati tanpa permission.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Order dari website masuk ke branch pemroses dan menghasilkan picking sampai delivery.",
+        "Pembayaran dan pajak diposting tepat satu kali."
+      ],
+      "testPlan": [
+        "E2E checkout-payment-reservation-fulfillment-stock-journal-tax.",
+        "Idempotency webhook dan offline sync test.",
+        "Performance test checkout paralel."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/ASSET-FLEET-OPERATIONS.md"
+      ]
+    },
+    {
+      "key": "w3-accounting-tax-end-to-end",
+      "priority": 90,
+      "title": "Menyelesaikan accounting dan tax posting lintas seluruh modul",
+      "type": "feature",
+      "module": "accounting-core",
+      "wave": "W3",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w2-pos-payment-production",
+        "w1-inbound-inspection-complete"
+      ],
+      "featureFlag": "finance.unifiedPosting.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "MEDIUM",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "MEDIUM",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Seluruh modul mengirim accounting event dan dilarang membuat journal langsung.",
+        "Tax rule dipilih berdasarkan scope, versi, dan periode berlaku.",
+        "Fiscal period lock mencegah posting mundur tanpa reopening resmi."
+      ],
+      "acceptanceCriteria": [
+        "Penjualan, pembelian, stok, biaya, payroll, aset, fleet, dan retur memakai posting engine yang sama.",
+        "Subledger dapat direkonsiliasi ke general ledger."
+      ],
+      "testPlan": [
+        "Journal debit-credit test seluruh event type.",
+        "Tax version/effective period test dan reversal test.",
+        "Idempotent accounting posting retry test.",
+        "Performance test posting batch.",
+        "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan."
+      ],
+      "documentation": [
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+        "docs/DEVELOPMENT-KIT.md"
+      ]
+    },
+    {
+      "key": "w3-financial-reporting-close",
+      "priority": 100,
+      "title": "Menyelesaikan laporan keuangan period close dan rekonsiliasi",
+      "type": "feature",
+      "module": "financial-reporting",
+      "wave": "W3",
+      "risk": "HIGH",
+      "dependencies": [
+        "w3-accounting-tax-end-to-end"
+      ],
+      "featureFlag": "finance.reporting.productionReady",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "LOW",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "MEDIUM",
+        "payroll": "MEDIUM",
+        "sync": "LOW",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Laporan bersumber dari posting yang sudah disetujui dan periode fiskal yang jelas.",
+        "Perubahan setelah close memakai adjustment atau reopening terotorisasi."
+      ],
+      "acceptanceCriteria": [
+        "Laba rugi, neraca, arus kas, buku besar, pajak, utang, dan piutang dapat direkonsiliasi.",
+        "Laporan besar berjalan sebagai report job asynchronous."
+      ],
+      "testPlan": [
+        "Journal-to-report reconciliation test.",
+        "Tax period reconciliation test.",
+        "Security test akses laporan lintas branch.",
+        "Performance test jutaan journal line melalui summary/report job.",
+        "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+        "Sync idempotency, retry, offline, dan conflict test sesuai scope pekerjaan."
+      ],
+      "documentation": [
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+        "docs/LARGE-SCALE-DATA.md"
+      ]
+    },
+    {
+      "key": "w4-attendance-biometric-location",
+      "priority": 110,
+      "title": "Menyelesaikan absensi fingerprint foto GPS dan geofence",
+      "type": "integration",
+      "module": "attendance",
+      "wave": "W4",
+      "risk": "HIGH",
+      "dependencies": [
+        "w0-permission-guard-coverage",
+        "w0-idempotency-all-mutations"
+      ],
+      "featureFlag": "hr.attendance.enabled",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "NONE",
+        "accounting": "LOW",
+        "tax": "LOW",
+        "payment": "NONE",
+        "payroll": "HIGH",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Fingerprint mentah tidak disimpan; hanya credential reference vendor.",
+        "Foto dan lokasi mempunyai retention, access scope, dan audit trail.",
+        "Event offline diproses idempotent berdasarkan device dan sequence.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Fingerprint, selfie, GPS, geofence, shift, koreksi, dan approval menghasilkan attendance record konsisten.",
+        "Karyawan hanya melihat data absensi sendiri."
+      ],
+      "testPlan": [
+        "Device adapter contract test.",
+        "Offline sync retry/idempotency test.",
+        "Payroll attendance input integration test.",
+        "Security test foto privat dan employee self-scope.",
+        "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+      ],
+      "documentation": [
+        "docs/HRIS-ATTENDANCE-PAYROLL.md",
+        "docs/BIOMETRIC-LOCATION-SECURITY.md",
+        "docs/FINGERPRINT-INTEGRATION.md"
+      ]
+    },
+    {
+      "key": "w4-payroll-production",
+      "priority": 120,
+      "title": "Menyelesaikan payroll approval pajak jurnal slip dan pembayaran",
+      "type": "feature",
+      "module": "payroll",
+      "wave": "W4",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w4-attendance-biometric-location",
+        "w3-accounting-tax-end-to-end"
+      ],
+      "featureFlag": "hr.payroll.productionReady",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "NONE",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "MEDIUM",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Payroll posted tidak diedit langsung; koreksi melalui adjustment.",
+        "Pajak payroll memakai rule version dan periode berlaku yang disetujui.",
+        "Slip gaji hanya dapat diakses pemilik akun atau role berwenang."
+      ],
+      "acceptanceCriteria": [
+        "Absensi, lembur, komponen, pajak, jaminan sosial, jurnal, pembayaran, dan slip gaji terhubung.",
+        "Batch payroll dapat diulang tanpa posting ganda."
+      ],
+      "testPlan": [
+        "Payroll calculation dan tax period test.",
+        "Journal debit-credit serta payment settlement test.",
+        "Idempotency retry test payroll posting.",
+        "Security test payslip self-scope dan audit."
+      ],
+      "documentation": [
+        "docs/HRIS-ATTENDANCE-PAYROLL.md",
+        "docs/PAYROLL-TAX-INDONESIA.md"
+      ]
+    },
+    {
+      "key": "w5-assets-fleet-lifecycle",
+      "priority": 130,
+      "title": "Menyelesaikan lifecycle aset kendaraan dan penyusutan",
+      "type": "feature",
+      "module": "assets",
+      "wave": "W5",
+      "risk": "HIGH",
+      "dependencies": [
+        "w3-accounting-tax-end-to-end",
+        "w0-permission-guard-coverage"
+      ],
+      "featureFlag": "operations.assets.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "LOW",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "MEDIUM",
+        "payroll": "LOW",
+        "sync": "MEDIUM",
+        "security": "MEDIUM",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Aset bergerak dan tidak bergerak mempunyai lifecycle, custodian, lokasi, dan bukti.",
+        "Penyusutan memakai policy version dan fiscal period yang terbuka.",
+        "Kendaraan merupakan aset dan biaya servis/BBM diposting melalui accounting core."
+      ],
+      "acceptanceCriteria": [
+        "Perolehan, aktivasi, mutasi, maintenance, depreciation, disposal, dan tax posting tercatat.",
+        "Kendaraan memiliki status operasional dan jadwal servis."
+      ],
+      "testPlan": [
+        "Asset acquisition-journal-tax test.",
+        "Depreciation journal balance dan idempotency test.",
+        "Vehicle maintenance posting test.",
+        "Sync retry test mutasi aset antar branch.",
+        "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan."
+      ],
+      "documentation": [
+        "docs/ASSET-FLEET-OPERATIONS.md",
+        "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+      ]
+    },
+    {
+      "key": "w5-delivery-inspection-gatepass",
+      "priority": 140,
+      "title": "Menyelesaikan trip manifest outbound inspection gate pass COD dan retur",
+      "type": "feature",
+      "module": "delivery-trip",
+      "wave": "W5",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w5-assets-fleet-lifecycle",
+        "w2-online-order-fulfillment"
+      ],
+      "featureFlag": "operations.deliveryControl.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "MEDIUM",
+        "payment": "HIGH",
+        "payroll": "LOW",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Barang tidak keluar sebelum scan sama dengan manifest dan gate pass disetujui.",
+        "Kendaraan gagal inspeksi blocking tidak dapat dispatch.",
+        "COD, barang kembali, kerusakan, dan selisih diposting secara idempotent.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Trip, driver, vehicle, manifest, loading, gate pass, proof of delivery, COD, dan return terhubung.",
+        "Inventory movement mengikuti setiap perubahan custody barang."
+      ],
+      "testPlan": [
+        "E2E order-outbound inventory movement-trip-delivery-COD-journal.",
+        "Vehicle blocking inspection test.",
+        "Offline sync retry/conflict test.",
+        "Payment dan accounting idempotency test."
+      ],
+      "documentation": [
+        "docs/ASSET-FLEET-OPERATIONS.md",
+        "docs/INBOUND-OUTBOUND-CONTROL.md"
+      ]
+    },
+    {
+      "key": "w6-edge-central-sync",
+      "priority": 150,
+      "title": "Membangun sinkronisasi dua arah server toko dan pusat",
+      "type": "feature",
+      "module": "sync-protocol",
+      "wave": "W6",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w0-idempotency-all-mutations",
+        "w1-atomic-stock-mutation",
+        "w3-accounting-tax-end-to-end"
+      ],
+      "featureFlag": "hybrid.sync.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "HIGH",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Setiap data mempunyai system of record dan conflict policy.",
+        "Sync envelope ditandatangani, idempotent, mempunyai checkpoint, receipt, retry, dan dead letter.",
+        "Inventory disinkronkan sebagai movement, bukan menimpa saldo akhir.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Server toko tetap beroperasi offline dan menyinkronkan transaksi saat koneksi kembali.",
+        "Master data pusat turun ke toko tanpa menimpa transaksi lokal yang sah."
+      ],
+      "testPlan": [
+        "Offline 8 jam lalu sync retry/idempotency test.",
+        "Conflict test harga, customer, inventory movement, journal, tax, payroll, dan payment.",
+        "Security test signature replay dan credential rotation.",
+        "Performance test batch sync besar."
+      ],
+      "documentation": [
+        "docs/DEVELOPMENT-KIT.md",
+        "docs/AUTOMATION-RULEBOOK.md",
+        "docs/SESSION-HANDOFF.md"
+      ]
+    },
+    {
+      "key": "w6-device-provider-adapters",
+      "priority": 160,
+      "title": "Menyelesaikan device bridge dan adapter provider eksternal",
+      "type": "integration",
+      "module": "device-bridge",
+      "wave": "W6",
+      "risk": "HIGH",
+      "dependencies": [
+        "w6-edge-central-sync",
+        "w0-permission-guard-coverage"
+      ],
+      "featureFlag": "integrations.deviceBridge.enabled",
+      "impacts": {
+        "database": "MEDIUM",
+        "inventory": "MEDIUM",
+        "accounting": "LOW",
+        "tax": "LOW",
+        "payment": "HIGH",
+        "payroll": "MEDIUM",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "MEDIUM"
+      },
+      "businessRules": [
+        "Setiap adapter mengikuti contract, timeout, retry, circuit breaker, dan credential scope.",
+        "Provider callback wajib diverifikasi signature dan diproses idempotent.",
+        "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+      ],
+      "acceptanceCriteria": [
+        "Fingerprint, scanner, printer, timbangan, payment, WhatsApp, Telegram, marketplace, dan shipping dapat dipasang melalui adapter.",
+        "Kegagalan provider tidak memblokir transaksi inti yang dapat diantrikan."
+      ],
+      "testPlan": [
+        "Adapter contract test dan simulated timeout.",
+        "Webhook idempotency/retry test.",
+        "Offline device queue conflict test.",
+        "Security test credential rotation dan signature.",
+        "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+        "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+      ],
+      "documentation": [
+        "docs/EXTENSION-GUIDE.md",
+        "docs/FINGERPRINT-INTEGRATION.md",
+        "docs/AUTOMATION-RULEBOOK.md"
+      ]
+    },
+    {
+      "key": "w7-large-scale-hardening",
+      "priority": 170,
+      "title": "Menerapkan partitioning retention summary queue dan performance budget",
+      "type": "performance",
+      "module": "performance",
+      "wave": "W7",
+      "risk": "HIGH",
+      "dependencies": [
+        "w3-financial-reporting-close",
+        "w6-edge-central-sync"
+      ],
+      "featureFlag": "platform.largeScale.enabled",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "MEDIUM",
+        "accounting": "MEDIUM",
+        "tax": "MEDIUM",
+        "payment": "LOW",
+        "payroll": "LOW",
+        "sync": "HIGH",
+        "security": "MEDIUM",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Hot table dipartisi dan diarsipkan sesuai retention policy yang dapat diaudit.",
+        "Query daftar memakai cursor pagination dan laporan besar memakai summary/report job.",
+        "Perubahan pajak atau jurnal lama tidak dihapus oleh retention."
+      ],
+      "acceptanceCriteria": [
+        "Target jutaan transaksi memenuhi performance budget.",
+        "Archive dapat direstorasi dan direkonsiliasi dengan ledger."
+      ],
+      "testPlan": [
+        "Load test produk, sale, inventory movement, journal, tax, payroll, dan sync.",
+        "Archive/restore test.",
+        "Query plan dan index regression test.",
+        "Backpressure dan worker retry test."
+      ],
+      "documentation": [
+        "docs/LARGE-SCALE-DATA.md",
+        "docs/PERFORMANCE-CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "w7-production-readiness",
+      "priority": 180,
+      "title": "Melaksanakan backup restore monitoring security dan production readiness",
+      "type": "release",
+      "module": "backup-recovery",
+      "wave": "W7",
+      "risk": "CRITICAL",
+      "dependencies": [
+        "w7-large-scale-hardening",
+        "w6-device-provider-adapters"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "HIGH",
+        "inventory": "MEDIUM",
+        "accounting": "HIGH",
+        "tax": "HIGH",
+        "payment": "HIGH",
+        "payroll": "HIGH",
+        "sync": "HIGH",
+        "security": "HIGH",
+        "performance": "HIGH"
+      },
+      "businessRules": [
+        "Tidak ada production release tanpa backup teruji, restore drill, monitoring, alert, dan rollback plan.",
+        "Data accounting, tax, payroll, dan audit mempunyai retensi serta akses yang sesuai."
+      ],
+      "acceptanceCriteria": [
+        "Restore drill memenuhi RPO/RTO yang ditetapkan.",
+        "Security review, load test, failover, dan release checklist disetujui."
+      ],
+      "testPlan": [
+        "Full restore dan reconciliation inventory/journal/tax/payroll test.",
+        "Failover serta offline sync recovery test.",
+        "Security penetration checklist dan credential rotation test.",
+        "Peak load performance test."
+      ],
+      "documentation": [
+        "docs/QUALITY-GATES.md",
+        "docs/PERFORMANCE-CHECKLIST.md",
+        "docs/PROJECT-CHECKPOINTS.md"
+      ]
+    },
+    {
+      "key": "ui-p1-admin-application-shell",
+      "priority": 190,
+      "title": "UI-P1 Admin Application Shell dan information architecture",
+      "type": "feature",
+      "module": "admin-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "w7-production-readiness"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "NONE",
+        "accounting": "NONE",
+        "tax": "NONE",
+        "payment": "NONE",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Navigasi Admin hanya menampilkan workspace yang memiliki view nyata dan module runtime aktif.",
+        "Role/permission pada token hanya digunakan untuk visibility UI; backend tetap menjadi otoritas akses fail-closed.",
+        "UiSchemaDefinition surface admin dapat menyembunyikan, mengurutkan, atau mengganti label workspace tanpa mengubah business logic."
+      ],
+      "acceptanceCriteria": [
+        "Admin memiliki canonical route per workspace dan direct reload route tetap membuka shell yang sama.",
+        "Sidebar dapat collapse, dicari, responsive, dan dibangun dari module catalog, feature flag, role/permission, serta UI schema runtime.",
+        "Setiap workspace mempunyai breadcrumb, page header, company/branch context, dan related-workspace rail yang konsisten.",
+        "Business workflow dan endpoint yang sudah hijau tetap tidak berubah."
+      ],
+      "testPlan": [
+        "Static regression canonical route dan dynamic navigation resolver.",
+        "UI cleanup regression memastikan tidak ada fake controls atau menu tanpa view nyata.",
+        "Full dependency-free regression sebelum push.",
+        "GitHub Full System Simulation untuk Next build dan browser runtime sesudah push."
+      ],
+      "documentation": [
+        "docs/ADMIN-APPLICATION-SHELL.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    },
+    {
+      "key": "ui-p2-admin-domain-workspaces",
+      "priority": 200,
+      "title": "UI-P2 Admin domain workspaces dan nested operator navigation",
+      "type": "feature",
+      "module": "admin-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "ui-p1-admin-application-shell"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "NONE",
+        "accounting": "NONE",
+        "tax": "NONE",
+        "payment": "NONE",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Nested Admin workspace route hanya mengubah information architecture; endpoint dan business transaction tetap authoritative di backend.",
+        "Setiap sub-workspace harus mempunyai deep link yang stabil, breadcrumb, label, dan deskripsi operator yang konsisten.",
+        "UI tidak boleh mengarang status atau capability yang tidak tersedia dari runtime/domain implementation."
+      ],
+      "acceptanceCriteria": [
+        "Domain Admin utama mempunyai nested route operator seperti procurement/orders, finance/receivables, people/payroll, assets-fleet/trips, dan platform/security.",
+        "Admin shell mempunyai sticky secondary navigation, overview deck, dan breadcrumb tingkat sub-workspace.",
+        "Direct reload nested route tetap membuka shell/authentication yang sama dan route invalid fail-safe kembali ke domain root.",
+        "Business views, API authorization, tenant scope, dan fail-closed backend behavior tetap tidak berubah."
+      ],
+      "testPlan": [
+        "Static regression domain workspace catalog, nested route, breadcrumb, secondary navigation, dan invalid-path fallback.",
+        "UI-P1 regression dan UI cleanup regression tetap PASS.",
+        "Full dependency-free regression sebelum push.",
+        "GitHub Full System Simulation untuk Next build dan browser runtime sesudah push."
+      ],
+      "documentation": [
+        "docs/ADMIN-DOMAIN-WORKSPACES.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    },
+    {
+      "backlogKey": "ui-p3-pos-modernization",
+      "title": "UI-P3 POS modernization dan operator workspaces",
+      "type": "feature",
+      "module": "pos-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "ui-p2-admin-domain-workspaces"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "LOW",
+        "accounting": "NONE",
+        "tax": "LOW",
+        "payment": "LOW",
+        "payroll": "NONE",
+        "sync": "LOW",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "POS workspace hanya mengubah presentation dan operator flow; quote, payment, stock, shift, return, dan sync tetap authoritative pada logic/API lama.",
+        "Mode offline tetap dibatasi fail-closed: cash-only, tanpa promo/loyalty/pack conversion, dengan reservation stok lokal dan replay idempotent.",
+        "Human Stage-20 UAT tidak boleh dipenuhi oleh automated simulation dan candidate verifier tetap harus FAIL sampai human evidence sah."
+      ],
+      "acceptanceCriteria": [
+        "POS mempunyai shell reusable dan workspace Penjualan, Shift & Kas, Retur, dan Sinkronisasi.",
+        "Catalog/cart/payment tetap satu operator flow fokus dan cart tetap sticky pada desktop tanpa mengubah transaksi.",
+        "Shift, cash movement, return/refund, dan offline queue tidak lagi bercampur dalam satu surface panjang.",
+        "Existing payment guard, idempotency, offline reservation/replay conflict, tenant/auth behavior, dan human-UAT fail-closed tetap dipertahankan."
+      ],
+      "testPlan": [
+        "node --test tests/ui-p3-pos-modernization.test.mjs",
+        "node --test tests/pos-offline.test.mjs tests/pos-functional.test.mjs jika tersedia",
+        "npm run test:dependency-free sebelum push; GitHub Full System Simulation untuk build/browser/runtime."
+      ],
+      "documentation": [
+        "docs/POS-MODERNIZATION.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ],
+      "key": "ui-p3-pos-modernization",
+      "priority": 210
+    },
+    {
+      "key": "ui-p4-storefront-productization",
+      "priority": 220,
+      "title": "UI-P4 Storefront productization dan customer journeys",
+      "type": "feature",
+      "module": "storefront-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "ui-p3-pos-modernization"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "LOW",
+        "accounting": "NONE",
+        "tax": "LOW",
+        "payment": "LOW",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Storefront UI hanya mengubah information architecture dan customer journey; harga, promo, stok, reservasi, fulfillment, pembayaran, retur, review, favorit, dan loyalitas tetap authoritative pada API existing.",
+        "Route storefront tidak menjadi security boundary; customer session dan order access token tetap diverifikasi backend.",
+        "Human Stage-20 UAT tetap terpisah dan candidate verifier tidak boleh diubah atau dipaksa PASS."
+      ],
+      "acceptanceCriteria": [
+        "Storefront mempunyai shell reusable dan deep-link view untuk home, catalog, product, cart, dan account.",
+        "Catalog menyediakan pencarian, sorting, product detail, favorite, dan stock visibility tanpa mengubah pricing/stock calculation authoritative.",
+        "Cart/checkout terpisah dari catalog sementara fulfillment, promo, order creation, dan payment selection tetap memakai endpoint existing.",
+        "Account/orders menampung login/register, verification, addresses, order tracking, review, return, dan loyalty dalam customer workspace terpisah."
+      ],
+      "testPlan": [
+        "node --test tests/ui-p4-storefront-productization.test.mjs",
+        "node --test tests/functional-w2-storefront-contact-verification.test.mjs tests/functional-w2-storefront-customer-account.test.mjs tests/functional-w2-storefront-favorites-reviews.test.mjs tests/functional-w2-storefront-fulfillment-address.test.mjs tests/functional-w2-storefront-loyalty-tier.test.mjs tests/functional-w2-storefront-order-return.test.mjs tests/uat-candidate-gate.test.mjs",
+        "Invariant commerce: order creation tetap memakai server-authoritative total/promo, stock reservation tetap melalui backend, dan payment selection tidak dianggap lunas tanpa provider/backoffice confirmation.",
+        "GitHub Full System Simulation untuk Next build, browser/runtime, exact artifact, dan Stage-20 automated."
+      ],
+      "documentation": [
+        "docs/STOREFRONT-PRODUCTIZATION.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    },
+    {
+      "key": "ui-p5-employee-portal-productization",
+      "priority": 230,
+      "title": "UI-P5 Employee Portal productization dan employee self-service workspaces",
+      "type": "feature",
+      "module": "employee-portal-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "ui-p3-pos-modernization"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "NONE",
+        "accounting": "NONE",
+        "tax": "NONE",
+        "payment": "NONE",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Employee Portal UI hanya mengubah information architecture dan self-service journey; employee scope, attendance evidence, leave/overtime approval, dan payslip visibility tetap authoritative di backend.",
+        "Presensi tetap mengirim GPS/selfie/geofence evidence ke endpoint existing dan tidak boleh dianggap valid hanya karena UI menampilkan status siap.",
+        "Human Stage-20 UAT tetap PENDING sampai ada human evidence sah dan candidate verifier tidak boleh diubah atau dipaksa PASS."
+      ],
+      "acceptanceCriteria": [
+        "Employee Portal mempunyai shell reusable dan deep-link workspace untuk home, attendance, leave, overtime, payslips, history, dan profile.",
+        "Login dan authenticated browser contract existing tetap terlihat sehingga browser UAT tidak putus karena productization.",
+        "Attendance, leave, overtime, payslip, dan history tetap memakai endpoint existing tanpa memindahkan authorization ke UI.",
+        "Desktop sidebar dan mobile navigation menyediakan operator journey yang jelas tanpa menumpuk semua workflow pada satu halaman."
+      ],
+      "testPlan": [
+        "node --test tests/ui-p5-employee-portal-productization.test.mjs",
+        "node --test tests/browser-uat-employee-runtime.test.mjs tests/browser-uat-launcher.test.mjs",
+        "GitHub Full System Simulation untuk Next build, authenticated Employee Portal browser runtime, exact artifact, dan Stage-20 automated."
+      ],
+      "documentation": [
+        "docs/EMPLOYEE-PORTAL-PRODUCTIZATION.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    },
+    {
+      "key": "ui-p6-server-driven-admin-ui",
+      "priority": 240,
+      "title": "UI-P6 Server-driven Admin UI integration",
+      "type": "feature",
+      "module": "admin-ui",
+      "wave": "W7",
+      "risk": "MEDIUM",
+      "dependencies": [
+        "ui-p5-employee-portal-productization"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "NONE",
+        "accounting": "NONE",
+        "tax": "NONE",
+        "payment": "NONE",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "Module catalog, feature flags, token role/permission, dan admin UiSchema hanya mengatur visibility/presentation canonical workspace dan domain view yang source-nya sudah ada.",
+        "UiSchema tidak boleh membuat route, action, permission, atau business capability baru; backend tetap authorization boundary authoritative.",
+        "Human Stage-20 UAT tetap PENDING sampai human evidence sah dan candidate verifier tidak boleh dipaksa PASS."
+      ],
+      "acceptanceCriteria": [
+        "Nested Admin domain view dapat hide/relabel/reorder dari admin UiSchema dengan fallback canonical yang deterministic.",
+        "Nested view hanya ditampilkan bila module aktif dan role/permission visibility requirement terpenuhi.",
+        "Direct deep-link ke domain view yang tidak visible di runtime kembali ke domain root tanpa mengubah backend authority.",
+        "Admin shell menampilkan runtime module/schema status dan UI-P1/UI-P2 contracts tetap kompatibel."
+      ],
+      "testPlan": [
+        "node --test tests/ui-p6-server-driven-admin-ui.test.mjs",
+        "node --test tests/ui-p1-admin-application-shell.test.mjs tests/ui-p2-admin-domain-workspaces.test.mjs tests/tenant-scope-platform.test.mjs",
+        "GitHub Full System Simulation untuk regression/build/browser/runtime/Stage-20 automated."
+      ],
+      "documentation": [
+        "docs/SERVER-DRIVEN-ADMIN-UI.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    },
+    {
+      "key": "ui-p7-final-interface-hardening",
+      "priority": 250,
+      "title": "UI-P7 Final visual, responsive, accessibility, dan browser cleanup",
+      "type": "feature",
+      "module": "admin-ui",
+      "wave": "W7",
+      "risk": "LOW",
+      "dependencies": [
+        "ui-p6-server-driven-admin-ui"
+      ],
+      "featureFlag": "",
+      "impacts": {
+        "database": "NONE",
+        "inventory": "NONE",
+        "accounting": "NONE",
+        "tax": "NONE",
+        "payment": "NONE",
+        "payroll": "NONE",
+        "sync": "NONE",
+        "security": "LOW",
+        "performance": "LOW"
+      },
+      "businessRules": [
+        "UI-P7 hanya mengubah presentation, responsive behavior, keyboard/touch accessibility, dan semantic navigation; business authority tetap di backend.",
+        "Browser UAT literal contract existing tidak boleh diubah untuk memaksa PASS.",
+        "Human Stage-20 UAT tetap PENDING sampai evidence manual sah."
+      ],
+      "acceptanceCriteria": [
+        "Admin, POS, Storefront, dan Employee Portal memiliki skip-link dan focusable primary workspace.",
+        "Focus-visible, reduced-motion, dan minimum coarse-pointer touch target konsisten lintas app.",
+        "Active navigation dan connection/runtime state memiliki semantic state yang dapat dibaca assistive technology.",
+        "Existing built-browser UAT contracts tetap utuh."
+      ],
+      "testPlan": [
+        "node --test tests/ui-p7-final-interface-hardening.test.mjs tests/ui-final-cleanup.test.mjs",
+        "node --test tests/ui-p1-admin-application-shell.test.mjs tests/ui-p2-admin-domain-workspaces.test.mjs tests/ui-p3-pos-modernization.test.mjs tests/ui-p4-storefront-productization.test.mjs tests/ui-p5-employee-portal-productization.test.mjs tests/ui-p6-server-driven-admin-ui.test.mjs",
+        "GitHub Full System Simulation untuk build/browser/runtime/Stage-20 automated."
+      ],
+      "documentation": [
+        "docs/UI-UX-FINAL-CLEANUP.md",
+        "docs/DEVELOPMENT-KIT.md",
+        "UI-DESIGN-SYSTEM.md",
+        "handoff/CURRENT-WORK.md"
+      ]
+    }
+  ]
+}

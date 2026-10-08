@@ -1,0 +1,70 @@
+{
+  "id": "T360-20260802-145524",
+  "backlogKey": "w0-tenant-branch-isolation",
+  "title": "Menegakkan isolasi company dan branch di seluruh endpoint",
+  "type": "security",
+  "module": "tenant",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "platform.tenantIsolation.enforced",
+  "dependencies": [],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "MEDIUM",
+    "accounting": "MEDIUM",
+    "tax": "MEDIUM",
+    "payment": "MEDIUM",
+    "payroll": "MEDIUM",
+    "sync": "MEDIUM",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Company dan branch selalu berasal dari identitas terverifikasi, bukan parameter bebas pengguna.",
+    "Query lintas tenant ditolak dan dicatat pada audit log.",
+    "Background worker wajib membawa tenant context yang eksplisit.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Seluruh endpoint operasional menerapkan company/branch scope.",
+    "Pengguna cabang A tidak dapat membaca atau mengubah data cabang B.",
+    "Worker dan report job tidak memproses data di luar tenant context."
+  ],
+  "testPlan": [
+    "Integration test akses silang tenant pada produk, stok, jurnal, pajak, payroll, dan pembayaran.",
+    "Security test token tanpa branch assignment.",
+    "Sync retry test memastikan envelope tenant tetap idempotent."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/DEVELOPMENT-WORKFLOW.md",
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260802-145524",
+    "createdFromBacklog": true,
+    "configVersion": "1.0.0"
+  },
+  "createdAt": "2026-08-02T06:55:24.480Z",
+  "updatedAt": "2026-08-23T02:37:40.014Z",
+  "releaseEvidence": [
+    "work-items/generated/T360-20260802-145524/evidence/T360-20260802-145524-stage18-postgres-staging.json",
+    "work-items/generated/T360-20260802-145524/evidence/T360-20260802-145524-stage19-http-db-integration.json",
+    "work-items/generated/T360-20260802-145524/evidence/T360-20260802-145524-stage20-release-readiness.json"
+  ],
+  "releaseReadiness": {
+    "status": "READY_FOR_CHANGE_APPROVAL",
+    "productionTouched": false,
+    "uatApprover": "Rey (IVO)",
+    "rollbackOwner": "Rey (IVO)",
+    "monitoringOwner": "Rey (IVO)",
+    "evidence": "work-items/generated/T360-20260802-145524/evidence/T360-20260802-145524-stage20-release-readiness.json"
+  }
+}

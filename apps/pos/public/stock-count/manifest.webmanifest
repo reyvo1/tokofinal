@@ -1,0 +1,22 @@
+{
+  "name": "TOKO360 Hitung Stok",
+  "short_name": "Hitung Stok",
+  "description": "Hitungan stok opname dari ponsel di gudang, dengan pemindaian barcode.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#0f172a",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

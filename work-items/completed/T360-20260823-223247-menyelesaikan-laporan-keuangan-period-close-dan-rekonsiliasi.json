@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260823-223247",
+  "backlogKey": "w3-financial-reporting-close",
+  "title": "Menyelesaikan laporan keuangan period close dan rekonsiliasi",
+  "type": "feature",
+  "module": "financial-reporting",
+  "wave": "W3",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "finance.reporting.productionReady",
+  "dependencies": [
+    "w3-accounting-tax-end-to-end"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "LOW",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "MEDIUM",
+    "payroll": "MEDIUM",
+    "sync": "LOW",
+    "security": "HIGH",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Laporan bersumber dari posting yang sudah disetujui dan periode fiskal yang jelas.",
+    "Perubahan setelah close memakai adjustment atau reopening terotorisasi."
+  ],
+  "acceptanceCriteria": [
+    "Laba rugi, neraca, arus kas, buku besar, pajak, utang, dan piutang dapat direkonsiliasi.",
+    "Laporan besar berjalan sebagai report job asynchronous."
+  ],
+  "testPlan": [
+    "Journal-to-report reconciliation test.",
+    "Tax period reconciliation test.",
+    "Security test akses laporan lintas branch.",
+    "Performance test jutaan journal line melalui summary/report job.",
+    "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+    "Sync idempotency, retry, offline, dan conflict test sesuai scope pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+    "docs/LARGE-SCALE-DATA.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-223247",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T14:32:47.512Z",
+  "updatedAt": "2026-08-23T14:40:11.036Z",
+  "releaseEvidence": [
+    "Posting guard periode fiskal CLOSED aktif di accounting core.",
+    "Rekonsiliasi bank & fiscal period close endpoint sudah ada sebelumnya.",
+    "Build & TSC lulus."
+  ]
+}

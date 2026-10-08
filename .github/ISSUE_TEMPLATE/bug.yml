@@ -1,0 +1,47 @@
+name: Bug / Regression
+about: Kesalahan fungsi atau data pada Toko360
+labels: ["type:bug", "status:intake"]
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Lingkungan dan versi
+      placeholder: local/staging/production, v0.x.x, commit SHA
+    validations:
+      required: true
+  - type: input
+    id: module
+    attributes:
+      label: Modul/cabang/gudang terdampak
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Hasil aktual
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Hasil yang benar
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Langkah reproduksi dan referensi transaksi
+      description: Sensor data pelanggan, credential, nomor rekening, dan informasi sensitif.
+    validations:
+      required: true
+  - type: dropdown
+    id: dataImpact
+    attributes:
+      label: Apakah berpotensi merusak data?
+      options: ["Tidak", "Belum diketahui", "Ya—stok", "Ya—keuangan/pajak", "Ya—payroll", "Ya—sinkronisasi", "Ya—data sensitif"]
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Log/bukti yang sudah disensor

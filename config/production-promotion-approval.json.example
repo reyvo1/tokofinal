@@ -1,0 +1,37 @@
+{
+  "environment": "STAGING",
+  "decision": "GO_FOR_PRODUCTION_PROMOTION",
+  "approvedBy": "REPLACE_WITH_APPROVER",
+  "approvedAt": "2026-09-12T00:00:00.000Z",
+  "sourceFingerprint": "REPLACE_WITH_CURRENT_64_HEX_SOURCE_FINGERPRINT",
+  "buildArtifactId": "REPLACE_WITH_TESTED_64_HEX_BUILD_ARTIFACT_ID",
+  "stagingTarget": {
+    "hostHash": "REPLACE_WITH_STAGE20_HOST_HASH",
+    "databaseHash": "REPLACE_WITH_STAGE20_DATABASE_HASH"
+  },
+  "providers": {
+    "enabled": false,
+    "notes": "Set enabled=true only when external payment/shipping/notification providers are actually enabled for production."
+  },
+  "checks": {
+    "securitySecrets": "PASS",
+    "securityTesting": "PASS",
+    "authControls": "PASS",
+    "backupRetention": "PASS",
+    "backupEncryption": "PASS",
+    "queueCapacity": "PASS",
+    "monitoringAlerts": "PASS",
+    "cutoverPlan": "PASS",
+    "rollbackPlan": "PASS",
+    "financialOpeningBalances": "PASS",
+    "inventoryOpeningBalances": "PASS",
+    "privacyRetention": "PASS",
+    "indexReview": "PASS",
+    "providerCertification": "NOT_APPLICABLE",
+    "apiKeyLifecycle": "NOT_APPLICABLE"
+  },
+  "externalApiAccess": {
+    "enabled": false,
+    "notes": "Set true only when scoped external API-key access will be exposed in production."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "id": "T360-20260823-184817",
+  "backlogKey": "w1-inbound-inspection-complete",
+  "title": "Menyelesaikan inspeksi barang masuk supplier sampai posting",
+  "type": "feature",
+  "module": "inbound-inspection",
+  "wave": "W5",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "operations.inboundInspection.enabled",
+  "dependencies": [
+    "w1-atomic-stock-mutation",
+    "w0-permission-guard-coverage"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "HIGH",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "LOW",
+    "payroll": "NONE",
+    "sync": "MEDIUM",
+    "security": "MEDIUM",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Goods receipt belum menambah stok sebelum inspeksi dan konfirmasi selesai.",
+    "Barang rusak atau ditolak tidak masuk stok tersedia.",
+    "Pajak masukan memakai tax rule version yang berlaku pada dokumen supplier."
+  ],
+  "acceptanceCriteria": [
+    "PO, scan, kondisi, batch, bukti, approval, stok, utang, pajak, dan jurnal terhubung.",
+    "Selisih blocking menahan posting sampai disetujui."
+  ],
+  "testPlan": [
+    "Integration test PO-inspection-stock movement-payable-journal-tax.",
+    "Inventory test barang rusak tidak menambah available stock.",
+    "Journal debit-credit dan tax period test.",
+    "Idempotency retry test konfirmasi penerimaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/INBOUND-OUTBOUND-CONTROL.md",
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-184817",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T10:48:17.912Z",
+  "updatedAt": "2026-08-23T10:58:52.594Z",
+  "releaseEvidence": [
+    "UAT HTTP: PO -> goods receipt -> inspection complete + approve -> confirm, seluruh alur PASS.",
+    "Confirm memakai serializableTx (retry konflik).",
+    "quality gate & build lulus.",
+    "Rollback: git restore commit."
+  ]
+}

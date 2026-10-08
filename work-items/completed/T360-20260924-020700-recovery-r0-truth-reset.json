@@ -1,0 +1,66 @@
+{
+  "id": "T360-20260924-020700",
+  "title": "R0 recovery truth reset and 48/48 audit closure governance",
+  "type": "documentation",
+  "module": "platform",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Current repo HEAD plus working tree is the only implementation baseline; older completion claims are historical evidence only.",
+    "All 48 deep-audit findings must remain explicitly mapped to R0-R8 with zero unmapped findings.",
+    "CRITICAL/HIGH findings cannot close from source/regex evidence alone and require runtime evidence in the relevant wave.",
+    "F12R4 final UI verification is blocked until R1-R6 functional prerequisites stabilize; its current source changes are preserved, not discarded.",
+    "Human Stage-20 remains separate and fail-closed."
+  ],
+  "acceptanceCriteria": [
+    "config/recovery-finding-matrix.json contains exactly F01-F48 with primary recovery waves and closure requirements.",
+    "docs/TOKO360-MASTER-RECOVERY-WORKFLOW.md defines R0-R8 dependencies and closure invariants.",
+    "npm run audit:recovery fails if finding coverage becomes incomplete or source model/API/UI-control counts drift without R0 regeneration.",
+    "PROJECT-STATE and CURRENT-WORK identify recovery R0 as the authoritative active program and F12R4 as blocked dependent work.",
+    "Workflow/repository/recovery audit and dependency-free regression pass."
+  ],
+  "testPlan": [
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:full:repo",
+    "npm run ci:ui:audit",
+    "npm run audit:recovery",
+    "node --test tests/recovery-r0-48-finding-coverage.test.mjs",
+    "npm run test:dependency-free"
+  ],
+  "migrationPlan": "No database/schema migration. R0 changes only recovery governance, generated audit baseline, documentation, validation scripts, and work-item state.",
+  "rollbackPlan": "Revert the R0 governance files only. Do not revert existing F12R4 working-tree presentation changes or database/application source from prior work.",
+  "monitoringPlan": "Run audit:recovery on every recovery-wave change; any Prisma/API/UI-control count drift requires matrix regeneration before the work item can advance.",
+  "securityNotes": "R0 stores no credentials or production data. Snapshot metadata remains redacted; tenant/security findings are tracked but not modified in this governance-only work item.",
+  "documentation": [
+    "docs/TOKO360-MASTER-RECOVERY-WORKFLOW.md",
+    "config/recovery-finding-matrix.json",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-24T02:07:00+08:00",
+  "updatedAt": "2026-09-24T02:24:00+08:00",
+  "closureEvidence": {
+    "localApply": "PASS",
+    "workflowValidation": "PASS",
+    "repositoryValidation": "PASS",
+    "recoveryFindingCoverage": "48/48",
+    "dependencyFreeRegression": "854/854 PASS",
+    "humanStage20": "PENDING/BLOCKED"
+  }
+}

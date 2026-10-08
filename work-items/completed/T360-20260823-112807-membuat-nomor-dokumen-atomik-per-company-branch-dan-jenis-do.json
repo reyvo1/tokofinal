@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260823-112807",
+  "backlogKey": "w0-atomic-number-sequence",
+  "title": "Membuat nomor dokumen atomik per company branch dan jenis dokumen",
+  "type": "feature",
+  "module": "database",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "platform.atomicNumberSequence.enabled",
+  "dependencies": [
+    "w0-tenant-branch-isolation"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "LOW",
+    "accounting": "LOW",
+    "tax": "LOW",
+    "payment": "LOW",
+    "payroll": "LOW",
+    "sync": "MEDIUM",
+    "security": "LOW",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Nomor dokumen unik per company, branch, jenis dokumen, dan periode.",
+    "Retry atau sync ulang tidak boleh mengonsumsi nomor baru untuk operation yang sama."
+  ],
+  "acceptanceCriteria": [
+    "Tidak terjadi nomor duplikat pada transaksi paralel.",
+    "Format nomor dapat dikonfigurasi tanpa mengubah ID UUID."
+  ],
+  "testPlan": [
+    "Concurrency test 100 generator nomor pada branch yang sama.",
+    "Idempotency retry test untuk operation yang sama.",
+    "Migration test expand-only pada SQLite dan PostgreSQL.",
+    "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan.",
+    "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/LARGE-SCALE-DATA.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-112807",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T03:28:07.801Z",
+  "updatedAt": "2026-08-23T09:52:04.555Z",
+  "releaseEvidence": [
+    "UAT HTTP nyata pada API lokal: skenario utama PASS (permission 403/201, numbering sequential unique, idempotency replay sama & altered ditolak).",
+    "quality:fast 197/197 pass; quality:full LULUS via scripts/quality-full-safe.sh (generate+push+seed+smoke+build).",
+    "Staging lokal PostgreSQL toko360_staging melalui gate Tahap 18-20 sebelumnya; production tidak disentuh.",
+    "Rollback: git restore per commit + feature flag platform.permissions.enforced / sequence fallback."
+  ]
+}

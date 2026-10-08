@@ -1,0 +1,57 @@
+{
+  "candidates": [
+    {
+      "id": "runtime-framework-patched-prisma-current",
+      "description": "Patch production Next/Nest runtime packages and Nest testing peer compatibility while deliberately keeping Nest CLI/schematics on v11 so TypeScript 6 is not introduced merely to create an audit proposal. Prisma remains committed 6.19.3.",
+      "direct": {
+        "next": "16.3.8",
+        "@nestjs/common": "12.0.4",
+        "@nestjs/config": "12.0.0",
+        "@nestjs/core": "12.0.4",
+        "@nestjs/jwt": "12.0.2",
+        "@nestjs/platform-express": "12.0.4",
+        "@nestjs/swagger": "12.0.1",
+        "@nestjs/testing": "12.0.3"
+      },
+      "overrides": {
+        "deepmerge-ts": "8.0.1",
+        "js-yaml": "5.2.2",
+        "multer": "2.4.0",
+        "nanoid": "3.3.19",
+        "postcss": "8.5.28",
+        "sharp": "0.35.4"
+      }
+    },
+    {
+      "id": "runtime-framework-patched-prisma-audit-compat",
+      "description": "Exploratory audit-only candidate: patched Next/Nest runtime packages plus npm-audit suggested Prisma 6.12.0 pair. Never auto-adopt; must pass deterministic install, schema generation, regression, six-app build, PostgreSQL integration and browser UAT before commit.",
+      "direct": {
+        "next": "16.3.8",
+        "@nestjs/common": "12.0.4",
+        "@nestjs/config": "12.0.0",
+        "@nestjs/core": "12.0.4",
+        "@nestjs/jwt": "12.0.2",
+        "@nestjs/platform-express": "12.0.4",
+        "@nestjs/swagger": "12.0.1",
+        "@nestjs/testing": "12.0.3",
+        "prisma": "6.12.0",
+        "@prisma/client": "6.12.0"
+      },
+      "overrides": {
+        "deepmerge-ts": "8.0.1",
+        "js-yaml": "5.2.2",
+        "multer": "2.4.0",
+        "nanoid": "3.3.19",
+        "postcss": "8.5.28",
+        "sharp": "0.35.4"
+      }
+    }
+  ],
+  "notes": [
+    "Proposal generation is isolated from the checked-out source tree.",
+    "The committed npm audit gate remains authoritative and is never bypassed.",
+    "Nest CLI/schematics stay on the committed v11 toolchain in these candidates because Nest 12 schematics requires TypeScript >=6.0; tooling migration must be evaluated separately from production vulnerability remediation.",
+    "Candidates are diagnostics only. A PASS candidate must still be manually adopted into source and pass deterministic npm ci, Prisma validation/generation, all regression, six-app build, PostgreSQL integration and browser UAT.",
+    "Prisma 6.12.0 appears only in the second exploratory candidate because npm audit currently recommends that downgrade for the @prisma/config/deepmerge-ts advisory; it must not be committed without compatibility proof."
+  ]
+}

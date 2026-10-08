@@ -1,0 +1,47 @@
+{
+  "id": "T360-20260729-215201",
+  "title": "Menerapkan workflow governance berbasis Development Kit",
+  "type": "documentation",
+  "module": "platform",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "repository-maintainer",
+  "featureFlag": "",
+  "dependencies": ["development-kit", "github-actions"],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "NONE"
+  },
+  "businessRules": [
+    "Setiap perubahan non-trivial wajib memiliki work item dan evidence sebelum rilis."
+  ],
+  "acceptanceCriteria": [
+    "Workflow CLI memvalidasi manifest dan GitHub memvalidasi kebijakan PR.",
+    "Development Kit menjelaskan fase, quality gate, release, dan hotfix."
+  ],
+  "testPlan": [
+    "Jalankan workflow manifest validation.",
+    "Jalankan repository governance tests.",
+    "Periksa policy PR melalui GitHub Actions."
+  ],
+  "migrationPlan": "Tidak ada perubahan database pada work item governance ini.",
+  "rollbackPlan": "Kembalikan commit workflow governance tanpa mengubah data operasional atau schema database.",
+  "monitoringPlan": "Pantau kegagalan workflow governance pada pull request dan sesuaikan aturan bila menghasilkan false positive.",
+  "securityNotes": "Template melarang credential dan data sensitif; PR policy memastikan analisis security dan tenant scope dicatat.",
+  "documentation": [
+    "docs/DEVELOPMENT-WORKFLOW.md",
+    "docs/IMPLEMENTATION-ROADMAP.md",
+    "docs/QUALITY-GATES.md",
+    "CONTRIBUTING.md"
+  ],
+  "createdAt": "2026-07-29T13:52:01.000Z",
+  "updatedAt": "2026-07-29T13:52:01.000Z"
+}

@@ -1,0 +1,76 @@
+{
+  "id": "T360-20260925-003000",
+  "title": "R6 scale summaries retention archive and capability truth closure",
+  "type": "feature",
+  "module": "platform-scale",
+  "wave": "W6",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-020700"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "MEDIUM",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "R6 is limited to F26 capability truth, F27 daily summary materialization, F28 retention/archive runtime, F29 ExternalMapping secondary closure, and F30 AccountingCloseControl canonical truth from the master recovery workflow.",
+    "Operator assistant remains deterministic, source-linked, permission scoped, read-only, and must not claim external AI/LLM provider capability.",
+    "Daily summaries are rebuilt idempotently per authenticated branch and UTC business date from completed Sale and canonical journal lines.",
+    "Retention/archive policy is tenant-scoped; archive execution is fail-closed unless an explicit storage provider is configured. This wave supports local durable-volume archives for CI/self-hosted use and records SHA-256 checksum.",
+    "Archive execution does not delete source rows. Destructive purge remains separate and must never occur before successful archive evidence and an explicit policy.",
+    "ExternalMapping is tenant-authorized through IntegrationConnection and marketplace import materializes the mapping contract automatically.",
+    "AccountingCloseControl remains the canonical posting lock already proven by R4 exact-runtime evidence.",
+    "F26-F29 are HIGH/runtime-evidence findings and remain VERIFICATION until exact-source PostgreSQL R6 probe passes. Human Stage-20 remains separate."
+  ],
+  "acceptanceCriteria": [
+    "F26 Admin labels and API response state deterministic rule-based capability with aiProvider=null and no LLM claim.",
+    "F27 API materializes and reads DailySalesSummary and DailyFinanceSummary for authenticated branch with audit evidence.",
+    "F28 operator/API can manage retention policy and execute checksum-bound archive artifact lifecycle with fail-closed provider configuration.",
+    "F29 ExternalMapping list/upsert/delete lifecycle exists and marketplace import automatically creates/updates a mapping.",
+    "F30 documentation/matrix reflects AccountingCloseControl canonical runtime use already proven by R4 close/reopen/posting probe.",
+    "Both GitHub PostgreSQL workflows run ci:r6:probe and aggregate evidence requires R6 PASS.",
+    "Focused R6 test, workflow validation, repo validation, recovery audit, API lint/Prisma generate, and dependency-free regression pass before push."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r6-scale-ai.test.mjs",
+    "npm run prisma:generate:postgres -w @toko360/api",
+    "npm run lint -w @toko360/api",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run ci:ui:audit",
+    "npm run test:dependency-free",
+    "GitHub ci:r6:probe on exact PostgreSQL runtime"
+  ],
+  "migrationPlan": "No schema migration. Existing Daily*Summary, DataRetentionPolicy, DataArchiveRun, ExternalMapping, and AccountingCloseControl models are reused.",
+  "rollbackPlan": "Revert R6 API/UI/probe wave atomically. Archive files are additive evidence and source rows are never deleted by this wave.",
+  "monitoringPlan": "R6 GitHub evidence records exact source fingerprint plus summary, archive, mapping, capability-truth, and AccountingCloseControl checks.",
+  "securityNotes": "Tenant scope derives from JWT context; archive allowlist is restricted to tenant-owned entities and local archive provider is explicit/fail-closed.",
+  "documentation": [
+    "docs/R6-SCALE-SUMMARY-RETENTION-AI-TRUTH.md",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md",
+    "config/recovery-finding-matrix.json"
+  ],
+  "createdAt": "2026-09-25T00:30:00+08:00",
+  "updatedAt": "2026-09-25T01:30:00+08:00",
+  "releaseEvidence": [
+    "Commit bd4abf386c56bce283f10c08ff988ea109909b54 on origin/main",
+    "GitHub Full System Simulation PASS",
+    "GitHub Full Automated UAT PASS",
+    "ci:r6:probe PASS on exact PostgreSQL runtime",
+    "R6 source fingerprint 1d07234c2f58891d1cf95309c65d4465d8c1bb4cb67b77bc4e9e233ae2c274c6 (631 files)",
+    "Stage-20 automated PASS after diagnostic correction",
+    "Human Stage-20 remains PENDING 12/12 and separate"
+  ]
+}

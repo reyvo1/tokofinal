@@ -1,0 +1,1415 @@
+{
+  "info": {
+    "name": "Toko360 Enterprise Workflow v0.5.3",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Koleksi pengujian API dasar Toko360. Jalankan login dahulu; token disimpan otomatis."
+  },
+  "variable": [
+    {
+      "key": "apiUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "supplierId",
+      "value": ""
+    },
+    {
+      "key": "warehouseId",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "purchaseOrderId",
+      "value": ""
+    },
+    {
+      "key": "purchaseOrderItemId",
+      "value": ""
+    },
+    {
+      "key": "orderNumber",
+      "value": ""
+    },
+    {
+      "key": "companyId",
+      "value": ""
+    },
+    {
+      "key": "branchId",
+      "value": ""
+    },
+    {
+      "key": "payrollPeriodId",
+      "value": ""
+    },
+    {
+      "key": "payrollRunId",
+      "value": ""
+    },
+    {
+      "key": "payrollPaymentId",
+      "value": ""
+    },
+    {
+      "key": "assetId",
+      "value": ""
+    },
+    {
+      "key": "maintenanceWorkOrderId",
+      "value": ""
+    },
+    {
+      "key": "vehicleId",
+      "value": ""
+    },
+    {
+      "key": "tripId",
+      "value": ""
+    },
+    {
+      "key": "inspectionId",
+      "value": ""
+    },
+    {
+      "key": "orderOperationKey",
+      "value": "postman-order-001"
+    },
+    {
+      "key": "financeOperationKey",
+      "value": "postman-finance-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@toko360.local\",\n  \"password\": \"Admin123!\"\n}"
+        },
+        "url": "{{apiUrl}}/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('token', data.accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Daftar Produk",
+      "request": {
+        "method": "GET",
+        "url": "{{apiUrl}}/products"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data[0]) pm.collectionVariables.set('productId', data[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Daftar Gudang",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{apiUrl}}/inventory/warehouses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data[0]) pm.collectionVariables.set('warehouseId', data[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Daftar Supplier",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{apiUrl}}/suppliers"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data[0]) pm.collectionVariables.set('supplierId', data[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Buat Purchase Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"supplierId\": \"{{supplierId}}\",\n  \"warehouseId\": \"{{warehouseId}}\",\n  \"items\": [{\n    \"productId\": \"{{productId}}\",\n    \"orderedQty\": 10,\n    \"unitCost\": 35000\n  }]\n}"
+        },
+        "url": "{{apiUrl}}/purchase-orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('purchaseOrderId', data.id);",
+              "if (data.items[0]) pm.collectionVariables.set('purchaseOrderItemId', data.items[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Terima Barang Supplier",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"purchaseOrderId\": \"{{purchaseOrderId}}\",\n  \"supplierInvoice\": \"INV-DEMO-001\",\n  \"deliveryNote\": \"SJ-DEMO-001\",\n  \"items\": [{\n    \"purchaseOrderItemId\": \"{{purchaseOrderItemId}}\",\n    \"quantityReceived\": 10,\n    \"quantityDamaged\": 1\n  }]\n}"
+        },
+        "url": "{{apiUrl}}/goods-receipts"
+      }
+    },
+    {
+      "name": "07 Penjualan POS",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"warehouseId\": \"{{warehouseId}}\",\n  \"paymentMethod\": \"CASH\",\n  \"items\": [{ \"productId\": \"{{productId}}\", \"quantity\": 1 }]\n}"
+        },
+        "url": "{{apiUrl}}/sales"
+      }
+    },
+    {
+      "name": "08 Pesanan Website",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{orderOperationKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerName\": \"Pelanggan Demo\",\n  \"customerEmail\": \"pelanggan@example.com\",\n  \"address\": \"Alamat pelanggan\",\n  \"items\": [{ \"productId\": \"{{productId}}\", \"quantity\": 1 }]\n}"
+        },
+        "url": "{{apiUrl}}/orders"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('orderNumber', data.number);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Pilih Metode Pembayaran Pesanan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"paymentMethod\": \"MOCK_QRIS\" }"
+        },
+        "url": "{{apiUrl}}/orders/{{orderNumber}}/payment-selection"
+      }
+    },
+    {
+      "name": "10 Enterprise Accounting & Tax",
+      "item": [
+        {
+          "name": "Daftar tax code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/accounting-core/tax-codes?companyId={{companyId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "accounting-core",
+                "tax-codes?companyId={{companyId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar accounting event",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/accounting-core/events?companyId={{companyId}}&limit=50",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "accounting-core",
+                "events?companyId={{companyId}}&limit=50"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat biaya operasional",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{financeOperationKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/finance-operations",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "finance-operations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyId\": \"{{companyId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"type\": \"OPERATING_EXPENSE\",\n  \"description\": \"Biaya operasional\",\n  \"amount\": 100000,\n  \"debitAccountCode\": \"6101\",\n  \"creditAccountCode\": \"1101\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Daftar utang supplier ter-rekonsiliasi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/finance-operations/supplier-payables",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "finance-operations",
+                "supplier-payables"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Assets & Fleet",
+      "item": [
+        {
+          "name": "Daftar aset",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/assets?companyId={{companyId}}&branchId={{branchId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets?companyId={{companyId}}&branchId={{branchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ringkasan aset",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/assets/summary",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar maintenance aset",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/assets/maintenances?companyId={{companyId}}&branchId={{branchId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "maintenances?companyId={{companyId}}&branchId={{branchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat work order maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"maintenanceType\": \"PERIODIC_SERVICE\",\n  \"priority\": \"NORMAL\",\n  \"scheduledAt\": \"2026-09-11T09:00:00+08:00\",\n  \"estimatedCost\": 250000,\n  \"supplierId\": \"{{supplierId}}\",\n  \"notes\": \"Service berkala\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/assets/maintenance",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "maintenance"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Selesaikan maintenance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actualCost\": 250000,\n  \"odometer\": 12500,\n  \"inspectionId\": \"{{inspectionId}}\",\n  \"paymentMode\": \"CREDIT\",\n  \"completedAt\": \"2026-09-11T12:00:00+08:00\",\n  \"parts\": [],\n  \"notes\": \"Selesai dan diverifikasi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/assets/maintenance/{{maintenanceWorkOrderId}}/complete",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "maintenance",
+                "{{maintenanceWorkOrderId}}",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transfer aset intra-branch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetWarehouseId\": \"{{warehouseId}}\",\n  \"inspectionId\": \"{{inspectionId}}\",\n  \"transferredAt\": \"2026-09-11T13:00:00+08:00\",\n  \"notes\": \"Transfer custody/lokasi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/assets/{{assetId}}/transfer",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}",
+                "transfer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Disposal aset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"DISPOSAL\",\n  \"proceeds\": 0,\n  \"settlementMode\": \"CASH\",\n  \"inspectionId\": \"{{inspectionId}}\",\n  \"disposedAt\": \"2026-09-11T14:00:00+08:00\",\n  \"reason\": \"Aset tidak ekonomis diperbaiki\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/assets/{{assetId}}/dispose",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}",
+                "dispose"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar kendaraan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/fleet/vehicles?companyId={{companyId}}&branchId={{branchId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "fleet",
+                "vehicles?companyId={{companyId}}&branchId={{branchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ringkasan fleet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/fleet/summary",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "fleet",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar trip",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/fleet/trips?companyId={{companyId}}&branchId={{branchId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "fleet",
+                "trips?companyId={{companyId}}&branchId={{branchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar transaksi BBM",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/fleet/fuel?companyId={{companyId}}&branchId={{branchId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "fleet",
+                "fuel?companyId={{companyId}}&branchId={{branchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Catat BBM kredit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"tripId\": \"{{tripId}}\",\n  \"liters\": 20,\n  \"unitPrice\": 13000,\n  \"transactionDate\": \"2026-09-11T10:00:00+08:00\",\n  \"odometer\": 12600,\n  \"supplierId\": \"{{supplierId}}\",\n  \"vendorName\": \"SPBU / Supplier\",\n  \"receiptNumber\": \"FUEL-EXAMPLE-001\",\n  \"paymentMode\": \"CREDIT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/fleet/fuel",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "fleet",
+                "fuel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Inspection & Returns",
+      "item": [
+        {
+          "name": "Daftar operation policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/operations-control/policies?companyId={{companyId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "operations-control",
+                "policies?companyId={{companyId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar retur penjualan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/returns/sales",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "returns",
+                "sales"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar retur pembelian",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/returns/purchases",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "returns",
+                "purchases"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 HR & Payroll Integrity",
+      "item": [
+        {
+          "name": "Daftar periode payroll",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/periods",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "periods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar tax rule set",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/tax-rule-sets",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "tax-rule-sets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar social-security rule set",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/social-security-rule-sets",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "social-security-rule-sets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat periode payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"PAY-2026-09\",\n  \"year\": 2026,\n  \"month\": 9,\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-09-30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/periods",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "periods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kunci absensi periode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/periods/{{payrollPeriodId}}/lock-attendance",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "periods",
+                "{{payrollPeriodId}}",
+                "lock-attendance"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat payroll run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payrollPeriodId\": \"{{payrollPeriodId}}\",\n  \"taxRuleSetId\": \"REPLACE_APPROVED_TAX_RULE_ID\",\n  \"socialSecurityRuleSetId\": \"REPLACE_APPROVED_SOCIAL_RULE_ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat adjustment payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Koreksi payroll setelah posting\",\n  \"postingDate\": \"2026-09-12\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/adjustments",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "adjustments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Batalkan payroll sebelum posting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Batalkan sebelum posting untuk perbaikan input\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/cancel",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Hitung payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/calculate",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "calculate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/approve",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Posting payroll accounting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/post-accounting",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "post-accounting"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar payment payroll run",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/payments",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Settlement pembayaran gaji",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"settlementAccountCode\": \"1102\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"externalReference\": \"REPLACE_REAL_BANK_REFERENCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/payments/{{payrollPaymentId}}/settle",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "payments",
+                "{{payrollPaymentId}}",
+                "settle"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daftar kewajiban payroll",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/payroll/liabilities",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "liabilities"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buat draft settlement PPh payroll",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PAYROLL_LIABILITY_PAYMENT\",\n  \"description\": \"Pelunasan PPh payroll\",\n  \"amount\": 100000,\n  \"debitAccountCode\": \"2103\",\n  \"creditAccountCode\": \"1102\",\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"referenceType\": \"PayrollRun\",\n  \"referenceId\": \"{{payrollRunId}}\",\n  \"idempotencyKey\": \"payroll-liability:{{payrollRunId}}:2103\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/finance-operations",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "finance-operations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Terbitkan payslip setelah gaji PAID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{apiUrl}}/payroll/runs/{{payrollRunId}}/publish-payslips",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "runs",
+                "{{payrollRunId}}",
+                "publish-payslips"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 Runtime Session Certification",
+      "item": [
+        {
+          "name": "List Auth Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{apiUrl}}/auth/sessions"
+          }
+        },
+        {
+          "name": "Ops Health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{apiUrl}}/platform/ops-health"
+          }
+        },
+        {
+          "name": "Financial Integrity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{apiUrl}}/reports/financial-integrity"
+          }
+        },
+        {
+          "name": "Logout Current Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{apiUrl}}/auth/logout"
+          }
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{apiUrl}}/auth/logout-all"
+          }
+        }
+      ]
+    }
+  ]
+}

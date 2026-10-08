@@ -1,0 +1,39 @@
+-- W6 edge/cloud sync expand migration.
+ALTER TYPE "OfflineSyncStatus" ADD VALUE IF NOT EXISTS 'DEAD_LETTER';
+ALTER TABLE "OfflineTransaction" ADD COLUMN IF NOT EXISTS "attempts" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "OfflineTransaction" ADD COLUMN IF NOT EXISTS "nextRetryAt" TIMESTAMP(3);
+ALTER TABLE "OfflineTransaction" ADD COLUMN IF NOT EXISTS "deadLetteredAt" TIMESTAMP(3);
+
+CREATE TABLE IF NOT EXISTS "DeviceCredential" (
+  "id" TEXT PRIMARY KEY,
+  "deviceId" TEXT NOT NULL,
+  "keyId" TEXT NOT NULL,
+  "secretHash" TEXT NOT NULL,
+  "publicKey" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+  "expiresAt" TIMESTAMP(3),
+  "revokedAt" TIMESTAMP(3),
+  "createdById" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "DeviceCredential_deviceId_keyId_key" ON "DeviceCredential"("deviceId", "keyId");
+CREATE INDEX IF NOT EXISTS "DeviceCredential_deviceId_status_createdAt_idx" ON "DeviceCredential"("deviceId", "status", "createdAt");
+
+CREATE TABLE IF NOT EXISTS "SyncReceipt" (
+  "id" TEXT PRIMARY KEY,
+  "deviceId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "branchId" TEXT NOT NULL,
+  "since" TIMESTAMP(3) NOT NULL,
+  "checkpoint" TIMESTAMP(3) NOT NULL,
+  "nextCursor" TEXT,
+  "eventCount" INTEGER NOT NULL DEFAULT 0,
+  "eventIds" JSONB NOT NULL,
+  "requestHash" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'ISSUED',
+  "acknowledgedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "SyncReceipt_deviceId_requestHash_key" ON "SyncReceipt"("deviceId", "requestHash");
+CREATE INDEX IF NOT EXISTS "SyncReceipt_deviceId_status_createdAt_idx" ON "SyncReceipt"("deviceId", "status", "createdAt");
+CREATE INDEX IF NOT EXISTS "SyncReceipt_companyId_branchId_createdAt_idx" ON "SyncReceipt"("companyId", "branchId", "createdAt");

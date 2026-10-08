@@ -1,0 +1,15 @@
+ALTER TABLE "User" ADD COLUMN "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "User" ADD COLUMN "twoFactorSecretEncrypted" TEXT;
+ALTER TABLE "User" ADD COLUMN "twoFactorPendingSecretEncrypted" TEXT;
+ALTER TABLE "User" ADD COLUMN "twoFactorRecoveryCodes" TEXT;
+CREATE TABLE "PasswordResetToken" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "tokenHash" TEXT NOT NULL,
+  "expiresAt" DATETIME NOT NULL,
+  "usedAt" DATETIME,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
+CREATE INDEX "PasswordResetToken_userId_expiresAt_idx" ON "PasswordResetToken"("userId", "expiresAt");

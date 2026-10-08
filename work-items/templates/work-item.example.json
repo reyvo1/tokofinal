@@ -1,0 +1,45 @@
+{
+  "id": "T360-20260729-215200",
+  "title": "Contoh implementasi pemeriksaan outbound",
+  "type": "feature",
+  "module": "outbound-inspection",
+  "wave": "W5",
+  "phase": "ANALYSIS",
+  "risk": "HIGH",
+  "owner": "unassigned",
+  "featureFlag": "operations.outboundInspection.enabled",
+  "dependencies": ["inventory", "delivery-trip", "gate-pass"],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "HIGH",
+    "accounting": "LOW",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "MEDIUM",
+    "security": "MEDIUM",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Barang tidak dapat keluar sebelum jumlah hasil scan sama dengan manifest.",
+    "Selisih membutuhkan approval sesuai OperationPolicy cabang."
+  ],
+  "acceptanceCriteria": [
+    "Scan item tercatat append-only.",
+    "Gate pass diblokir ketika pemeriksaan gagal.",
+    "Retry request tidak membuat scan atau posting ganda."
+  ],
+  "testPlan": [
+    "Unit test aturan blocking.",
+    "Integration test scan-manifest-gate pass.",
+    "Tenant dan branch isolation test.",
+    "Concurrency test dua petugas memindai item yang sama."
+  ],
+  "migrationPlan": "Tambahkan migration expand-only bila schema berubah; jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag, hentikan consumer event baru, dan jalankan compensating operation bila sudah diposting.",
+  "monitoringPlan": "Pantau inspection_failed_total, gate_pass_blocked_total, dan queue age.",
+  "securityNotes": "Bukti foto privat; URL bertanda tangan; role warehouse.inspection.confirm diperlukan.",
+  "documentation": ["docs/INBOUND-OUTBOUND-CONTROL.md", "docs/API.md"],
+  "createdAt": "2026-07-29T21:52:00+08:00",
+  "updatedAt": "2026-07-29T21:52:00+08:00"
+}

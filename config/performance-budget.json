@@ -1,0 +1,38 @@
+{
+  "pagination": {
+    "defaultLimit": 50,
+    "maxPublicLimit": 100,
+    "maxTrustedWorkerLimit": 500
+  },
+  "latencyP95Ms": {
+    "barcodeLookup": 100,
+    "posTransactionLocal": 500,
+    "productList": 300,
+    "transactionList": 500,
+    "summaryDashboard": 1000,
+    "interactiveReport31Days": 3000,
+    "attendanceCheckInLocal": 500,
+    "attendanceHistory31Days": 500,
+    "employeePayslipList": 500,
+    "payrollRunCreate": 1000
+  },
+  "database": {
+    "slowQueryThresholdMs": 500,
+    "statementTimeoutMs": 15000,
+    "reportStatementTimeoutMs": 60000
+  },
+  "retentionDays": {
+    "completedOutbox": 30,
+    "successfulWebhookDelivery": 30,
+    "technicalNotificationLog": 90,
+    "attendancePhotoDefault": 180,
+    "successfulPayslipDeliveryLog": 365,
+    "rawAttendanceDevicePayload": 90
+  },
+  "batching": {
+    "payrollEmployeesPerJob": 250,
+    "payslipGenerationPerJob": 250,
+    "notificationDeliveriesPerWorkerTick": 25,
+    "attendanceRecalculationPerJob": 500
+  }
+}

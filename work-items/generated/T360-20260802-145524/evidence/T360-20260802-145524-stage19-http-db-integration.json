@@ -1,0 +1,88 @@
+{
+  "workItem": "T360-20260802-145524",
+  "stage": 19,
+  "generatedAt": "2026-09-22T15:46:02.752Z",
+  "sourceIdentity": {
+    "algorithm": "sha256",
+    "value": "00621ae6604475a218fce9ece0965f32f15f98c4c818d7d41d6c63c744ecf7d4",
+    "fileCount": 518
+  },
+  "buildArtifactId": "e9f182b4227cacf97dbd9752412df2f942f87de5f28bd9a6fb01e15291c6c6c2",
+  "targetMode": "STAGING",
+  "target": {
+    "hostHash": "49960de5880e8c68",
+    "databaseHash": "d52c6f099d1f3613"
+  },
+  "fixtureRunId": "s19-1790091956412-baa416",
+  "apiPort": 41919,
+  "tests": [
+    {
+      "name": "health endpoint aktif pada API staging terisolasi dan exact artifact terverifikasi",
+      "status": "PASSED",
+      "durationMs": 3
+    },
+    {
+      "name": "produk tenant A tidak membaca produk tenant B",
+      "status": "PASSED",
+      "durationMs": 119
+    },
+    {
+      "name": "stok dan warehouse tenant A tidak membaca tenant B",
+      "status": "PASSED",
+      "durationMs": 46
+    },
+    {
+      "name": "jurnal/accounting event dibatasi company dan branch token",
+      "status": "PASSED",
+      "durationMs": 77
+    },
+    {
+      "name": "tax code dibatasi company token",
+      "status": "PASSED",
+      "durationMs": 78
+    },
+    {
+      "name": "payroll run dibatasi company dan branch token",
+      "status": "PASSED",
+      "durationMs": 77
+    },
+    {
+      "name": "finance/payment operations dibatasi tenant token",
+      "status": "PASSED",
+      "durationMs": 249
+    },
+    {
+      "name": "user list tidak membocorkan user branch lain",
+      "status": "PASSED",
+      "durationMs": 18
+    },
+    {
+      "name": "token tanpa branch assignment ditolak",
+      "status": "PASSED",
+      "durationMs": 12
+    },
+    {
+      "name": "offline sync mempertahankan tenant envelope dan retry idempoten",
+      "status": "PASSED",
+      "durationMs": 182
+    },
+    {
+      "name": "denial lintas tenant tercatat pada audit database",
+      "status": "PASSED",
+      "durationMs": 22
+    }
+  ],
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0
+  },
+  "auditDenials": 7,
+  "cleanup": {
+    "passed": true
+  },
+  "gate": {
+    "passed": true
+  },
+  "note": "Credential, password, token, raw database URL, dan response sensitif tidak disimpan."
+}

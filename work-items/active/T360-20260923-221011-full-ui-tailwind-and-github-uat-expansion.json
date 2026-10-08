@@ -1,0 +1,74 @@
+{
+  "id": "T360-20260923-221011",
+  "title": "Full UI rebuild with Tailwind and GitHub full-system UAT expansion",
+  "type": "feature",
+  "module": "admin-ui",
+  "wave": "W7",
+  "phase": "VERIFICATION",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-022400",
+    "T360-20260924-180000",
+    "T360-20260924-195500",
+    "T360-20260924-210000",
+    "T360-20260925-000500",
+    "T360-20260925-003000"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "LOW",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "R7 is the presentation/IA recovery wave after R1-R6 functional prerequisites are runtime-closed; business authority remains in existing APIs and server context.",
+    "Admin renders exactly one primary sidebar, one contextual secondary navigation, and one content surface. Parallel workspace rails/decks/context strips remain forbidden.",
+    "Four operator surfaces remain Tailwind CSS v4, flat one-accent, Lucide-based, responsive, keyboard-focusable, and free of decorative gradients or horizontal page overflow.",
+    "Dashboard analytics use reusable canonical chart primitives with one accent language; ad-hoc per-widget chart colors and decorative chart gradients are forbidden.",
+    "High-value capabilities remain discoverable in explicit workspaces, including owner digest/providers, control plane, reports, assets, marketplace, tenant/branch/warehouse, security/API keys, and truthful Forecast & Otomasi.",
+    "Exact-source Browser UAT must prove all visible Admin workspaces/contextual destinations, canonical analytics, desktop/tablet/mobile geometry, and screenshot evidence before F46 can close.",
+    "R8 remains responsible for expanded safe mutation journeys, exact release evidence, and remaining runtime revalidation such as F06/F40. Human Stage-20 remains separate."
+  ],
+  "acceptanceCriteria": [
+    "F45 canonical chart component strategy replaces ad-hoc analytics SVG/colors/gradient behavior.",
+    "F46 Admin information architecture exposes all 14 canonical top-level workspaces with one contextual navigation layer and no stacked navigation.",
+    "Browser UAT records canonical chart evidence plus 14-workspace/contextual navigation sweep on the exact source fingerprint.",
+    "Admin, POS, Storefront, and Employee Portal pass 1440x900, 1024x768, and 390x844 no-overflow geometry checks.",
+    "R7 GitHub probe is required by both PostgreSQL workflows and aggregate release evidence.",
+    "Existing functional operator routes from R1-R6 remain reachable; no API/business logic is reimplemented in the client.",
+    "Focused R7 tests, workflow/repository/recovery/full-repo/UI audits, lint/build gates, and full dependency-free regression pass before push.",
+    "Human Stage-20 remains PENDING until operator visual/usability acceptance."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r7-ui-ia.test.mjs",
+    "npm run lint -w @toko360/admin",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run audit:full:repo",
+    "npm run ci:ui:audit",
+    "npm run test:dependency-free",
+    "GitHub uat:browser:built + ci:r7:probe on exact source/build artifact"
+  ],
+  "migrationPlan": "No database schema change is planned. Tailwind/PostCSS and CI/UAT changes are source/build tooling only; existing expand-only database migration chain remains unchanged and must still be rehearsed.",
+  "rollbackPlan": "Revert this work item commit set to the last source-bound automated-GitHub-PASS commit. No database rollback is required because schema is unchanged. If the new UAT gate itself is defective, fix the gate while preserving or strengthening its assertions; never bypass it to release.",
+  "monitoringPlan": "GitHub job summary and uploaded source-bound evidence will report API coverage, browser viewport coverage, provider simulation results, exact artifact identity, worker/report probe, staging/load/index/DR and Stage-20 automated state. UI regressions are additionally checked by local candidate gate before push.",
+  "securityNotes": "All runtime identity continues to come from authenticated server context. CI uses non-production PostgreSQL and synthetic provider endpoints. GitHub secrets/environment secrets are never echoed, browser/localStorage evidence is sanitized, provider mocks validate headers/payloads without storing real tokens, and Human Stage-20 remains separately approved.",
+  "documentation": [
+    "UI-DESIGN-SYSTEM.md",
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/DEVELOPMENT-WORKFLOW.md",
+    "docs/ADMIN-DOMAIN-WORKSPACES.md",
+    ".github/workflows/full-system-simulation.yml",
+    ".github/workflows/toko360-full-uat.yml"
+  ],
+  "createdAt": "2026-09-23T14:10:11.719Z",
+  "updatedAt": "2026-09-25T02:30:00+08:00"
+}

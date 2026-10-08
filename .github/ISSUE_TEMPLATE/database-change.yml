@@ -1,0 +1,46 @@
+name: Database / Migration
+about: Perubahan schema, indeks, backfill, partition, atau retention
+labels: ["type:migration", "status:analysis"]
+body:
+  - type: input
+    id: workitem
+    attributes:
+      label: Work item
+      placeholder: T360-YYYYMMDD-HHMMSS
+    validations:
+      required: true
+  - type: textarea
+    id: change
+    attributes:
+      label: Perubahan schema dan tujuan query
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Rencana expand–migrate–contract dan kompatibilitas versi lama
+    validations:
+      required: true
+  - type: textarea
+    id: volume
+    attributes:
+      label: Volume data, estimasi lock, backfill, dan indeks
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback, backup, dan restore point
+    validations:
+      required: true
+  - type: checkboxes
+    id: parity
+    attributes:
+      label: Pemeriksaan wajib
+      options:
+        - label: Schema SQLite dan PostgreSQL tetap sejajar
+          required: true
+        - label: Tidak menggunakan reset/db push destructive pada production
+          required: true
+        - label: Migration telah direhearsal pada salinan staging
+          required: true

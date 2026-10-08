@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>Hitung Stok · TOKO360</title>
+<!-- The app is served at /stock-count (rewritten to this file), which leaves the document's base at
+     the parent directory — so ./app.js resolved to /app.js and 404'd, taking the whole app with it.
+     A <base> keeps every relative URL inside the app's own directory, which also keeps the manifest,
+     the service worker scope, and the icons portable if it is ever mounted under a subpath. -->
+<base href="/stock-count/" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<style>
+  :root { color-scheme: light dark; --bg:#0b1120; --card:#111c33; --line:#1f2d4f; --fg:#e6edf7; --muted:#93a4c0; --ok:#34d399; --bad:#f87171; --warn:#fbbf24; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg);
+         padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 16px; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .muted { color:var(--muted); font-size:13px; }
+  main { padding:16px; max-width:720px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input, select { width:100%; padding:12px; font-size:16px; background:#0a1224; color:var(--fg);
+                  border:1px solid var(--line); border-radius:10px; }
+  button { width:100%; padding:14px; font-size:16px; font-weight:600; border:0; border-radius:12px;
+           background:#2563eb; color:#fff; margin-top:10px; }
+  button.secondary { background:#1e293b; border:1px solid var(--line); }
+  button:disabled { opacity:.45; }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--fg); }
+  .row { display:flex; gap:8px; align-items:center; }
+  .row > * { flex:1; }
+  .line { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .line:last-child { border-bottom:0; }
+  .code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--muted); }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .pill.ok { background:rgba(52,211,153,.15); color:var(--ok); }
+  .pill.bad { background:rgba(248,113,113,.15); color:var(--bad); }
+  .pill.warn { background:rgba(251,191,36,.15); color:var(--warn); }
+  #msg { min-height:22px; font-size:14px; margin-top:8px; }
+  video { width:100%; border-radius:12px; background:#000; }
+  .hide { display:none !important; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  dialog { width:min(92vw,460px); border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--fg); padding:18px; }
+  dialog::backdrop { background:rgba(2,6,23,.72); }
+  .dialog-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hitung Stok</h1>
+  <div class="muted" id="who">Belum masuk</div>
+</header>
+
+<main>
+  <!-- API ADDRESS: resolved at runtime, because a build-time constant would freeze every branch
+       server to whatever host the build machine used. -->
+  <form id="api-form" class="card" style="margin-top:12px">
+    <label for="api-url">Alamat server (default: server cabang ini)</label>
+    <input id="api-url" autocapitalize="off" autocorrect="off" spellcheck="false" />
+    <button class="secondary" type="submit">Simpan alamat</button>
+    <div class="muted" id="api-info" style="margin-top:6px"></div>
+  </form>
+
+  <!-- LOGIN -->
+  <section id="sec-login" class="card">
+    <label for="email">Email karyawan</label>
+    <input id="email" type="email" autocomplete="username" inputmode="email" />
+    <label for="password">Kata sandi</label>
+    <input id="password" type="password" autocomplete="current-password" />
+    <button id="btn-login">Masuk</button>
+    <div id="msg" class="muted"></div>
+  </section>
+
+  <!-- COUNT -->
+  <section id="sec-count" class="hide">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="warehouse">Gudang</label>
+          <input id="warehouse" placeholder="id gudang" autocapitalize="off" />
+        </div>
+        <div>
+          <label for="device">Perangkat</label>
+          <input id="device" placeholder="mis. hp-001" autocapitalize="off" />
+        </div>
+      </div>
+      <label for="location">Lokasi / rak (opsional)</label>
+      <input id="location" placeholder="mis. rak-A" autocapitalize="off" />
+      <button id="btn-open">Buka / lanjut hitungan</button>
+      <div class="muted" id="draft-info" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card" id="card-scan">
+      <div class="row">
+        <div>
+          <label for="code">Barcode atau SKU</label>
+          <input id="code" autocapitalize="characters" />
+        </div>
+        <div style="max-width:110px">
+          <label for="qty">Jumlah</label>
+          <input id="qty" type="number" inputmode="numeric" min="1" value="1" />
+        </div>
+      </div>
+      <button id="btn-scan">Tambah hitungan</button>
+      <button id="btn-camera" class="secondary">Pindai dengan kamera</button>
+      <video id="video" class="hide" playsinline muted></video>
+      <button id="btn-camera-stop" class="ghost hide">Matikan kamera</button>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <strong>Hasil hitung</strong>
+        <span class="muted" id="line-count">0 baris</span>
+      </div>
+      <div id="lines"></div>
+      <button id="btn-review" class="secondary">Lihat selisih</button>
+      <button id="btn-submit">Kirim ke opname</button>
+      <div class="muted" style="margin-top:8px">
+        Mengirim hanya mengisi jumlah hitung pada item opname. Posting stok tetap lewat persetujuan
+        supervisor di alur kanonik.
+      </div>
+    </div>
+
+    <div class="card hide" id="card-review">
+      <strong>Selisih terhadap snapshot</strong>
+      <div id="review"></div>
+      <div style="margin-top:10px">
+        <label for="opname">Id opname untuk dikirim</label>
+        <input id="opname" autocapitalize="off" />
+      </div>
+    </div>
+
+    <button id="btn-logout" class="ghost">Keluar</button>
+  </section>
+
+  <dialog id="submit-confirm" aria-labelledby="submit-confirm-title">
+    <strong id="submit-confirm-title">Konfirmasi kirim hitungan</strong>
+    <p class="muted" id="submit-confirm-text"></p>
+    <div class="dialog-actions">
+      <button id="btn-submit-cancel" type="button" class="ghost">Batal</button>
+      <button id="btn-submit-confirm" type="button">Kirim ke opname</button>
+    </div>
+  </dialog>
+</main>
+
+<script src="./app.js"></script>
+</body>
+</html>

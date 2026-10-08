@@ -1,0 +1,66 @@
+{
+  "id": "T360-20260925-143000",
+  "title": "R8 GitHub full runtime UAT and release evidence",
+  "type": "release",
+  "module": "release-uat",
+  "wave": "W7",
+  "phase": "BLOCKED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260923-221011"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "MEDIUM",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "R8 source may be prepared while R7 is in VERIFICATION, but R8 cannot be declared CLOSED until exact-source R7 evidence is PASS.",
+    "F04/F05 closure uses executed evidence bound to the current source fingerprint and exact six-app build artifact, never test filenames alone.",
+    "F06 requires at least two non-production Browser UAT mutation journeys across distinct domains; reversible configuration must be restored.",
+    "F23/F24/F25/F44 require PostgreSQL runtime proof for denial, enabled flag authority, minStock-aware digest selection, and verified recipient bindings.",
+    "R1-R7 runtime evidence, provider, worker, DR, payroll, and automated Stage-20 evidence must all match the current source; Browser/worker artifact IDs must match the exact build artifact.",
+    "Human Stage-20 remains PENDING and automation must not mutate human acceptance."
+  ],
+  "acceptanceCriteria": [
+    "ci:uat:coverage is explicitly classified SOURCE_CONTRACT and not runtime closure evidence.",
+    "ci:r8:reporting-security-probe passes F23/F24/F25/F44 on PostgreSQL runtime.",
+    "Built Browser UAT emits R8_SAFE_MUTATION_JOURNEYS with owner-reporting and HR mutation evidence and productionTouched=false.",
+    "ci:r8:probe emits 12/12 executed critical scenarios bound to current source and exact build artifact.",
+    "Both PostgreSQL GitHub workflows execute R8 reporting/security and final R8 release probes without continue-on-success bypass in their aggregate enforcement.",
+    "Full-system summary and GitHub UAT report surface both R8 gates.",
+    "Human Stage-20 remains PENDING after automated R8 PASS."
+  ],
+  "testPlan": [
+    "npm run prisma:generate:postgres -w @toko360/api",
+    "npm run lint -w @toko360/api",
+    "npm run lint -w @toko360/admin",
+    "node --test tests/recovery-r8-runtime-uat.test.mjs",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run audit:full:repo",
+    "npm run ci:ui:audit",
+    "npm run test:dependency-free",
+    "GitHub exact-source PostgreSQL workflows: R7 PASS, R8 reporting/security PASS, Browser safe mutations PASS, R8 final probe PASS"
+  ],
+  "migrationPlan": "No schema migration. R8 uses existing PostgreSQL models and exact build/runtime evidence.",
+  "rollbackPlan": "Revert the R8 evidence/workflow commit set. No database rollback is required; runtime fixtures are ephemeral/restored and Human Stage-20 is untouched.",
+  "monitoringPlan": "GitHub full-system summary and full-UAT report expose R8 reporting/security and final exact-source release evidence gates.",
+  "securityNotes": "Only synthetic non-production identities/fixtures are used. Restricted-user denial is runtime-tested. Digest recipient uses verified binding IDs. No real provider target is required. Human UAT remains separate.",
+  "documentation": [
+    "docs/R8-GITHUB-FULL-RUNTIME-UAT.md",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md"
+  ],
+  "createdAt": "2026-09-25T14:30:00+08:00",
+  "updatedAt": "2026-09-25T14:45:00+08:00"
+}

@@ -1,0 +1,62 @@
+{
+  "id": "T360-20260823-103757",
+  "backlogKey": "w0-permission-guard-coverage",
+  "title": "Menerapkan permission guard pada seluruh endpoint mutasi",
+  "type": "security",
+  "module": "security",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "platform.permissions.enforced",
+  "dependencies": [
+    "w0-tenant-branch-isolation"
+  ],
+  "impacts": {
+    "database": "LOW",
+    "inventory": "MEDIUM",
+    "accounting": "MEDIUM",
+    "tax": "MEDIUM",
+    "payment": "HIGH",
+    "payroll": "HIGH",
+    "sync": "LOW",
+    "security": "HIGH",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Setiap mutasi mempunyai permission spesifik dan audit trail.",
+    "Approval tidak boleh dilakukan oleh pembuat transaksi jika segregation of duties aktif.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Tidak ada endpoint mutasi tanpa permission metadata.",
+    "Role dinamis dapat diberi atau dicabut permission tanpa perubahan source code."
+  ],
+  "testPlan": [
+    "Unit test permission mapping.",
+    "Integration test akses ditolak pada stock adjustment, journal posting, tax posting, payment refund, dan payroll approval.",
+    "Sync idempotency, retry, offline, dan conflict test sesuai scope pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/QUALITY-GATES.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-103757",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T02:37:57.266Z",
+  "updatedAt": "2026-08-23T09:52:02.835Z",
+  "releaseEvidence": [
+    "UAT HTTP nyata pada API lokal: skenario utama PASS (permission 403/201, numbering sequential unique, idempotency replay sama & altered ditolak).",
+    "quality:fast 197/197 pass; quality:full LULUS via scripts/quality-full-safe.sh (generate+push+seed+smoke+build).",
+    "Staging lokal PostgreSQL toko360_staging melalui gate Tahap 18-20 sebelumnya; production tidak disentuh.",
+    "Rollback: git restore per commit + feature flag platform.permissions.enforced / sequence fallback."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "workItemIdPattern": "^T360-[0-9]{8}-[0-9]{6}$",
+  "allowedTypes": ["feature", "bug", "security", "migration", "integration", "performance", "documentation", "release", "hotfix"],
+  "allowedPhases": ["INTAKE", "ANALYSIS", "DESIGN", "IMPLEMENTATION", "VERIFICATION", "STAGING", "RELEASE_READY", "RELEASED", "CLOSED", "BLOCKED"],
+  "allowedRisks": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+  "allowedImpacts": ["NONE", "LOW", "MEDIUM", "HIGH"],
+  "branchPrefixes": ["feature", "fix", "security", "migration", "integration", "performance", "docs", "refactor", "hotfix", "release"],
+  "requiredPrSections": ["Work item", "Perubahan", "Dampak lintas modul", "Database dan migrasi", "Pengujian", "Rollback", "Checklist"],
+  "highRiskRequiredFields": ["rollbackPlan", "monitoringPlan", "securityNotes"],
+  "criticalImpactDomains": ["inventory", "accounting", "tax", "payment", "payroll", "sync", "security"],
+  "phaseOrder": {
+    "INTAKE": 0,
+    "ANALYSIS": 1,
+    "DESIGN": 2,
+    "IMPLEMENTATION": 3,
+    "VERIFICATION": 4,
+    "STAGING": 5,
+    "RELEASE_READY": 6,
+    "RELEASED": 7,
+    "CLOSED": 8,
+    "BLOCKED": 99
+  }
+}

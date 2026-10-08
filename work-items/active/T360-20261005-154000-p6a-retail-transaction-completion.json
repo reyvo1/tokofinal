@@ -1,0 +1,73 @@
+{
+  "id": "T360-20261005-154000",
+  "title": "P6A Retail Transaction Completion",
+  "type": "feature",
+  "module": "payments",
+  "wave": "W2",
+  "phase": "VERIFICATION",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "accounting-core",
+    "receivables",
+    "master-data",
+    "returns",
+    "pos"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "LOW",
+    "accounting": "HIGH",
+    "tax": "NONE",
+    "payment": "HIGH",
+    "payroll": "NONE",
+    "sync": "MEDIUM",
+    "security": "MEDIUM",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Active company PAYMENT_METHOD master data is authoritative for new tenders; inactive methods remain historical only and cannot settle new sales.",
+    "Every payment/refund preserves immutable tender identity and accounting-policy snapshot so later master edits cannot rewrite historical financial meaning.",
+    "Server remains authoritative for exact split totals, cash-change eligibility, provider/reference requirements, offline eligibility, explicit on-account amount and refund allocation.",
+    "All settlement, clearing, MDR/fee and receivable postings reuse canonical Accounting Core; no parallel payment or accounting ledger is permitted.",
+    "On-account sale requires an explicit customer and explicit amount; unpaid value cannot masquerade as paid, and later customer receipt settlement is bounded and idempotent.",
+    "Gift/store-credit/customer-wallet and layaway are not claimed without a durable concurrency-safe canonical balance/lifecycle; browser-only or status-only substitutes are forbidden.",
+    "P6A is an engineering-wave label only and does not advance canonical product currentPhase; productReady=false, currentPhase=P5 and Human Stage-20=PENDING remain unchanged until their own acceptance gates pass."
+  ],
+  "acceptanceCriteria": [
+    "POS and sale API consume active PAYMENT_METHOD authority instead of a fixed CASH/QRIS/TRANSFER/CARD business list while retaining legacy history compatibility.",
+    "Tender configuration distinguishes settlement account/behavior, provider/reference requirements, refund policy, offline eligibility, cash-change permission and optional MDR/fee accounting.",
+    "Multiple dynamic tenders settle one sale only when the server-validated total exactly equals tender due; idempotent retries cannot duplicate payment/accounting facts.",
+    "Explicit customer on-account sales create journal-backed AR and later customer receipts remain bounded by outstanding balance and idempotent.",
+    "Refund/reversal allocation uses immutable original tender/AR facts and cannot exceed committed original tender/receivable capacity.",
+    "Admin manages real tender policy; POS uses real backend tender authority; shift/read models distinguish tender, clearing and MDR/net-settlement truth.",
+    "Existing Browser UAT remains fail-closed and additionally exercises runtime tender authority, split payment and on-account operator paths."
+  ],
+  "testPlan": [
+    "Run node --test tests/p6a-retail-transaction-completion.test.mjs and directly affected POS/offline/refund/accounting regression suites.",
+    "Run SQLite and PostgreSQL expand-migration rehearsals and verify legacy Payment rows remain readable after additive snapshot/accounting fields.",
+    "Run sale/return inventory movement regression proving P6A does not duplicate, bypass or silently alter canonical stock movement/reversal semantics.",
+    "Assert every P6A journal remains balanced debit=credit and is posted through Accounting Core with no direct duplicate journal creation.",
+    "Run offline/retry tests proving dynamic allowOffline policy is enforced and split/on-account flows remain fail-closed where unsupported.",
+    "Run workflow:validate, validate:repo, test:dependency-free, lint/build, recovery/full/UI audits, uat:pre-github:local and git diff --check before the single delivery commit."
+  ],
+  "migrationPlan": "Use registered additive expand migration T360-20261005-p6a-retail-transaction-completion for SQLite and PostgreSQL. Historical payment/refund facts are preserved; no destructive reset/db-push or historical rewrite is allowed.",
+  "rollbackPlan": "Rollback application code first while leaving additive P6A columns in place. Never delete historical tender/refund snapshots or destructively reverse posted journals; use canonical reversal/compensating operations for posted financial effects.",
+  "monitoringPlan": "Monitor sale/payment validation failures, split-total mismatch, on-account outstanding/receipt bounds, refund allocation errors, journal-balance guards, offline replay conflicts and settlement/MDR read-model discrepancies.",
+  "securityNotes": "All P6A mutations remain authenticated and tenant/company/branch scoped, use existing permission/idempotency/audit boundaries, never store card credentials, and treat provider/reference values as business metadata only.",
+  "documentation": [
+    "02-HANDOFF-P6A.md",
+    "03-P6A-SCOPE-AND-GATES.md",
+    "database/migrations/T360-20261005-p6a-retail-transaction-completion/README.md",
+    "handoff/CURRENT-WORK.md",
+    "config/product-completeness.json",
+    "docs/FEATURE-CATALOG.md",
+    "tests/p6a-retail-transaction-completion.test.mjs"
+  ],
+  "createdAt": "2026-10-05T15:40:00+08:00",
+  "updatedAt": "2026-10-05T19:00:00+08:00",
+  "notes": [
+    "Governance record for the P6A engineering wave that began from exact automated-green baseline eb320e931f898acdcce4b705ca4dd6e51059d156. It intentionally does not advance canonical currentPhase while P5/Human Stage-20 acceptance remains pending."
+  ]
+}

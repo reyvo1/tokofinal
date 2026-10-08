@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "phase": "P5",
+  "baseline": {
+    "commit": "d305ade2050765de86c7f5ef1c54eb7426c5e25b",
+    "sourceFingerprint": "cf6165fcc74e94abb3866230aa1764cee9487d4de6b630377465d20bda7d9246",
+    "note": "P4 exact-source GitHub evidence is the visual baseline before P5."
+  },
+  "requirements": {
+    "desktopWidth": 1440,
+    "tabletWidth": 1024,
+    "mobileWidth": 390,
+    "maxOverflowPx": 3,
+    "humanAcceptanceRequired": true
+  },
+  "admin": {
+    "primaryWorkspaces": [
+      {
+        "route": "/dashboard",
+        "key": "dashboard",
+        "label": "Dashboard"
+      },
+      {
+        "route": "/commerce",
+        "key": "commerce",
+        "label": "Penjualan & Order"
+      },
+      {
+        "route": "/procurement",
+        "key": "procurement",
+        "label": "Pembelian"
+      },
+      {
+        "route": "/manufacturing",
+        "key": "manufacturing",
+        "label": "Produksi"
+      },
+      {
+        "route": "/inventory-control",
+        "key": "inventory-control",
+        "label": "Persediaan"
+      },
+      {
+        "route": "/operations-control",
+        "key": "operations-control",
+        "label": "Kontrol Operasional"
+      },
+      {
+        "route": "/master-data",
+        "key": "master-data",
+        "label": "Produk & Master Data"
+      },
+      {
+        "route": "/finance",
+        "key": "finance",
+        "label": "Keuangan"
+      },
+      {
+        "route": "/reports",
+        "key": "reports",
+        "label": "Laporan & Analitik"
+      },
+      {
+        "route": "/people",
+        "key": "people",
+        "label": "HRIS & Payroll"
+      },
+      {
+        "route": "/assets-fleet",
+        "key": "assets-fleet",
+        "label": "Aset & Armada"
+      },
+      {
+        "route": "/intelligence",
+        "key": "intelligence",
+        "label": "Forecast & Otomasi"
+      },
+      {
+        "route": "/integrations",
+        "key": "integrations",
+        "label": "Integrasi & Notifikasi"
+      },
+      {
+        "route": "/organization",
+        "key": "organization",
+        "label": "Tenant & Organisasi"
+      },
+      {
+        "route": "/settings",
+        "key": "settings",
+        "label": "Pengaturan & Akses"
+      }
+    ],
+    "representativeContextualRoutes": [
+      "/commerce/orders",
+      "/procurement/requests",
+      "/manufacturing/recipes",
+      "/inventory-control/overview",
+      "/operations-control/inspections",
+      "/master-data/catalog",
+      "/finance/ledger",
+      "/reports/financial",
+      "/people/employees",
+      "/assets-fleet/assets",
+      "/intelligence/ai",
+      "/integrations/providers",
+      "/organization/organization",
+      "/settings/features"
+    ]
+  },
+  "pos": {
+    "views": [
+      "sale",
+      "shift",
+      "returns",
+      "sync"
+    ]
+  },
+  "storefront": {
+    "views": [
+      "home",
+      "catalog",
+      "product",
+      "cart",
+      "account"
+    ]
+  },
+  "employeePortal": {
+    "views": [
+      "home",
+      "attendance",
+      "leave",
+      "overtime",
+      "payslips",
+      "history",
+      "profile"
+    ]
+  }
+}

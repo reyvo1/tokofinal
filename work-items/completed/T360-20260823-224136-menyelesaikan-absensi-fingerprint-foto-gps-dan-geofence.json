@@ -1,0 +1,65 @@
+{
+  "id": "T360-20260823-224136",
+  "backlogKey": "w4-attendance-biometric-location",
+  "title": "Menyelesaikan absensi fingerprint foto GPS dan geofence",
+  "type": "integration",
+  "module": "attendance",
+  "wave": "W4",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "hr.attendance.enabled",
+  "dependencies": [
+    "w0-permission-guard-coverage",
+    "w0-idempotency-all-mutations"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "NONE",
+    "accounting": "LOW",
+    "tax": "LOW",
+    "payment": "NONE",
+    "payroll": "HIGH",
+    "sync": "HIGH",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Fingerprint mentah tidak disimpan; hanya credential reference vendor.",
+    "Foto dan lokasi mempunyai retention, access scope, dan audit trail.",
+    "Event offline diproses idempotent berdasarkan device dan sequence.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Fingerprint, selfie, GPS, geofence, shift, koreksi, dan approval menghasilkan attendance record konsisten.",
+    "Karyawan hanya melihat data absensi sendiri."
+  ],
+  "testPlan": [
+    "Device adapter contract test.",
+    "Offline sync retry/idempotency test.",
+    "Payroll attendance input integration test.",
+    "Security test foto privat dan employee self-scope.",
+    "Journal debit-credit dan idempotent posting test sesuai event pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/HRIS-ATTENDANCE-PAYROLL.md",
+    "docs/BIOMETRIC-LOCATION-SECURITY.md",
+    "docs/FINGERPRINT-INTEGRATION.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-224136",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T14:41:36.249Z",
+  "updatedAt": "2026-08-23T14:44:44.870Z",
+  "releaseEvidence": [
+    "Semua komponen absensi sudah terimplementasi & teruji: fingerprint ingest, biometric hash credential, GPS+geofence haversine validation, photo upload, employee portal UI.",
+    "Audit-only closure tanpa perubahan source."
+  ]
+}

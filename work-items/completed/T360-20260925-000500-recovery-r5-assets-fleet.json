@@ -1,0 +1,77 @@
+{
+  "id": "T360-20260925-000500",
+  "title": "R5 assets fleet maintenance and operational lifecycle closure",
+  "type": "feature",
+  "module": "assets-fleet",
+  "wave": "W5",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-022400"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "MEDIUM",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "MEDIUM",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "R5 is limited to F31 AssetMaintenancePlan management, F32 VehicleDriverAssignment lifecycle, and F33 asset assign/transfer/dispose operator flow from the master recovery workflow.",
+    "AssetMaintenancePlan and VehicleDriverAssignment reuse existing SQLite/PostgreSQL models; R5 introduces no schema or migration change.",
+    "Tenant and branch authority always comes from authenticated context; client companyId/branchId compatibility fields cannot select another tenant or branch.",
+    "Maintenance plans require a day or odometer interval; odometer schedules are valid only for vehicle assets; optional checklist templates must belong to the authenticated company and be active.",
+    "Vehicle-driver assignments reject overlapping duplicate assignments and overlapping primary-driver periods for the same vehicle; active primary assignment projects to Vehicle.defaultDriverEmployeeId.",
+    "Asset transfer/disposal continues to require a PASSED or APPROVED Asset operational inspection; Admin must not auto-pass that gate.",
+    "F31/F32/F33 are HIGH findings with runtimeEvidenceRequired=true and cannot close from static tests alone.",
+    "Human Stage-20 remains PENDING and is never replaced by the R5 automated probe."
+  ],
+  "acceptanceCriteria": [
+    "F31 exposes list/create/update lifecycle for AssetMaintenancePlan and preserves worker asset.maintenance.due / CREATE_MAINTENANCE_WORK_ORDER integration.",
+    "F32 exposes list/create/end lifecycle for VehicleDriverAssignment with tenant/branch validation, overlap protection, audit, and primary-driver projection.",
+    "F33 Admin exposes assign, transfer, dispose/sale, and explicit Asset handover inspection operator controls without weakening the backend inspection gate.",
+    "Both GitHub PostgreSQL workflows execute ci:r5:probe against exact runtime source and aggregate evidence requires the R5 gate PASS.",
+    "Focused R5 source contract, workflow validation, repository validation, recovery audit, and dependency-free regression pass before push.",
+    "R5 remains VERIFICATION until exact-source GitHub PostgreSQL runtime evidence passes; only then may F31/F32/F33 be closed."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r5-assets-fleet.test.mjs",
+    "R5 PostgreSQL runtime disposal verifies the existing ASSET_DISPOSAL balanced journal posting path; R5 does not change journal line construction.",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run test:dependency-free",
+    "npm run prisma:generate:postgres -w @toko360/api",
+    "npm run lint -w @toko360/api",
+    "GitHub Full System Simulation / Toko360 Full Automated UAT: npm run ci:r5:probe against live PostgreSQL exact runtime"
+  ],
+  "migrationPlan": "No database migration. Existing AssetMaintenancePlan and VehicleDriverAssignment models are reused with SQLite/PostgreSQL schema parity unchanged.",
+  "rollbackPlan": "Revert R5 API/UI/probe source as one atomic wave. No schema rollback is required. Existing asset, maintenance, fleet, accounting, and inspection records remain authoritative.",
+  "monitoringPlan": "GitHub R5 evidence records exact source fingerprint and runtime checks for maintenance-plan management, driver-assignment lifecycle, primary-driver projection, asset assignment, inspection-gated transfer, and disposal.",
+  "securityNotes": "All new API operations keep existing Roles/Permissions decorators and authenticated tenant/branch scoping. Asset handover inspection must be explicitly completed by an operator; transfer/disposal only accepts PASSED/APPROVED inspection status.",
+  "documentation": [
+    "docs/R5-ASSETS-FLEET-LIFECYCLE.md",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md",
+    "config/recovery-finding-matrix.json",
+    ".github/workflows/full-system-simulation.yml",
+    ".github/workflows/toko360-full-uat.yml"
+  ],
+  "createdAt": "2026-09-25T00:05:00+08:00",
+  "updatedAt": "2026-09-25T00:30:00+08:00",
+  "releaseEvidence": [
+    "Commit 708d34cb7afd259c507844cadf065b23029797ec on origin/main",
+    "GitHub Full System Simulation PASS",
+    "GitHub Full Automated UAT PASS",
+    "ci:r5:probe PASS",
+    "R5 source fingerprint 91f5b3910bed430d5a682fb53a3ce8baf050884674be56269eb39af309781655 (629 files)",
+    "Dependency-free 902/902 PASS",
+    "Human Stage-20 remains PENDING and separate"
+  ]
+}

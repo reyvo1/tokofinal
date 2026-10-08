@@ -1,0 +1,63 @@
+{
+  "id": "T360-20260823-224844",
+  "backlogKey": "w5-assets-fleet-lifecycle",
+  "title": "Menyelesaikan lifecycle aset kendaraan dan penyusutan",
+  "type": "feature",
+  "module": "assets",
+  "wave": "W5",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "operations.assets.enabled",
+  "dependencies": [
+    "w3-accounting-tax-end-to-end",
+    "w0-permission-guard-coverage"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "LOW",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "MEDIUM",
+    "payroll": "LOW",
+    "sync": "MEDIUM",
+    "security": "MEDIUM",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Aset bergerak dan tidak bergerak mempunyai lifecycle, custodian, lokasi, dan bukti.",
+    "Penyusutan memakai policy version dan fiscal period yang terbuka.",
+    "Kendaraan merupakan aset dan biaya servis/BBM diposting melalui accounting core."
+  ],
+  "acceptanceCriteria": [
+    "Perolehan, aktivasi, mutasi, maintenance, depreciation, disposal, dan tax posting tercatat.",
+    "Kendaraan memiliki status operasional dan jadwal servis."
+  ],
+  "testPlan": [
+    "Asset acquisition-journal-tax test.",
+    "Depreciation journal balance dan idempotency test.",
+    "Vehicle maintenance posting test.",
+    "Sync retry test mutasi aset antar branch.",
+    "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/ASSET-FLEET-OPERATIONS.md",
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-224844",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T14:48:44.238Z",
+  "updatedAt": "2026-08-23T14:49:40.793Z",
+  "releaseEvidence": [
+    "Asset & fleet lifecycle lengkap dengan jurnal accounting core + UI admin tersedia.",
+    "Audit-only closure tanpa perubahan source."
+  ]
+}

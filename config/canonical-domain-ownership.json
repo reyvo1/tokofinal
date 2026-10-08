@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "phase": "P4",
+  "status": "IMPLEMENTED_RUNTIME_PENDING",
+  "requiredDomains": [
+    "inventory",
+    "returns",
+    "accounting",
+    "payments",
+    "notifications",
+    "payroll",
+    "assets",
+    "marketplace",
+    "summaries"
+  ],
+  "legacyAliases": [
+    {
+      "path": "/sale-returns*",
+      "domain": "returns",
+      "status": "REMOVED_AFTER_COMPATIBILITY_VERIFICATION",
+      "canonicalReplacement": "/returns/sales*"
+    },
+    {
+      "path": "/purchase-returns*",
+      "domain": "returns",
+      "status": "REMOVED_AFTER_COMPATIBILITY_VERIFICATION",
+      "canonicalReplacement": "/returns/purchases*"
+    }
+  ],
+  "domains": [
+    {
+      "id": "inventory",
+      "canonicalOwner": "Inventory movement ledger with transaction-scoped stock mutation",
+      "canonicalPublicMutationSurface": "/advanced-inventory/*",
+      "controller": "apps/api/src/advanced-inventory/advanced-inventory.controller.ts",
+      "service": "apps/api/src/advanced-inventory/advanced-inventory.service.ts",
+      "sourceOfTruthModels": ["Inventory", "InventoryMovement"],
+      "sideEffectWriters": [
+        "apps/api/src/sales/sales.service.ts",
+        "apps/api/src/orders/orders.service.ts",
+        "apps/api/src/returns/returns.service.ts",
+        "apps/api/src/goods-receipts/goods-receipts.service.ts",
+        "apps/api/src/assets/assets.service.ts"
+      ],
+      "rule": "Operator stock-control mutations use AdvancedInventoryService; business transactions may mutate stock only inside their canonical transaction and must append InventoryMovement."
+    },
+    {
+      "id": "returns",
+      "canonicalOwner": "ReturnsModule / ReturnsService",
+      "canonicalPublicMutationSurface": "/returns/*",
+      "controller": "apps/api/src/returns/returns.controller.ts",
+      "service": "apps/api/src/returns/returns.service.ts",
+      "sourceOfTruthModels": ["SaleReturn", "PurchaseReturn", "OrderReturn"],
+      "ledgerModels": ["InventoryMovement", "AccountingEvent", "JournalEntry"],
+      "rule": "All sale, purchase and storefront-order return mutations enter through /returns/*; historical /sale-returns* and /purchase-returns* aliases are removed."
+    },
+    {
+      "id": "accounting",
+      "canonicalOwner": "AccountingCoreModule / AccountingCoreService",
+      "canonicalPublicMutationSurface": "/accounting-core/*",
+      "controller": "apps/api/src/accounting-core/accounting-core.controller.ts",
+      "service": "apps/api/src/accounting-core/accounting-core.service.ts",
+      "sourceOfTruthModels": ["AccountingEvent"],
+      "ledgerModels": ["JournalEntry", "JournalLine"],
+      "rule": "Business domains emit canonical AccountingEvent records; posting materializes balanced JournalEntry/JournalLine and no alternate public ledger mutation surface is authoritative."
+    },
+    {
+      "id": "payments",
+      "canonicalOwner": "Commerce transaction payment lifecycle with PaymentsService as provider ingress adapter",
+      "canonicalPublicMutationSurface": "/payments/providers/:integrationId/callback",
+      "controller": "apps/api/src/payments/payments.controller.ts",
+      "service": "apps/api/src/payments/payments.service.ts",
+      "sourceOfTruthModels": ["Payment", "PaymentProviderEvent"],
+      "rule": "Sale/order/finance transaction owners create or settle Payment; provider callbacks may only enter through PaymentsService and delegate to canonical commerce payment confirmation, never create a parallel payment ledger."
+    },
+    {
+      "id": "notifications",
+      "canonicalOwner": "Notification queue record plus asynchronous worker delivery lifecycle",
+      "canonicalPublicMutationSurface": "/notifications",
+      "controller": "apps/api/src/extensions/extensions.controller.ts",
+      "service": "apps/api/src/extensions/extensions.service.ts",
+      "sourceOfTruthModels": ["Notification", "NotificationTemplate"],
+      "worker": "apps/worker/src/index.ts",
+      "rule": "API queues Notification records; worker owns delivery attempts/status. Platform replay/cancel controls operate on the same Notification record rather than a duplicate notification store."
+    },
+    {
+      "id": "payroll",
+      "canonicalOwner": "PayrollModule / PayrollService",
+      "canonicalPublicMutationSurface": "/payroll/*",
+      "controller": "apps/api/src/payroll/payroll.controller.ts",
+      "service": "apps/api/src/payroll/payroll.service.ts",
+      "sourceOfTruthModels": ["PayrollRun", "PayrollResult"],
+      "ledgerModels": ["AccountingEvent", "JournalEntry"],
+      "rule": "Payroll configuration, calculation, approval, posting, adjustments and settlement use PayrollService; accounting output is linked to the canonical accounting ledger."
+    },
+    {
+      "id": "assets",
+      "canonicalOwner": "AssetsModule / AssetsService",
+      "canonicalPublicMutationSurface": "/assets/*",
+      "controller": "apps/api/src/assets/assets.controller.ts",
+      "service": "apps/api/src/assets/assets.service.ts",
+      "sourceOfTruthModels": ["Asset", "AssetTransaction"],
+      "ledgerModels": ["AccountingEvent", "JournalEntry"],
+      "rule": "Asset acquisition, assignment, transfer, disposal, maintenance and depreciation are owned by AssetsService; financial impact links to canonical accounting records."
+    },
+    {
+      "id": "marketplace",
+      "canonicalOwner": "Extensions marketplace import adapter",
+      "canonicalPublicMutationSurface": "/marketplace-orders/import",
+      "controller": "apps/api/src/extensions/extensions.controller.ts",
+      "service": "apps/api/src/extensions/extensions.service.ts",
+      "sourceOfTruthModels": ["MarketplaceOrder"],
+      "rule": "External marketplace orders are idempotently imported into MarketplaceOrder and linked to the canonical internal Order lifecycle; no second marketplace-order mutation API is authoritative."
+    },
+    {
+      "id": "summaries",
+      "canonicalOwner": "Admin-explicit daily summary materialization",
+      "canonicalPublicMutationSurface": "/analytics/daily-summaries/materialize",
+      "controller": "apps/api/src/extensions/extensions.controller.ts",
+      "service": "apps/api/src/extensions/extensions.service.ts",
+      "sourceOfTruthModels": ["DailySalesSummary", "DailyFinanceSummary", "DailyInventorySummary"],
+      "rule": "Daily summaries are rebuildable aggregates. P3/P4 ownership remains ADMIN_EXPLICIT; they never replace Sale, AccountingEvent/JournalEntry, or InventoryMovement as transaction truth."
+    }
+  ]
+}

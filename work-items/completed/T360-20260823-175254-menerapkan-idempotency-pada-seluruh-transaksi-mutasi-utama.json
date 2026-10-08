@@ -1,0 +1,65 @@
+{
+  "id": "T360-20260823-175254",
+  "backlogKey": "w0-idempotency-all-mutations",
+  "title": "Menerapkan idempotency pada seluruh transaksi mutasi utama",
+  "type": "feature",
+  "module": "platform",
+  "wave": "W0",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "platform.idempotency.required",
+  "dependencies": [
+    "w0-tenant-branch-isolation",
+    "w0-atomic-number-sequence"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "HIGH",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "HIGH",
+    "sync": "HIGH",
+    "security": "MEDIUM",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Operation ID yang sama menghasilkan receipt yang sama dan tidak membuat transaksi kedua.",
+    "Versi dan periode pajak pada replay harus sama dengan posting awal.",
+    "Receipt idempotency mempunyai masa retensi sesuai jenis transaksi."
+  ],
+  "acceptanceCriteria": [
+    "Penjualan, penerimaan supplier, pembayaran, retur, payroll, aset, dan inspeksi aman terhadap retry.",
+    "Duplicate request menghasilkan respons konsisten tanpa stock movement atau journal baru."
+  ],
+  "testPlan": [
+    "Idempotency test penjualan dan inventory movement.",
+    "Retry test payment webhook dan sync offline.",
+    "Journal debit-credit test memastikan tidak ada posting ganda.",
+    "Tax transaction replay test berdasarkan versi aturan berlaku."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/AUTOMATION-RULEBOOK.md",
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-175254",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T09:52:54.550Z",
+  "updatedAt": "2026-08-23T10:18:11.757Z",
+  "releaseEvidence": [
+    "Idempotency receipt (IdempotencyReceipt) aktif pada: sales create, orders create, purchase-orders create, goods-receipts confirm, payroll post, finance ops, accounting events, advanced-inventory (transfer/ship/receive/opname), returns, assets, fleet fuel.",
+    "UAT HTTP: order replay key sama -> order SAMA (bukan dobel); altered payload -> 400; attendance memakai operationId bawaan.",
+    "quality:fast 197/197 pass; quality:full LULUS via quality-full-safe.sh.",
+    "Rollback: hapus pemanggilan beginIdempotent per modul (isolated)."
+  ]
+}

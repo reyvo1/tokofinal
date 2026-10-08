@@ -1,0 +1,81 @@
+{
+  "id": "T360-20260924-180000",
+  "title": "R2 HRIS attendance employee self-service and payroll closure",
+  "type": "feature",
+  "module": "hris",
+  "wave": "W4",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "T360-20260924-022400"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "NONE",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "NONE",
+    "payroll": "HIGH",
+    "sync": "NONE",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "All HR and payroll tenant identity comes from authenticated company/branch context; compatibility tenant fields never grant authority.",
+    "Work shifts, rosters, policies, corrections, assignments, tax/social profiles, and payroll mappings are operator-managed and audited.",
+    "Attendance correction approval is fail-closed for locked payroll attendance and applies only an allowlisted attendance-record patch.",
+    "Employee assignments are effective-dated and primary assignment ranges may not overlap.",
+    "Employee Telegram/WhatsApp bindings require verification before preferences can be relied upon for sensitive delivery.",
+    "Only GROSS tax is currently executable; GROSS_UP and NET remain explicit unsupported/fail-closed until a documented lawful rule is implemented.",
+    "Split-period/proration cannot silently guess; payroll calculation requires full effective-dated profile/component coverage and explicit supported proration rules.",
+    "Payroll accounting mapping must resolve active branch-owned accounts before posting.",
+    "R2 CRITICAL/HIGH findings require GitHub live PostgreSQL/browser evidence before CLOSED."
+  ],
+  "acceptanceCriteria": [
+    "F11 WorkShift CRUD is available through permissioned Admin/API with audit evidence.",
+    "F12 EmployeeSchedule roster planning is available through permissioned Admin/API.",
+    "F13 AttendanceCorrection submit-review-approve/reject applies safely and unblocks payroll only after resolution.",
+    "F14 EmployeeAssignment effective-dated placement lifecycle is available and overlap-safe.",
+    "F15 AttendancePolicy management is available with validation and audit.",
+    "F16 Geofence/device/biometric operator management is available from Admin.",
+    "F17 Employee Portal exposes Telegram/WhatsApp verification and notification preferences.",
+    "F18 EmployeeTaxProfile and EmployeeSocialSecurityProfile are operator-managed and used by payroll.",
+    "F19 PayrollAccountingMapping is operator-managed and validates branch accounts.",
+    "F20 unsupported tax methods remain explicit fail-closed rather than falsely calculated.",
+    "F21 split-period/proration behavior is explicit and cannot silently under/overpay.",
+    "GitHub R2 E2E covers roster, correction, leave/permission/sick, payroll configuration, calculation, approval, posting, settlement, and payslip."
+  ],
+  "testPlan": [
+    "node --test tests/recovery-r2-hr-attendance-payroll.test.mjs",
+    "R2 payroll posting regression verifies balanced journal debit equals credit and branch-owned accounting mappings.",
+    "npm run workflow:validate",
+    "npm run validate:repo",
+    "npm run audit:recovery",
+    "npm run test:dependency-free",
+    "GitHub R2 runtime probe on live PostgreSQL exact artifact"
+  ],
+  "migrationPlan": "Use existing R2 schema models where present. Any required schema changes must be expand-only and provider-parity; this source pass does not remove or rewrite existing columns.",
+  "rollbackPlan": "Application rollback may stop exposing new operator routes while retaining additive data. Do not destroy HR/payroll configuration or approved correction/assignment history.",
+  "monitoringPlan": "Audit logs cover configuration and review mutations. Runtime evidence records exact source/build identity and R2 journey results.",
+  "securityNotes": "Biometric templates remain external references/hashes only; sensitive member/tax identifiers remain secret refs; notification bindings require verification.",
+  "documentation": [
+    "docs/HRIS-ATTENDANCE-PAYROLL.md",
+    "docs/PAYROLL-TAX-INDONESIA.md",
+    "docs/BIOMETRIC-LOCATION-SECURITY.md",
+    "docs/PROJECT-STATE.md",
+    "handoff/CURRENT-WORK.md",
+    "config/recovery-finding-matrix.json"
+  ],
+  "createdAt": "2026-09-24T18:00:00+08:00",
+  "updatedAt": "2026-09-24T19:55:00+08:00",
+  "releaseEvidence": [
+    "GitHub Full System Simulation PASS",
+    "GitHub Full Automated UAT PASS",
+    "ci:r2:probe PASS",
+    "dependency-free 877/877 PASS",
+    "Built Browser UAT PASS",
+    "Stage-18/19/20 automated PASS"
+  ]
+}

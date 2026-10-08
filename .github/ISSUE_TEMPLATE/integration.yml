@@ -1,0 +1,41 @@
+name: Integrasi / Perangkat / Provider
+about: Payment, marketplace, ekspedisi, WhatsApp, Telegram, fingerprint, GPS, printer, atau perangkat lain
+labels: ["type:integration", "status:analysis"]
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider/perangkat dan versi protokol
+    validations:
+      required: true
+  - type: input
+    id: workitem
+    attributes:
+      label: Work item
+      placeholder: T360-YYYYMMDD-HHMMSS
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Contract, webhook, polling, timeout, retry, dan idempotency
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Credential, signature, rotation, scope, dan data sensitif
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Offline/failure/conflict/recovery flow
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Sandbox, mock, contract test, dan fallback
+    validations:
+      required: true

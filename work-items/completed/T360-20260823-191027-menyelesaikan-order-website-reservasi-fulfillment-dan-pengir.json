@@ -1,0 +1,62 @@
+{
+  "id": "T360-20260823-191027",
+  "backlogKey": "w2-online-order-fulfillment",
+  "title": "Menyelesaikan order website reservasi fulfillment dan pengiriman",
+  "type": "feature",
+  "module": "orders",
+  "wave": "W2",
+  "phase": "CLOSED",
+  "risk": "HIGH",
+  "owner": "IVO",
+  "featureFlag": "commerce.onlineOrder.enabled",
+  "dependencies": [
+    "w1-atomic-stock-mutation",
+    "w2-pos-payment-production"
+  ],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "HIGH",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "NONE",
+    "sync": "HIGH",
+    "security": "MEDIUM",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Checkout mereservasi stok dengan expiry dan membebaskan reservasi ketika pembayaran gagal.",
+    "Status fulfillment mengikuti state machine dan tidak dapat dilompati tanpa permission.",
+    "Setiap dampak pajak harus memakai tax rule version dan periode berlaku yang dapat diaudit."
+  ],
+  "acceptanceCriteria": [
+    "Order dari website masuk ke branch pemroses dan menghasilkan picking sampai delivery.",
+    "Pembayaran dan pajak diposting tepat satu kali."
+  ],
+  "testPlan": [
+    "E2E checkout-payment-reservation-fulfillment-stock-journal-tax.",
+    "Idempotency webhook dan offline sync test.",
+    "Performance test checkout paralel."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/DEVELOPMENT-KIT.md",
+    "docs/ASSET-FLEET-OPERATIONS.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-191027",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T11:10:27.584Z",
+  "updatedAt": "2026-08-23T11:13:59.849Z",
+  "releaseEvidence": [
+    "Audit menunjukkan seluruh alur sudah terimplementasi: reservasi, pembayaran, shipment otomatis READY, pick-pack confirmation, jurnal+pajak+outbox.",
+    "UAT HTTP Tahap 20: order create + mock-pay PASS.",
+    "Rollback: tidak ada perubahan source pada item ini (audit-only closure)."
+  ]
+}

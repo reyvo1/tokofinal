@@ -1,0 +1,57 @@
+name: Performance Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: Number of health requests
+        required: false
+        default: '1000'
+      concurrency:
+        description: Concurrent clients
+        required: false
+        default: '50'
+
+permissions:
+  contents: read
+
+jobs:
+  sqlite-api-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: cp .env.local.example .env
+      - run: npm ci
+      - run: npm run db:local:prepare
+      - run: npm run build -w @toko360/api
+      - name: Start API
+        shell: bash
+        run: |
+          setsid npm run start -w @toko360/api > /tmp/toko360-api.log 2>&1 &
+          echo $! > /tmp/toko360-api.pid
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4000/api/v1/health && exit 0
+            sleep 2
+          done
+          cat /tmp/toko360-api.log
+          exit 1
+      - name: Run dependency-free load smoke
+        run: node scripts/load-test.mjs --url http://127.0.0.1:4000/api/v1/health --requests "${{ inputs.requests }}" --concurrency "${{ inputs.concurrency }}"
+      - name: Stop API and show log
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/toko360-api.pid ]; then
+            pid="$(cat /tmp/toko360-api.pid)"
+            kill -TERM -- "-$pid" 2>/dev/null || true
+            sleep 2
+            kill -KILL -- "-$pid" 2>/dev/null || true
+          fi
+          cat /tmp/toko360-api.log 2>/dev/null || true

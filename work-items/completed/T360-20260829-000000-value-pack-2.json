@@ -1,0 +1,47 @@
+{
+  "id": "T360-20260829-000000",
+  "title": "Value pack 2 — analitik lanjutan, export CSV, fondasi promo, riwayat harga, bagikan struk, ops health",
+  "type": "feature",
+  "module": "reports,promotions,products,sales,platform,worker",
+  "wave": "W7",
+  "phase": "CLOSED",
+  "risk": "MEDIUM",
+  "owner": "reyvo1",
+  "featureFlag": "sales.promotions.enabled",
+  "dependencies": ["reports", "sales", "products", "worker"],
+  "impacts": {
+    "database": "MEDIUM",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "LOW",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "MEDIUM",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "Promo hanya fondasi: aturan tersimpan, preview diskon read-only, belum mengubah perhitungan penjualan.",
+    "Diskon promo tidak pernah mengubah pajak karena preview tidak memotong transaksi nyata.",
+    "Export CSV berjalan asinkron via worker, file kedaluwarsa, dan tidak memuat data lintas company/branch."
+  ],
+  "acceptanceCriteria": [
+    "Endpoint peak-hours, dead-stock, dan customer-rfm terisolasi per company/branch dengan pagination/limit.",
+    "ReportJob PENDING dieksekusi worker sekali, idempoten, output tersimpan lokal dan dapat diunduh hanya oleh company yang sama.",
+    "PromoRule CRUD tervalidasi dan preview diskon menghitung sesuai aturan aktif periode efektif.",
+    "Perubahan harga produk otomatis mencatat ProductPriceHistory.",
+    "Struk digital menyediakan tombol bagikan WhatsApp dan CSS cetak."
+  ],
+  "testPlan": [
+    "node --test tests/value-pack-2.test.mjs (struktur + logika murni).",
+    "npm run quality:fast.",
+    "db:local:prepare + smoke setelah perubahan schema SQLite."
+  ],
+  "migrationPlan": "Tambah model PromoRule dan ProductPriceHistory pada schema SQLite dan PostgreSQL (expand-only). Lokal via db:local:push; production wajib migration versioned.",
+  "rollbackPlan": "Hapus endpoint/modul baru, model baru bersifat add-only dan aman dibiarkan; flag sales.promotions.enabled dimatikan.",
+  "monitoringPlan": "Ops-health endpoint memantau EventOutbox gagal, WebhookDelivery gagal, ReportJob macet, AutomationJob gagal.",
+  "securityNotes": "Tidak ada credential dalam source; download export diverifikasi tenant; struk publik tetap tanpa data biaya.",
+  "documentation": ["docs/API.md", "CHANGELOG.md", "STATUS-FINAL.md"],
+  "createdAt": "2026-08-29T00:00:00+08:00",
+  "updatedAt": "2026-08-29T21:30:00+08:00"
+}

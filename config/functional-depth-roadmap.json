@@ -1,0 +1,371 @@
+{
+  "version": 1,
+  "name": "TOKO360 Functional Product Completion F1-F12",
+  "sourceOfTruth": [
+    "docs/DEVELOPMENT-KIT.md",
+    "config/module-delivery-map.json",
+    "config/implementation-backlog.json",
+    "docs/FUNCTIONAL-COMPLETENESS-W0-W2.md"
+  ],
+  "policy": {
+    "sequenceLocked": true,
+    "allowPhaseSkipping": false,
+    "uiOnlyDoesNotCompletePhase": true,
+    "testPassAloneDoesNotCompletePhase": true,
+    "completionFormula": [
+      "database_or_configuration_model",
+      "business_logic",
+      "api_contract",
+      "validation_and_permissions",
+      "operator_ui",
+      "end_to_end_operator_flow",
+      "reporting_or_evidence",
+      "regression_tests"
+    ]
+  },
+  "currentPhase": "HISTORICAL",
+  "phases": [
+    {
+      "id": "F1",
+      "title": "Audit backend capability vs UI exposure",
+      "status": "IN_PROGRESS",
+      "dependsOn": [],
+      "mappedWaves": [
+        "W0",
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5",
+        "W6",
+        "W7"
+      ],
+      "deliverables": [
+        "Inventory model/API/service capabilities by domain",
+        "Inventory current Admin/POS/Storefront/Employee UI exposure",
+        "Classify each capability as EXPOSED, HIDDEN, PARTIAL, or MISSING",
+        "Create exact F2-F11 implementation backlog from gaps",
+        "Do not change business behavior except audit instrumentation/tests"
+      ],
+      "exitCriteria": [
+        "Every Development Kit domain mapped to backend and UI",
+        "Every hidden capability has target workspace/menu",
+        "Every missing capability assigned to F2-F11",
+        "No UNKNOWN items remain in audit matrix"
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "Master Product + Multi-UOM lengkap",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F1"
+      ],
+      "mappedWaves": [
+        "W1"
+      ],
+      "deliverables": [
+        "Product, variant, category, brand",
+        "Base UOM and sale/purchase UOM",
+        "Unit conversion: pcs/botol/pack/lusin/dus/karton/kg/gram/liter as configurable data",
+        "Multiple barcodes by product/variant/UOM",
+        "Price per UOM, branch, segment, quantity tier",
+        "Supplier purchase UOM metadata",
+        "Admin CRUD and validation"
+      ],
+      "exitCriteria": [
+        "Conversion is deterministic to base unit",
+        "No hard-coded retail package names required",
+        "Pricing and barcode resolve by selected UOM",
+        "API/UI/regression coverage complete"
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "Inventory / batch / expiry / condition lengkap",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F2"
+      ],
+      "mappedWaves": [
+        "W1",
+        "W5"
+      ],
+      "deliverables": [
+        "Batch/lot and production/expiry dates",
+        "FEFO/FIFO support",
+        "Serial numbers",
+        "Condition buckets: available/damaged/quarantine/lost/in-transit",
+        "Warehouse/bin/location visibility",
+        "Stock opname/transfer/adjustment with condition and batch",
+        "Minimum stock and reorder visibility"
+      ],
+      "exitCriteria": [
+        "Inventory remains movement-ledger based",
+        "Batch/serial/condition quantities reconcile",
+        "Expiry and damaged stock visible to operator",
+        "End-to-end inventory tests complete"
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "Accounting workspace enterprise",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F1"
+      ],
+      "mappedWaves": [
+        "W3"
+      ],
+      "deliverables": [
+        "Chart of Accounts workspace",
+        "Journal entries and journal-line drill-down",
+        "Accounting events and source transaction linkage",
+        "Posting rules and account mapping",
+        "Fiscal-period aware posting/reversal/adjustment",
+        "Cost center and branch dimensions",
+        "Audit/reversal/operator controls"
+      ],
+      "exitCriteria": [
+        "Operator can navigate source -> event -> journal -> lines",
+        "Debit equals credit and posting remains idempotent",
+        "Period locks/reopen behavior surfaced",
+        "No accounting core capability remains hidden without reason"
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "Tax workspace dinamis",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F4"
+      ],
+      "mappedWaves": [
+        "W3",
+        "W4"
+      ],
+      "deliverables": [
+        "Tax codes and tax accounts",
+        "Versioned/effective-dated tax rules",
+        "Input/output/withholding views",
+        "Inclusive/exclusive and rounding configuration",
+        "Tax transaction ledger",
+        "Tax document workspace",
+        "Tax period reconciliation and approvals",
+        "Payroll tax rule-set visibility"
+      ],
+      "exitCriteria": [
+        "Tax rules are data-driven and effective-dated",
+        "Historical transactions retain original rule version",
+        "Tax ledger can drill to source/journal",
+        "Reversal and reconciliation tested"
+      ]
+    },
+    {
+      "id": "F6",
+      "title": "Financial reporting + drill-down",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F4",
+        "F5"
+      ],
+      "mappedWaves": [
+        "W3",
+        "W7"
+      ],
+      "deliverables": [
+        "Profit & Loss",
+        "Balance Sheet",
+        "Cash Flow",
+        "Trial Balance",
+        "General Ledger",
+        "Inventory valuation and margin",
+        "Tax reporting",
+        "Branch/cost-center comparison",
+        "Dynamic filters and period comparison",
+        "Report -> account -> journal -> source drill-down",
+        "PDF/XLSX/CSV async report jobs"
+      ],
+      "exitCriteria": [
+        "Reports reconcile to journals/subledgers",
+        "Large reports use ReportJob/summary path",
+        "Filters are tenant/branch scoped",
+        "Export and drill-down covered by tests"
+      ]
+    },
+    {
+      "id": "F7",
+      "title": "AR / AP / Cash / Bank / Reconciliation",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F4"
+      ],
+      "mappedWaves": [
+        "W3"
+      ],
+      "deliverables": [
+        "Accounts receivable balances and aging",
+        "Accounts payable balances and aging",
+        "Customer/supplier settlement",
+        "Cash and bank accounts",
+        "Bank statements",
+        "Bank reconciliation",
+        "Payment reconciliation",
+        "Branch-aware finance operations"
+      ],
+      "exitCriteria": [
+        "AR/AP reconcile to GL",
+        "Bank reconciliation has traceable unmatched/matched states",
+        "Settlement/reversal paths tested",
+        "Operator UI covers daily finance workflow"
+      ]
+    },
+    {
+      "id": "F8",
+      "title": "Automation + scheduled reports",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F6",
+        "F7"
+      ],
+      "mappedWaves": [
+        "W7"
+      ],
+      "deliverables": [
+        "Automation rule workspace",
+        "Scheduler",
+        "Report schedules",
+        "Low-stock/expiry/finance/tax/delivery triggers",
+        "Retry/dead-letter visibility",
+        "Execution history and audit"
+      ],
+      "exitCriteria": [
+        "Scheduled jobs are idempotent",
+        "Failures visible and retryable",
+        "Report schedules use async worker",
+        "Operator can enable/disable rules safely"
+      ]
+    },
+    {
+      "id": "F9",
+      "title": "WhatsApp / Telegram notification center",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F8"
+      ],
+      "mappedWaves": [
+        "W6"
+      ],
+      "deliverables": [
+        "Notification templates",
+        "Verified channel bindings",
+        "WhatsApp adapter configuration",
+        "Telegram adapter configuration",
+        "Email/in-app coexistence",
+        "Delivery/retry/error log",
+        "Scheduled business reports to channels",
+        "Secure-link policy for sensitive documents"
+      ],
+      "exitCriteria": [
+        "No provider credentials in source",
+        "Retries/idempotency/audit available",
+        "Owner can configure destinations and report schedules",
+        "Sensitive payroll/customer data not exposed in chat payload"
+      ]
+    },
+    {
+      "id": "F10",
+      "title": "AI / forecasting / operator assistant",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F6",
+        "F8"
+      ],
+      "mappedWaves": [
+        "W7"
+      ],
+      "deliverables": [
+        "Forecast runs",
+        "Reorder suggestions",
+        "Fast/slow moving product analysis",
+        "Anomaly insights",
+        "Operator assistant workspace",
+        "Explainable source links to reports/transactions",
+        "Permission-scoped AI context"
+      ],
+      "exitCriteria": [
+        "Forecast/reorder result stored and auditable",
+        "AI cannot bypass tenant/role permissions",
+        "Insights link to source data",
+        "No autonomous mutation without explicit approval policy"
+      ]
+    },
+    {
+      "id": "F11",
+      "title": "Purchase / Sales / POS integration ke UOM baru",
+      "status": "NEXT_SOURCE_IMPLEMENTATION",
+      "dependsOn": [
+        "F2",
+        "F3",
+        "F7"
+      ],
+      "mappedWaves": [
+        "W1",
+        "W2",
+        "W5"
+      ],
+      "deliverables": [
+        "Supplier PO and receipt in purchase UOM",
+        "Automatic conversion to base inventory unit",
+        "POS sale by pcs/bottle/pack/dozen/carton or configured UOM",
+        "Sales/order price resolution by UOM",
+        "Returns/refunds preserve original UOM and conversion",
+        "Barcode resolves correct UOM",
+        "Tax/accounting use converted quantities and actual monetary facts"
+      ],
+      "exitCriteria": [
+        "Purchase-to-stock conversion reconciles",
+        "Sale-to-stock conversion reconciles",
+        "Mixed-UOM return/refund is correct",
+        "POS remains performant and offline rules explicit"
+      ]
+    },
+    {
+      "id": "F12",
+      "title": "Final UI / UX polish",
+      "status": "SOURCE_IMPLEMENTATION_COMPLETE_UAT_DEFERRED",
+      "dependsOn": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11"
+      ],
+      "mappedWaves": [
+        "W7"
+      ],
+      "deliverables": [
+        "Information architecture finalization",
+        "Consistent forms/tables/detail panels",
+        "Responsive and accessibility polish",
+        "Loading/empty/error states",
+        "Keyboard/POS ergonomics",
+        "Visual hierarchy and dashboard composition",
+        "Final browser UAT"
+      ],
+      "exitCriteria": [
+        "No functional placeholder surfaces remain",
+        "Responsive/accessibility/browser checks pass",
+        "All operator workflows are discoverable",
+        "Only then run final UAT/release gates"
+      ]
+    }
+  ],
+  "statusAuthority": "config/product-completeness.json",
+  "lifecycle": "HISTORICAL_SOURCE_IMPLEMENTATION_ROADMAP"
+}

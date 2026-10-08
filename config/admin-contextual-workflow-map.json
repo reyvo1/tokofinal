@@ -1,0 +1,497 @@
+{
+  "version": 1,
+  "name": "TOKO360 Admin Contextual Workflow Map",
+  "expectedContextualViews": 70,
+  "rows": [
+    {
+      "workspace": "master-data",
+      "view": "catalog",
+      "renderer": "MasterDataView:catalog",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "master-data",
+      "view": "customers",
+      "renderer": "MasterDataView:customers",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "master-data",
+      "view": "products",
+      "renderer": "MasterDataView:products",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "master-data",
+      "view": "pricing",
+      "renderer": "MasterDataView:pricing",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "master-data",
+      "view": "references",
+      "renderer": "MasterDataView:references",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "organization",
+      "view": "organization",
+      "renderer": "OrganizationAdminView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "organization",
+      "view": "locations",
+      "renderer": "MasterDataView:locations",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "organization",
+      "view": "references",
+      "renderer": "MasterDataView:references",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "procurement",
+      "view": "requests",
+      "renderer": "AdminPage:PurchaseRequest",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "procurement",
+      "view": "orders",
+      "renderer": "AdminPage:PurchaseOrder",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "procurement",
+      "view": "receipts",
+      "renderer": "AdminPage:GoodsReceipt",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "procurement",
+      "view": "supplier",
+      "renderer": "AdminPage:Supplier",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "commerce",
+      "view": "orders",
+      "renderer": "ExtensionsView:commerce/orders",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "commerce",
+      "view": "fulfillment",
+      "renderer": "ExtensionsView:commerce/fulfillment",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "commerce",
+      "view": "returns",
+      "renderer": "OperationsView:returns",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "commerce",
+      "view": "channels",
+      "renderer": "ExtensionsView:commerce/channels+R3OperationsView:connections",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "inventory-control",
+      "view": "overview",
+      "renderer": "OperationsView:overview+InventoryLedger",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "inventory-control",
+      "view": "traceability",
+      "renderer": "OperationsView:traceability",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "inventory-control",
+      "view": "transfers",
+      "renderer": "OperationsView:transfers",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "inventory-control",
+      "view": "stocktake",
+      "renderer": "OperationsView:stocktake",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "inventory-control",
+      "view": "returns",
+      "renderer": "OperationsView:returns",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "operations-control",
+      "view": "inspections",
+      "renderer": "OperationsControlView:inspections",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "operations-control",
+      "view": "evidence",
+      "renderer": "OperationsControlView:evidence",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "operations-control",
+      "view": "gate-pass",
+      "renderer": "OperationsControlView:gate-pass",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "operations-control",
+      "view": "delivery",
+      "renderer": "DeliveryLifecycle",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "ledger",
+      "renderer": "AccountingView:ledger",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "tax",
+      "renderer": "AccountingView:tax",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "fiscal",
+      "renderer": "AccountingView:fiscal",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "payables",
+      "renderer": "AccountingView:payables",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "receivables",
+      "renderer": "AccountingView:receivables",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "finance",
+      "view": "banking",
+      "renderer": "AccountingView:banking",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "reports",
+      "view": "financial",
+      "renderer": "ReportingWorkspace:financial",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "reports",
+      "view": "operations",
+      "renderer": "ReportingWorkspace:operations+R3OperationsView:reporting",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "reports",
+      "view": "scheduled",
+      "renderer": "ReportingWorkspace:scheduled",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "reports",
+      "view": "owner",
+      "renderer": "OwnerView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "people",
+      "view": "employees",
+      "renderer": "EmployeeMasterView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "people",
+      "view": "attendance",
+      "renderer": "HrPayrollView:attendance",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "people",
+      "view": "payroll",
+      "renderer": "HrPayrollView:payroll",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "people",
+      "view": "compliance",
+      "renderer": "HrPayrollView:compliance",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "assets-fleet",
+      "view": "assets",
+      "renderer": "AssetsFleetView:assets",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "assets-fleet",
+      "view": "maintenance",
+      "renderer": "AssetsFleetView:maintenance",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "assets-fleet",
+      "view": "vehicles",
+      "renderer": "AssetsFleetView:vehicles",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "assets-fleet",
+      "view": "trips",
+      "renderer": "AssetsFleetView:trips",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "intelligence",
+      "view": "ai",
+      "renderer": "AiWorkspace:ai",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "intelligence",
+      "view": "forecast",
+      "renderer": "AiWorkspace:forecast",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "intelligence",
+      "view": "automation",
+      "renderer": "AutomationWorkspace:automation",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "intelligence",
+      "view": "schedules",
+      "renderer": "AutomationWorkspace:schedules",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "providers",
+      "renderer": "ExtensionsView:providers",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "notifications",
+      "renderer": "ExtensionsView:notifications",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "connections",
+      "renderer": "ExtensionsView:connections+R3OperationsView:connections",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "devices",
+      "renderer": "ExtensionsView:devices+R3OperationsView:devices",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "loyalty",
+      "renderer": "ExtensionsView:loyalty",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "features",
+      "renderer": "AdminPage:RuntimeFeatures",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "users",
+      "renderer": "AccessControlView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "platform",
+      "renderer": "PlatformControlView:platform",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "custom-fields",
+      "renderer": "PlatformControlView:custom-fields",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "approvals",
+      "renderer": "PlatformControlView:approvals",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "webhooks",
+      "renderer": "PlatformControlView:webhooks",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "ui-config",
+      "renderer": "PlatformControlView:ui-config",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "audit-ops",
+      "renderer": "PlatformControlView:audit-ops",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "security",
+      "renderer": "SecurityView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "api-keys",
+      "renderer": "ApiKeysView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "data-governance",
+      "renderer": "DataGovernanceView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "branch-sync",
+      "renderer": "BranchSyncView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "mobile-ops",
+      "renderer": "MobileOpsView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "master-data",
+      "view": "bulk-labels",
+      "renderer": "ProductBulkLabelsView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "manufacturing",
+      "view": "recipes",
+      "renderer": "ManufacturingView:recipes",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "manufacturing",
+      "view": "orders",
+      "renderer": "ManufacturingView:orders",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "integrations",
+      "view": "ppob",
+      "renderer": "DigitalServicesView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    },
+    {
+      "workspace": "settings",
+      "view": "setup",
+      "renderer": "SetupReadinessView",
+      "status": "SOURCE_IMPLEMENTED",
+      "sourceFile": "apps/admin/app/page.tsx"
+    }
+  ]
+}

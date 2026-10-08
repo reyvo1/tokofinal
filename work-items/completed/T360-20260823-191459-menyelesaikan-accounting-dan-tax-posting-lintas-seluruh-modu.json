@@ -1,0 +1,64 @@
+{
+  "id": "T360-20260823-191459",
+  "backlogKey": "w3-accounting-tax-end-to-end",
+  "title": "Menyelesaikan accounting dan tax posting lintas seluruh modul",
+  "type": "feature",
+  "module": "accounting-core",
+  "wave": "W3",
+  "phase": "CLOSED",
+  "risk": "CRITICAL",
+  "owner": "IVO",
+  "featureFlag": "finance.unifiedPosting.enabled",
+  "dependencies": [
+    "w2-pos-payment-production",
+    "w1-inbound-inspection-complete"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "MEDIUM",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "HIGH",
+    "sync": "MEDIUM",
+    "security": "HIGH",
+    "performance": "HIGH"
+  },
+  "businessRules": [
+    "Seluruh modul mengirim accounting event dan dilarang membuat journal langsung.",
+    "Tax rule dipilih berdasarkan scope, versi, dan periode berlaku.",
+    "Fiscal period lock mencegah posting mundur tanpa reopening resmi."
+  ],
+  "acceptanceCriteria": [
+    "Penjualan, pembelian, stok, biaya, payroll, aset, fleet, dan retur memakai posting engine yang sama.",
+    "Subledger dapat direkonsiliasi ke general ledger."
+  ],
+  "testPlan": [
+    "Journal debit-credit test seluruh event type.",
+    "Tax version/effective period test dan reversal test.",
+    "Idempotent accounting posting retry test.",
+    "Performance test posting batch.",
+    "Inventory movement dan rekonsiliasi stok test sesuai scope pekerjaan."
+  ],
+  "migrationPlan": "Gunakan migration expand-only, jaga parity SQLite dan PostgreSQL, siapkan backfill terpisah, validasi index/query plan, dan jangan memakai db push pada production.",
+  "rollbackPlan": "Nonaktifkan feature flag bila tersedia, rollback deployment, hentikan consumer baru, dan gunakan compensating operation untuk transaksi yang sudah diposting.",
+  "monitoringPlan": "Tambahkan metric sukses/gagal, latency, queue age, retry, structured log, alert threshold, dan masa observasi setelah rilis.",
+  "securityNotes": "Terapkan autentikasi, permission granular, company/branch scope, perlindungan data sensitif, audit trail, dan larangan menyimpan credential pada source code.",
+  "documentation": [
+    "docs/ENTERPRISE-ACCOUNTING-TAX.md",
+    "docs/DEVELOPMENT-KIT.md"
+  ],
+  "automation": {
+    "createdBy": "scripts/start-work.mjs",
+    "packetDirectory": "work-items/generated/T360-20260823-191459",
+    "createdFromBacklog": true,
+    "configVersion": "1.1.0"
+  },
+  "createdAt": "2026-08-23T11:14:59.775Z",
+  "updatedAt": "2026-08-23T14:32:01.458Z",
+  "releaseEvidence": [
+    "Verifikasi DB: 20 posting rules ACTIVE mencakup seluruh 13 event type transaksi yang dipakai service.",
+    "Mesin jurnal double-entry dengan balance check, idempotent, dan tax transactions terintegrasi.",
+    "Audit-only closure tanpa perubahan source."
+  ]
+}
