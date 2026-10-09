@@ -5,6 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import { sourceFingerprint } from './lib/source-fingerprint.mjs';
 import { assertRuntimeDatabaseTarget, expectedPostgresTarget } from './lib/runtime-target-identity.mjs';
 import { readAndVerifyBuildArtifactManifest } from './lib/build-artifact-identity.mjs';
+import { assertReleaseFinancialIntegrity } from './lib/release-financial-integrity.mjs';
 
 function env(name, required = true) {
   const value = process.env[name];
@@ -118,7 +119,8 @@ async function main() {
     await check('financial-integrity', async () => {
       const { response, body } = await request('/api/v1/reports/financial-integrity', { headers: authHeaders });
       if (!response.ok) throw new Error(`financial-integrity HTTP ${response.status}`);
-      return { status: response.status, result: body };
+      const accounting = assertReleaseFinancialIntegrity(body);
+      return { status: response.status, result: body, accounting };
     });
     await check('logout-revokes-session', async () => {
       const logout = await request('/api/v1/auth/logout', { method: 'POST', headers: authHeaders });

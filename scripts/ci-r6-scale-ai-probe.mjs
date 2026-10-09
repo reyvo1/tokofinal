@@ -5,6 +5,7 @@ import process from 'node:process';
 import { PrismaClient } from '@prisma/client';
 import { sourceFingerprint } from './lib/source-fingerprint.mjs';
 import { businessDateKeyInTimeZone, companyTimeZoneFromBranchContext } from './lib/business-date-key.mjs';
+import { balancedR6JournalLines } from './lib/ci-r6-balanced-journal-fixture.mjs';
 
 const root = process.cwd();
 const output = path.join(root, 'handoff/quality/github-r6-scale-ai-probe-latest.json');
@@ -46,8 +47,9 @@ try {
   const warehouse = warehouses?.[0];
   if (!warehouse?.id) throw new Error('Gudang R6 runtime tidak tersedia.');
   const accounts = await request('/accounting-core/accounts', { token });
-  const account = accounts?.find((row) => row.isActive);
-  if (!account?.id) throw new Error('Account R6 runtime tidak tersedia.');
+  const account = accounts?.find((row) => row.isActive && row.id);
+  const creditAccount = accounts?.find((row) => row.isActive && row.id && row.id !== account?.id);
+  if (!account?.id || !creditAccount?.id) throw new Error('R6 fixture memerlukan dua akun GL aktif berbeda di cabang runtime.');
 
   await prisma.sale.create({ data: {
     number: `R6-SALE-${stamp}`, branchId: scope.branchId, warehouseId: warehouse.id, channel: 'POS', status: 'COMPLETED',
@@ -55,13 +57,15 @@ try {
   } });
   await prisma.journalEntry.create({ data: {
     number: `R6-JRN-${stamp}`, date: now, referenceType: 'R6Probe', referenceId: `r6-${stamp}`, description: 'R6 summary materialization fixture',
-    lines: { create: [{ accountId: account.id, debit: 50000, credit: 0 }] },
+    // Fixture belongs only to ephemeral GitHub CI; every journal must be double-entry balanced.
+    lines: { create: balancedR6JournalLines(account.id, creditAccount.id) },
   } });
   const materialized = await request('/analytics/daily-summaries/materialize', { method: 'POST', token, body: { businessDate } });
   const summaries = await request(`/analytics/daily-summaries?from=${businessDate}&to=${businessDate}`, { token });
   const saleSummary = summaries.sales?.find((row) => row.channel === 'POS' && Number(row.transactionCount) >= 1);
   const financeSummary = summaries.finance?.find((row) => row.accountId === account.id && Number(row.debit) >= 50000);
-  if (!saleSummary || !financeSummary || materialized.salesChannels < 1 || materialized.financeAccounts < 1) {
+  const counterFinanceSummary = summaries.finance?.find((row) => row.accountId === creditAccount.id && Number(row.credit) >= 50000);
+  if (!saleSummary || !financeSummary || !counterFinanceSummary || materialized.salesChannels < 1 || materialized.financeAccounts < 2) {
     throw new Error(`R6 daily summary materialization tidak menghasilkan aggregate runtime yang diharapkan. businessDate=${businessDate} timezone=${companyTimeZone} sourceSales=${materialized.sourceSales} sourceJournalLines=${materialized.sourceJournalLines} salesChannels=${materialized.salesChannels} financeAccounts=${materialized.financeAccounts}`);
   }
 
@@ -99,7 +103,7 @@ try {
   const checks = {
     deterministicCapabilityTruth: aiTruth,
     dailySalesSummaryMaterialized: Boolean(saleSummary),
-    dailyFinanceSummaryMaterialized: Boolean(financeSummary),
+    dailyFinanceSummaryMaterialized: Boolean(financeSummary && counterFinanceSummary),
     retentionPolicyRuntime: policy.isActive === true && policy.archiveAfter === true,
     archiveArtifactRuntime: archive.status === 'COMPLETED' && archive.rowsProcessed >= 1,
     externalMappingAdapterRuntime: Boolean(adapterMapping),

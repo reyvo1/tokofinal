@@ -5,6 +5,7 @@ import process from 'node:process';
 import { sourceFingerprint } from './lib/source-fingerprint.mjs';
 import { assertRuntimeDatabaseTarget, expectedPostgresTarget, shortHash } from './lib/runtime-target-identity.mjs';
 import { readAndVerifyBuildArtifactManifest } from './lib/build-artifact-identity.mjs';
+import { assertReleaseFinancialIntegrity } from './lib/release-financial-integrity.mjs';
 
 const root = process.cwd();
 const output = path.join(root, 'handoff', 'quality', 'production-smoke-latest.json');
@@ -95,9 +96,10 @@ try {
       return { status: response.status };
     });
     await check('PRODUCTION_FINANCIAL_INTEGRITY', async () => {
-      const { response } = await request(baseUrl, '/api/v1/reports/financial-integrity', { headers });
+      const { response, body } = await request(baseUrl, '/api/v1/reports/financial-integrity', { headers });
       if (!response.ok) throw new Error(`financial-integrity HTTP ${response.status}`);
-      return { status: response.status };
+      const accounting = assertReleaseFinancialIntegrity(body);
+      return { status: response.status, accounting };
     });
     await check('PRODUCTION_LOGOUT_REVOCATION', async () => {
       const logout = await request(baseUrl, '/api/v1/auth/logout', { method: 'POST', headers });

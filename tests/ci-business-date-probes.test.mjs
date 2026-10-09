@@ -40,7 +40,9 @@ test('runtime probes that mean today use live company timezone rather than UTC d
 test('R6 materialization diagnostics expose timezone and source aggregate counts without weakening nonzero assertions', () => {
   const source = read('scripts/ci-r6-scale-ai-probe.mjs');
   assert.match(source, /materialized\.salesChannels < 1/);
-  assert.match(source, /materialized\.financeAccounts < 1/);
+  assert.match(source, /materialized\.financeAccounts < 2/);
+  assert.match(source, /counterFinanceSummary/);
+  assert.match(source, /balancedR6JournalLines/);
   assert.match(source, /timezone=\$\{companyTimeZone\}/);
   assert.match(source, /sourceSales=\$\{materialized\.sourceSales\}/);
   assert.match(source, /sourceJournalLines=\$\{materialized\.sourceJournalLines\}/);

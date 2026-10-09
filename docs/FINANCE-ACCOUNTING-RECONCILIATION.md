@@ -98,3 +98,8 @@ Sebelum production:
 8. Baru lakukan fiscal close.
 
 Static/regression PASS tidak menggantikan runtime integration dengan database target dan provider pembayaran sebenarnya.
+
+
+## [W3 RELEASE INTEGRITY FIX — 2026-10-09]
+
+Temuan GitHub: fixture `ci:r6:probe` membentuk debit Rp50.000 tanpa kredit, menyebabkan perbedaan trial balance dan neraca. Rootfix mengharuskan dua akun GL berbeda dengan total debit-kredit sama, dan release gate fail-closed memvalidasi status laporan beserta seluruh counter. Database CI lama yang tercemar harus dibuat ulang dari awal; data bisnis produksi tidak boleh dihapus otomatis.

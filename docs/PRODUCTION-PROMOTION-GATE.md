@@ -142,3 +142,8 @@ Only this final PASS sets `productionReady=true`. Post-release monitoring remain
 - `handoff/quality/production-ready-latest.json`
 
 Credentials, database URLs, passwords, tokens and secret material must never be copied into these evidence JSON files.
+
+
+## [W3 RELEASE INTEGRITY FIX — 2026-10-09]
+
+Smoke produksi read-only tetap FAIL jika endpoint `financial-integrity` merespons HTTP 200 dengan status `FAIL` atau `WARN`, nilai debit-kredit/neraca selisih, jurnal timpang, atau event/finance/tax pending. Tidak ada bypass atau penghapusan jurnal.

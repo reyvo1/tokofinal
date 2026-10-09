@@ -132,3 +132,8 @@ The profiler reports high sequential-scan candidates, large unused-index candida
 7. Collect load/index evidence under representative data volume.
 8. Execute the full business E2E matrix (POS online/offline, procurement/AP, storefront/AR, payroll, asset/fleet, approvals/automation/reporting).
 9. Capture cutover and rollback evidence before production release.
+
+
+## [W3 RELEASE INTEGRITY FIX — 2026-10-09]
+
+HTTP 200 bukan sertifikasi akuntansi. Staging wajib melihat status PASS, debit-kredit/neraca seimbang, nol blocker/warning, nol event pending/failed, dan tanpa jurnal timpang. R6 fixture membuat dua sisi jurnal dengan akun GL berbeda.
