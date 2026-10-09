@@ -526,6 +526,20 @@ async function main() {
       { accountCodeKey: 'cogs', side: 'DEBIT', amountKey: 'cogs' },
       { accountCodeKey: 'inventory', side: 'CREDIT', amountKey: 'inventory' },
     ] },
+    { code: 'PPOB-PREPAYMENT', eventType: 'DIGITAL_SERVICE_PREPAYMENT', lines: [
+      { accountCodeKey: 'settlement', side: 'DEBIT', amountKey: 'gross' },
+      { accountCodeKey: 'customerAdvance', side: 'CREDIT', amountKey: 'gross' },
+    ] },
+    { code: 'PPOB-FULFILLED', eventType: 'DIGITAL_SERVICE_FULFILLED', lines: [
+      { accountCodeKey: 'customerAdvance', side: 'DEBIT', amountKey: 'gross' },
+      { accountCodeKey: 'serviceRevenue', side: 'CREDIT', amountKey: 'gross' },
+      { accountCodeKey: 'cogs', side: 'DEBIT', amountKey: 'cost', skipIfZero: true },
+      { accountCodeKey: 'providerBalance', side: 'CREDIT', amountKey: 'cost', skipIfZero: true },
+    ] },
+    { code: 'PPOB-REFUND', eventType: 'DIGITAL_SERVICE_REFUND', lines: [
+      { accountCodeKey: 'customerAdvance', side: 'DEBIT', amountKey: 'gross' },
+      { accountCodeKey: 'settlement', side: 'CREDIT', amountKey: 'gross' },
+    ] },
     { code: 'ONLINE-ORDER-PREPAYMENT', eventType: 'ONLINE_ORDER_PREPAYMENT', lines: [
       { accountCodeKey: 'settlement', side: 'DEBIT', amountKey: 'gross' },
       { accountCodeKey: 'customerAdvance', side: 'CREDIT', amountKey: 'gross' },
@@ -854,7 +868,7 @@ async function main() {
       'tax.view','tax.manage','accounting.event.view','accounting.rule.manage',
       'payroll.view','payroll.approve','payroll.post','payroll.publish',
       'report.view','report.export','audit.view','inventory.view','asset.view','asset.depreciate','fleet.view',
-      'inspection.view','operations.confirm','goods_receipt.confirm','goods_receipt.reject','sale.return','purchase.return',
+      'inspection.view','operations.confirm','goods_receipt.confirm','goods_receipt.reject','digital_service.view','digital_service.manage','sale.return','purchase.return',
     ]],
     ['AUDITOR', ['product.view','supplier.view','purchase.view','sale.view','order.view','inventory.view','finance.view','tax.view','accounting.event.view','payroll.view','report.view','report.export','audit.view','inspection.view','asset.view','fleet.view','payment.view','manufacturing.view','digital_service.view']],
     ['HR', ['employee.view','employee.manage','attendance.view','attendance.manage','attendance.approve','leave.view','leave.manage','leave.approve','overtime.view','overtime.manage','overtime.approve','payroll.view','report.view']],

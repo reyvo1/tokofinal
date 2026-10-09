@@ -66,17 +66,46 @@ test('closing a shift that does not reconcile needs a supervisor grant', () => {
   assert.match(sales, /const SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE = 10000;/,
     'a small shortfall is ordinary change error and must not summon a manager');
   const close = body('async closeShift(');
-  assert.match(close, /const shortfall = expected - closingCash;/);
-  assert.match(close, /if \(shortfall > SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE\)/,
-    'gate the SHORT side only: a drawer that comes up over must never be blocked, or this control');
-  // ...becomes a way to stop a till from closing. Assert the sign, not just the presence of a check.
-  const shiftGate = close.slice(close.indexOf('if (shortfall > SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE)'),
+  // W3 computes money in Prisma.Decimal and rounds expected once to two decimal places.
+  // A numeric subtraction or reversed operands could misclassify a shortage as an overage.
+  assert.match(close, /const expected = new Prisma\.Decimal\(/);
+  assert.match(close, /\.toDecimalPlaces\(2\);\s*const declared = new Prisma\.Decimal\(closingCash\);/);
+  assert.match(close, /const difference = declared\.minus\(expected\);/);
+  assert.match(close, /const shortfall = expected\.minus\(declared\);/,
+    'shortfall must be expected minus declared (not the reverse)');
+  const threshold = 'if (shortfall.greaterThan(SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE))';
+  assert.ok(close.includes(threshold),
+    'gate only a Decimal shortfall above the unchanged Rp10,000 tolerance');
+  // Only SHORT is supervisor gated: an OVERAGE must not block shift closure.
+  assert.doesNotMatch(close, /if \(difference\.greaterThan\(SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE\)\)/);
+  const shiftGate = close.slice(close.indexOf(threshold),
     close.indexOf('const row = await tx.cashierShift.update('));
+  assert.ok(shiftGate.startsWith(threshold) && shiftGate.length > threshold.length,
+    'supervisor approval must remain on the actual shift close commit path');
   assert.match(shiftGate, /if \(!grantId\)\s*\{\s*throw new ForbiddenException/,
     'a shortfall past the tolerance with no grant must be REFUSED, not recorded');
   assert.match(shiftGate, /this\.approvals\.consume\(grantId, 'SHIFT_CLOSE', user\)/);
+  assert.ok(close.indexOf("this.approvals.consume(grantId, 'SHIFT_CLOSE', user)")
+    < close.indexOf('const row = await tx.cashierShift.update('),
+    'the single-use supervisor grant must be consumed before shift closure');
   assert.doesNotMatch(close, /closingCash\s*-\s*expected\s*>\s*SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE/,
     'gating an OVERAGE would block a safe outcome — that is the opposite of the intent');
+});
+
+test('shift shortage guard negative controls reject reversed Decimal sign or removed supervisor gate', () => {
+  const close = body('async closeShift(');
+  const assertSafe = (source) => {
+    assert.match(source, /const shortfall = expected\.minus\(declared\);/);
+    assert.match(source, /if \(shortfall\.greaterThan\(SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE\)\)/);
+    assert.match(source, /this\.approvals\.consume\(grantId, 'SHIFT_CLOSE', user\)/);
+  };
+  assertSafe(close);
+  assert.throws(() => assertSafe(close.replace('expected.minus(declared)', 'declared.minus(expected)')),
+    'an inverted shortage would gate overages and must be caught');
+  assert.throws(() => assertSafe(close.replace('shortfall.greaterThan(', 'shortfall.lessThan(')),
+    'an inverted tolerance predicate must be caught');
+  assert.throws(() => assertSafe(close.replace("this.approvals.consume(grantId, 'SHIFT_CLOSE', user)", 'void grantId')),
+    'an unconsumed approval must be caught');
 });
 
 test('both gates sit on the commit path and both reach the service', () => {

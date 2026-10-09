@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 class SaleItemDto {
   @ApiProperty() @IsString() productId!: string;
   @ApiProperty({ example: 1, description: 'Jumlah unit jual. Tanpa productUnitId/barcodeCode berarti base unit produk.' }) @IsInt() @Min(1) quantity!: number;
@@ -34,18 +34,20 @@ export class CreateSaleDto {
 }
 
 export class OpenCashierShiftDto {
-  @ApiProperty({ example: 500000 }) @IsNumber() @Min(0) openingCash!: number;
+  @ApiProperty({ example: 500000 }) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) openingCash!: number;
 }
 
 export class CloseCashierShiftDto {
-  @ApiProperty({ example: 1750000 }) @IsNumber() @Min(0) closingCash!: number;
+  @ApiProperty({ example: 1750000 }) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) closingCash!: number;
   @ApiPropertyOptional({ description: 'Grant persetujuan supervisor; wajib bila selisih kas melebihi toleransi.' })
   @IsOptional() @IsString() @MaxLength(160) supervisorApprovalId?: string;
 }
 
 export class CashierCashMovementDto {
+  @ApiProperty({ description: 'Kunci unik per niat mutasi kas. Retry dengan key sama harus mengembalikan movement awal.' })
+  @IsString() @MinLength(8) @MaxLength(160) idempotencyKey!: string;
   @ApiProperty({ enum: ['CASH_IN','CASH_OUT'] }) @IsString() @IsIn(['CASH_IN','CASH_OUT']) type!: 'CASH_IN' | 'CASH_OUT';
-  @ApiProperty({ example: 100000 }) @IsNumber() @Min(0.01) amount!: number;
+  @ApiProperty({ example: 100000, description: 'Nominal positif dengan maksimal 2 angka di belakang desimal.' }) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) amount!: number;
   @ApiProperty({ example: 'Tambah uang kecil' }) @IsString() @MaxLength(240) reason!: string;
   @ApiPropertyOptional({ description: 'Grant persetujuan supervisor; wajib bila pengambilan kas melebihi 5% dari isi laci.' })
   @IsOptional() @IsString() @MaxLength(160) supervisorApprovalId?: string;

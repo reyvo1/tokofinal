@@ -46,7 +46,51 @@ test('cash drawer expected value counts cash settlement, manual cash movement, a
   assert.match(sales, /this\.refundCashAmount\(row\.refundDetails, row\.refundMethod, row\.refundAmount\)/);
   assert.match(sales, /cashMovements\.filter\(\(item\) => item\.type === 'CASH_IN'\)/);
   assert.match(sales, /cashMovements\.filter\(\(item\) => item\.type === 'CASH_OUT'\)/);
-  assert.match(sales, /const expected = Number\(shift\.openingCash\) \+ summary\.cashSales \+ summary\.cashIn - summary\.cashOut - summary\.cashRefunds/);
+  assert.match(sales, /cashSales: cashSales \+ ppobCashSales/, 'paid PPOB cash belongs to shift cash sales');
+  assert.match(sales, /cashRefunds: cashRefundRows\.reduce\(\(sum, amount\) => sum \+ amount, 0\) \+ ppobRefunds/, 'paid PPOB refunds belong to shift cash refunds');
+  assertExpectedCashFormula(sales);
+
+});
+
+// W3 replaced the numeric expected-cash expression with a two-decimal Prisma.Decimal.
+// The previous test matched only the legacy spelling and did not recognize W3's
+// equivalent business formula. Keep all five signs and the rounding as hard gates.
+const EXPECTED_CASH_FORMULA = /const expected = new Prisma\.Decimal\(\s*Number\(shift\.openingCash\)\s*\+\s*summary\.cashSales\s*\+\s*summary\.cashIn\s*-\s*summary\.cashOut\s*-\s*summary\.cashRefunds\s*\)\s*\.toDecimalPlaces\(2\);/;
+
+function assertExpectedCashFormula(source) {
+  const closeShiftAt = source.indexOf('async closeShift(');
+  const recapAt = source.indexOf('async shiftRecap(', closeShiftAt);
+  assert.ok(closeShiftAt !== -1 && recapAt > closeShiftAt, 'closeShift and shiftRecap boundaries must exist');
+  const closeShift = source.slice(closeShiftAt, recapAt);
+  assert.match(closeShift, EXPECTED_CASH_FORMULA,
+    'expected drawer cash = opening + all cash sales (including PPOB) + cash in - cash out - all refunds, rounded to 2 decimal places');
+  assert.match(closeShift, /const difference = declared\.minus\(expected\);/,
+    'variance must compare declared cash against expected cash');
+  assert.match(closeShift, /const shortfall = expected\.minus\(declared\);/,
+    'cash shortage direction must not be inverted');
+}
+
+test('W3 cash recap negative controls refuse missing terms, inverted signs or lost rounding', () => {
+  assertExpectedCashFormula(sales);
+  const mutations = [
+    ['opening cash removed', /Number\(shift\.openingCash\) \+ /, ''],
+    ['cash sale sign reversed', /\+ summary\.cashSales/, '- summary.cashSales'],
+    ['cash in removed', /\+ summary\.cashIn/, ''],
+    ['cash out sign reversed', /- summary\.cashOut/, '+ summary.cashOut'],
+    ['refund removed', /- summary\.cashRefunds/, ''],
+    ['rounding removed', /\.toDecimalPlaces\(2\);/, ';'],
+    ['shortage sign reversed', /const shortfall = expected\.minus\(declared\);/, 'const shortfall = declared.minus(expected);'],
+  ];
+  for (const [name, search, replacement] of mutations) {
+    const start = sales.indexOf('async closeShift(');
+    const end = sales.indexOf('async shiftRecap(', start);
+    const original = sales.slice(start, end);
+    const mutated = original.replace(search, replacement);
+    assert.notEqual(mutated, original, `negative control must actually mutate source: ${name}`);
+    const wholeMutated = sales.slice(0, start) + mutated + sales.slice(end);
+    assert.throws(() => assertExpectedCashFormula(wholeMutated), undefined,
+      `cash drawer gate must reject: ${name}`);
+  }
 });
 
 test('POS total is server-authoritative and no longer hardcodes 11 percent tax', () => {

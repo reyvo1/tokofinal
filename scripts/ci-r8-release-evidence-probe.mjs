@@ -15,6 +15,7 @@ const evidence={
  r2:read('handoff/quality/github-r2-hr-payroll-probe-latest.json'),
  r3:read('handoff/quality/github-r3-residual-probe-latest.json'),
  r4:read('handoff/quality/github-r4-core-business-probe-latest.json'),
+ w3Cash:read('handoff/quality/github-w3-cash-postgres-probe-latest.json'),
  r5:read('handoff/quality/github-r5-assets-fleet-probe-latest.json'),
  r6:read('handoff/quality/github-r6-scale-ai-probe-latest.json'),
  r7:read('handoff/quality/github-r7-ui-probe-latest.json'),
@@ -32,7 +33,8 @@ const sourceOf=(v)=>v?.sourceIdentity?.value||v?.sourceIdentityAfter?.value||v?.
 for(const [id,v] of Object.entries(evidence)){
  const s=sourceOf(v); if(s&&s!==source.value) throw new Error(`R8 ${id} stale source: ${s}`);
 }
-for(const id of ['r1','r2','r3','r4','r5','r6','r7','r8Reporting','browserBuilt','browserRuntime','api','provider','worker','dr']) if(evidence[id]?.status!=='PASS') throw new Error(`R8 evidence ${id} belum PASS.`);
+for(const id of ['r1','r2','r3','r4','w3Cash','r5','r6','r7','r8Reporting','browserBuilt','browserRuntime','api','provider','worker','dr']) if(evidence[id]?.status!=='PASS') throw new Error(`R8 evidence ${id} belum PASS.`);
+if(evidence.w3Cash.productionTouched!==false || Object.keys(evidence.w3Cash.checks||{}).length<10 || !Object.values(evidence.w3Cash.checks).every(Boolean)) throw new Error('W3 exact-source PostgreSQL cash/journal proof incomplete.');
 if(!Object.values(evidence.r8Reporting?.checks||{}).every(Boolean)) throw new Error('R8 reporting/security runtime checks belum lengkap.');
 if(evidence.browserBuilt?.browserEvidence?.sourceFingerprint!==source.value||evidence.browserRuntime?.sourceIdentity?.value!==source.value) throw new Error('R8 browser wrapper/inner source mismatch.');
 if(evidence.browserBuilt?.buildArtifactId!==artifact.id||evidence.browserRuntime?.runtimeBuildArtifactId!==artifact.id||evidence.browserBuilt?.browserEvidence?.buildArtifactId!==artifact.id) throw new Error('R8 browser wrapper/inner artifact mismatch.');
@@ -44,7 +46,7 @@ for(const id of ['browserBuilt','worker']) if(evidence[id]?.buildArtifactId&&evi
 
 const scenarios=[
  ['UAT-01-AUTH-ACCESS',['r1']],['UAT-02-PUBLIC-CATALOG',['browserBuilt','browserRuntime','api']],['UAT-03-SALES-ORDER-PAYMENT',['r4']],
- ['UAT-04-PURCHASE-RECEIPT',['r4']],['UAT-05-INVENTORY-OPERATIONS',['r4']],['UAT-06-ACCOUNTING-FINANCE-REPORTS',['r4','worker','r8Reporting']],
+ ['UAT-04-PURCHASE-RECEIPT',['r4']],['UAT-05-INVENTORY-OPERATIONS',['r4']],['UAT-06-ACCOUNTING-FINANCE-REPORTS',['r4','w3Cash','worker','r8Reporting']],
  ['UAT-07-HR-ATTENDANCE-PAYROLL',['r2','payroll']],['UAT-08-OFFLINE-SYNC',['r3']],['UAT-09-AUDIT-DENIAL',['r1','r8Reporting']],
  ['UAT-10-RESTORE-ROLLBACK',['dr']],['UAT-11-DELIVERY-LIFECYCLE',['r5']],['UAT-12-PAYROLL-ADJUSTMENT-RECOVERY',['r2','payroll']],
 ].map(([id,refs])=>({id,status:'PASS',executedEvidence:refs}));

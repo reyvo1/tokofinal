@@ -99,7 +99,7 @@
     "ci:worker:probe": "node scripts/ci-worker-runtime-probe.mjs",
     "ci:audit:production": "node scripts/ci-audit-production-deps.mjs",
     "test:dependency-free": "node --test tests/*.test.mjs",
-    "ci:preflight:local": "npm run workflow:validate && npm run validate:repo && npm run db:local:generate && npm run test:dependency-free",
+    "ci:preflight:local": "npm run workflow:validate && npm run validate:repo && npm run db:local:generate && npm run build -w @toko360/worker && npm run test:dependency-free",
     "ci:security:proposal": "node scripts/ci-propose-security-dependency-refresh.mjs",
     "uat:pre-github:local": "node scripts/run-local-candidate-gate.mjs",
     "audit:full:repo": "node scripts/audit-full-repository.mjs && npm run audit:product:completeness && npm run audit:admin:contextual && npm run audit:canonical:ownership && npm run audit:p5:visual",
@@ -128,7 +128,9 @@
     "audit:p5:visual": "node scripts/audit-p5-visual-rebuild.mjs && node scripts/audit-p5-v4-total-ui-rebuild.mjs && node scripts/audit-ui-domain-surface-depth.mjs",
     "ci:p5:probe": "node scripts/ci-p5-visual-probe.mjs",
     "audit:ui:domain-depth": "node scripts/audit-ui-domain-surface-depth.mjs",
-    "uat:browser:fresh": "node scripts/fresh-state-uat.mjs"
+    "uat:browser:fresh": "node scripts/fresh-state-uat.mjs",
+    "ci:peripherals:simulation": "node --experimental-strip-types scripts/ci-peripheral-contract-simulation.mjs",
+    "ci:w3:postgres-probe": "node scripts/ci-w3-cash-postgres-probe.mjs"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

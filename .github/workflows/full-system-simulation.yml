@@ -178,6 +178,10 @@ jobs:
           echo "Build gate failed. Independent dependency/UAT-coverage/container diagnostics were still collected; artifact-dependent stages are intentionally skipped." >&2
           exit 1
 
+      - name: Simulate POS printer/drawer/barcode and signed Digiflazz provider protocol
+        id: peripheral_sim
+        run: npm run ci:peripherals:simulation
+
       - name: Rehearse expand migrations from previous source baseline
         id: migration_rehearsal
         shell: bash
@@ -317,6 +321,11 @@ jobs:
         id: r4_core_business
         continue-on-error: true
         run: npm run ci:r4:probe
+
+      - name: Exercise W3 cashier drawer PostgreSQL journaling on exact built runtime
+        id: w3_cash_postgres
+        continue-on-error: true
+        run: npm run ci:w3:postgres-probe
 
       - name: Exercise P2A mixed-UOM order fulfillment and historical return lifecycle
         id: p2a_multi_uom
@@ -567,6 +576,7 @@ jobs:
           T360_CI_STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
           T360_CI_STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
           T360_CI_STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          T360_CI_STEP_W3_CASH_POSTGRES: ${{ steps.w3_cash_postgres.outcome }}
           T360_CI_STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
           T360_CI_STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
           T360_CI_STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}

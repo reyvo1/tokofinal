@@ -13,5 +13,6 @@ import { ReceiptController } from './receipt.controller';
   imports: [PrismaModule, AccountingCoreModule, PromotionsModule, SupervisorApprovalModule],
   controllers: [SalesController, CashierTargetController, ReceiptController],
   providers: [SalesService, CashierTargetService, StockAlertService],
+  exports: [SalesService],
 })
 export class SalesModule {}

@@ -292,6 +292,8 @@ async function syncDigiflazzCatalog(integrationId: string): Promise<void> {
   const data = response.data;
   if (!Array.isArray(data)) throw new Error('Price list Digiflazz tidak mengembalikan data array.');
   await prisma.$transaction(async (tx) => {
+    const previousRows = await tx.digitalServiceProduct.findMany({ where: { integrationId: integration.id }, select: { providerSku: true, name: true, category: true, type: true, metadata: true } });
+    const previousBySku = new Map(previousRows.map((product) => [product.providerSku, product]));
     await tx.digitalServiceProduct.updateMany({ where: { integrationId: integration.id }, data: { active: false } });
     for (const item of data) {
       if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
@@ -304,6 +306,19 @@ async function syncDigiflazzCatalog(integrationId: string): Promise<void> {
       const buyerProductStatus = row.buyer_product_status !== false;
       const sellerProductStatus = row.seller_product_status !== false;
       const active = buyerProductStatus && sellerProductStatus;
+      const previous = previousBySku.get(providerSku);
+      const previousMetadata = previous?.metadata && typeof previous.metadata === 'object' && !Array.isArray(previous.metadata)
+        ? previous.metadata as Record<string, unknown> : {};
+      const safeProviderData = Object.fromEntries(Object.entries(row).filter(([key]) =>
+        !['taxTreatment','taxVerificationReason','taxVerifiedById','taxVerifiedAt'].includes(key)));
+      // Classification belongs to Finance, never the untrusted vendor catalog. Preserve it only
+      // for the exact same semantic product after sync; product reclassification clears it.
+      const sameProduct = previous && previous.name === name && previous.category === category
+        && (previous.type ?? null) === (typeof row.type === 'string' ? row.type : null);
+      const verifiedMetadata = sameProduct && previousMetadata.taxTreatment === 'NO_TAX_VERIFIED'
+        ? { taxTreatment: 'NO_TAX_VERIFIED', taxVerificationReason: previousMetadata.taxVerificationReason,
+            taxVerifiedById: previousMetadata.taxVerifiedById, taxVerifiedAt: previousMetadata.taxVerifiedAt } : {};
+      const mergedMetadata = { ...safeProviderData, ...verifiedMetadata } as Prisma.InputJsonObject;
       await tx.digitalServiceProduct.upsert({
         where: { integrationId_providerSku: { integrationId: integration.id, providerSku } },
         create: {
@@ -312,14 +327,14 @@ async function syncDigiflazzCatalog(integrationId: string): Promise<void> {
           sellerName: typeof row.seller_name === 'string' ? row.seller_name : null, costPrice: new Prisma.Decimal(cost),
           salePrice: new Prisma.Decimal(digiflazzSalePrice(cost, integration.config)), buyerProductStatus, sellerProductStatus,
           unlimitedStock: row.unlimited_stock === true, stock: Number.isInteger(Number(row.stock)) ? Number(row.stock) : null, active,
-          metadata: row as Prisma.InputJsonObject, syncedAt: new Date(),
+          metadata: mergedMetadata, syncedAt: new Date(),
         },
         update: {
           name, category, brand: typeof row.brand === 'string' ? row.brand : null, type: typeof row.type === 'string' ? row.type : null,
           sellerName: typeof row.seller_name === 'string' ? row.seller_name : null, costPrice: new Prisma.Decimal(cost),
           salePrice: new Prisma.Decimal(digiflazzSalePrice(cost, integration.config)), buyerProductStatus, sellerProductStatus,
           unlimitedStock: row.unlimited_stock === true, stock: Number.isInteger(Number(row.stock)) ? Number(row.stock) : null, active,
-          metadata: row as Prisma.InputJsonObject, syncedAt: new Date(),
+          metadata: mergedMetadata, syncedAt: new Date(),
         },
       });
     }
@@ -330,14 +345,28 @@ async function syncDigiflazzCatalog(integrationId: string): Promise<void> {
 function mappedDigiflazzStatus(value: unknown): 'SUCCESS'|'PENDING'|'FAILED' {
   const status = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (status === 'sukses' || status === 'success') return 'SUCCESS';
-  if (status === 'pending' || status === 'processing') return 'PENDING';
-  return 'FAILED';
+  if (status === 'gagal' || status === 'failed') return 'FAILED';
+  // Unknown provider values are NOT a failure proof. Never unlock cash refund
+  // unless Digiflazz sent an explicit terminal failure status.
+  return 'PENDING';
 }
 
 async function processDigiflazzTransaction(transactionId: string): Promise<void> {
   const transaction = await prisma.digitalServiceTransaction.findUnique({ where: { id: transactionId }, include: { integration: true } });
   if (!transaction) throw new Error('DigitalServiceTransaction tidak ditemukan.');
   if (!['QUEUED','PROCESSING','PENDING'].includes(transaction.status)) return;
+  // A legacy queued event must never reach Digiflazz: it has no customer cash
+  // receipt. The posted Accounting Core event, not a requestData flag, is authority.
+  if (!transaction.paymentAccountingEventId || !transaction.capturedAt) throw new Error('PPOB_UNPAID: provider dispatch blocked before network call.');
+  const prepaid = await prisma.accountingEvent.findFirst({ where: {
+    id: transaction.paymentAccountingEventId, companyId: transaction.companyId,
+    branchId: transaction.branchId, sourceType: 'DigitalServiceTransaction',
+    sourceId: transaction.id, eventType: 'DIGITAL_SERVICE_PREPAYMENT', status: 'POSTED',
+  } });
+  if (!prepaid || !new Prisma.Decimal(prepaid.grossAmount).equals(transaction.sellingPrice)) {
+    throw new Error('PPOB_PAYMENT_LEDGER_MISMATCH: provider dispatch blocked before network call.');
+  }
+
   if (transaction.integration.type !== 'PPOB' || transaction.integration.provider !== 'DIGIFLAZZ' || transaction.integration.status !== 'CONNECTED') throw new Error('IntegrationConnection transaksi bukan DIGIFLAZZ CONNECTED.');
   const { username, apiKey } = digiflazzCredentials(transaction.integration.encryptedSecrets);
   await prisma.digitalServiceTransaction.update({ where: { id: transaction.id }, data: { status: 'PROCESSING', attempts: { increment: 1 } } });

@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { SupervisorApprovalService } from '../supervisor-approval/supervisor-approval.service';
 import { CashierCashMovementDto, CreateSaleDto, ReplayOfflineSalesDto } from './dto/create-sale.dto';
+import { assertCashDrawerPostingRule, CashDrawerPostingEvent, DRAWER_ACCOUNT_CODE } from './cash-drawer-posting';
 import { StockAlertService } from './stock-alert.service';
 
 type TenantScope = { companyId: string; branchId: string };
@@ -267,25 +268,61 @@ export class SalesService {
 
   async recordCashMovement(user: AuthUser, dto: CashierCashMovementDto, grantId?: string) {
     const scope = this.requireTenantScope(user);
-    if (!Number.isFinite(dto.amount) || dto.amount <= 0) throw new BadRequestException('Nominal kas harus lebih besar dari nol.');
+    // Receipt hash rounds to 2 decimal places. Reject higher precision before hashing/writing,
+    // otherwise two different cash amounts can collide under the same idempotency key.
+    if (!Number.isFinite(dto.amount) || !new Prisma.Decimal(dto.amount).greaterThanOrEqualTo('0.01')
+      || new Prisma.Decimal(dto.amount).decimalPlaces() > 2) {
+      throw new BadRequestException('Nominal kas minimal 0,01 dan maksimal 2 angka desimal.');
+    }
     const reason = dto.reason.trim();
     if (!reason) throw new BadRequestException('Alasan kas masuk/keluar wajib diisi.');
     return serializableTx(this.prisma, async (tx) => {
+      // Resolve replay before looking for an open shift: the original shift may already be closed.
+      // The receipt and movement commit atomically in the same serializable transaction.
+      const idempotencyScope = `cashier-cash-movement:${user.sub}`;
+      const key = dto.idempotencyKey.trim();
+      const replay = await beginIdempotent(tx, {
+        companyId: scope.companyId, scope: idempotencyScope, key,
+        payload: { branchId: scope.branchId, type: dto.type, amount: new Prisma.Decimal(dto.amount).toFixed(2), reason },
+      });
+      if (replay.replay) {
+        if (!replay.response || typeof replay.response !== 'object' || !('id' in replay.response)) {
+          throw new BadRequestException('Receipt mutasi kas lama tidak memiliki identitas transaksi yang valid.');
+        }
+        const old = replay.response as { id: string; amount?: unknown };
+        const eventType: CashDrawerPostingEvent = dto.type === 'CASH_IN' ? 'CASH_DRAWER_TRANSFER_IN' : 'CASH_DRAWER_TRANSFER_OUT';
+        const posted = await tx.accountingEvent.findFirst({
+          where: { companyId: scope.companyId, branchId: scope.branchId, eventType,
+            sourceType: 'CashierCashMovement', sourceId: old.id, status: 'POSTED' },
+        });
+        if (!posted || !new Prisma.Decimal(posted.grossAmount).equals(dto.amount)) {
+          throw new BadRequestException('Mutasi kas lama tidak memiliki jurnal POSTED yang cocok. Rekonsiliasi Finance diperlukan.');
+        }
+        return replay.response;
+      }
       const shift = await tx.cashierShift.findFirst({
         where: { userId: user.sub, status: 'OPEN', user: { branchId: scope.branchId, branch: { companyId: scope.companyId } } },
         orderBy: { openedAt: 'desc' },
       });
       if (!shift) throw new BadRequestException('Buka shift kasir sebelum mencatat kas masuk/keluar.');
-      // Gate the COMMIT path. Money in the drawer is what leaves, so CASH_IN (petty cash added for
-      // change) stays an ordinary cashier action and only CASH_OUT is gated. The yardstick is the
-      // float the shift started with, so the same rule fits a warung and a supermarket.
+      const eventType: CashDrawerPostingEvent = dto.type === 'CASH_IN' ? 'CASH_DRAWER_TRANSFER_IN' : 'CASH_DRAWER_TRANSFER_OUT';
+      const postingAt = new Date();
+      // A finance-approved GL mapping must exist BEFORE cash can move, even if a supervisor
+      // can otherwise authorize the withdrawal. Unmapped cash is not legitimate drawer cash.
+      await assertCashDrawerPostingRule(tx, scope, eventType, postingAt);
+      // Gate the COMMIT path: CASH_OUT cannot exceed physically available drawer cash.
       if (dto.type === 'CASH_OUT') {
         const summary = await this.shiftCashSummary(tx, scope, shift);
         const float = new Prisma.Decimal(shift.openingCash)
           .plus(summary.cashSales)
           .plus(summary.cashIn)
-          .minus(summary.cashRefunds);
+          .minus(summary.cashRefunds)
+          .minus(summary.cashOut);
         const amount = new Prisma.Decimal(dto.amount);
+        // Supervisor approval cannot create physical cash. Reject even with a valid grant.
+        if (float.isNegative() || amount.greaterThan(float)) {
+          throw new BadRequestException('Kas keluar melebihi saldo tunai tersedia dalam laci.');
+        }
         if (float.greaterThan(0) && amount.dividedBy(float).greaterThan(SUPERVISOR_CASH_MOVEMENT_RATIO)) {
           if (!grantId) {
             throw new ForbiddenException('Pengambilan kas di atas 5% dari isi laci memerlukan persetujuan supervisor.');
@@ -293,11 +330,25 @@ export class SalesService {
           this.approvals.consume(grantId, 'SALE_CASH_MOVEMENT', user);
         }
       }
+      // Only an ASSET-to-ASSET transfer is allowed here. True expenses must use Finance
+      // Operations / Tax Core, never an arbitrary free-text CASH_OUT reason.
       const movement = await tx.cashierCashMovement.create({
         data: { cashierShiftId: shift.id, type: dto.type, amount: new Prisma.Decimal(dto.amount), reason, createdById: user.sub },
       });
+      await this.accounting.postOperationalEvent(tx, {
+        companyId: scope.companyId, branchId: scope.branchId, eventType,
+        sourceType: 'CashierCashMovement', sourceId: movement.id,
+        idempotencyKey: `cash-drawer:${movement.id}`, businessDate: postingAt,
+        amounts: { gross: new Prisma.Decimal(dto.amount) },
+        accountCodes: { drawerCash: DRAWER_ACCOUNT_CODE },
+        context: { shiftId: shift.id, cashierId: user.sub, movementType: dto.type, reason },
+      });
       await tx.auditLog.create({
         data: { companyId: scope.companyId, userId: user.sub, action: dto.type, entityType: 'CashierCashMovement', entityId: movement.id, payload: { shiftId: shift.id, amount: dto.amount, reason } },
+      });
+      await completeIdempotent(tx, {
+        companyId: scope.companyId, scope: idempotencyScope, key,
+        resourceType: 'CashierCashMovement', resourceId: movement.id, response: movement,
       });
       return movement;
     });
@@ -305,7 +356,7 @@ export class SalesService {
 
   async openShift(user: AuthUser, openingCash: number) {
     const scope = this.requireTenantScope(user);
-    if (!Number.isFinite(openingCash) || openingCash < 0) throw new BadRequestException('Saldo awal kas tidak valid.');
+    if (!Number.isFinite(openingCash) || openingCash < 0 || new Prisma.Decimal(openingCash).decimalPlaces() > 2) throw new BadRequestException('Saldo awal kas wajib nonnegatif dengan maksimal 2 angka desimal.');
     return serializableTx(this.prisma, async (tx) => {
       const existing = await tx.cashierShift.findFirst({
         where: {
@@ -343,7 +394,7 @@ export class SalesService {
     shift: { id: string; userId: string; openedAt: Date; closedAt: Date | null },
   ) {
     const end = shift.closedAt ?? new Date();
-    const [payments, warehouseRows, cashMovements] = await Promise.all([
+    const [payments, warehouseRows, cashMovements, ppobCashReceipts, ppobCashRefunds] = await Promise.all([
       client.payment.findMany({
         where: {
           status: 'PAID',
@@ -365,6 +416,16 @@ export class SalesService {
       client.cashierCashMovement.findMany({
         where: { cashierShiftId: shift.id, createdAt: { gte: shift.openedAt, lte: end } },
         select: { type: true, amount: true },
+      }),
+      client.digitalServiceTransaction.findMany({
+        where: { cashierShiftId: shift.id, branchId: scope.branchId, companyId: scope.companyId,
+          paymentAccountingEventId: { not: null }, capturedAt: { gte: shift.openedAt, lte: end } },
+        select: { sellingPrice: true },
+      }),
+      client.digitalServiceTransaction.findMany({
+        where: { refundCashierShiftId: shift.id, branchId: scope.branchId, companyId: scope.companyId,
+          refundAccountingEventId: { not: null }, refundedAt: { gte: shift.openedAt, lte: end } },
+        select: { sellingPrice: true },
       }),
     ]);
     const paymentTotals = new Map<string, number>();
@@ -398,22 +459,47 @@ export class SalesService {
     const cashRefundRows = completedReturns
       .map((row) => this.refundCashAmount(row.refundDetails, row.refundMethod, row.refundAmount))
       .filter((amount) => amount > 0);
+    const ppobCashSales = ppobCashReceipts.reduce((sum, row) => sum + Number(row.sellingPrice), 0);
+    const ppobRefunds = ppobCashRefunds.reduce((sum, row) => sum + Number(row.sellingPrice), 0);
+    paymentTotals.set('PPOB_CASH', (paymentTotals.get('PPOB_CASH') ?? 0) + ppobCashSales);
     const cashIn = cashMovements.filter((item) => item.type === 'CASH_IN').reduce((sum, item) => sum + Number(item.amount), 0);
     const cashOut = cashMovements.filter((item) => item.type === 'CASH_OUT').reduce((sum, item) => sum + Number(item.amount), 0);
     return {
       paymentTotals,
       paymentBreakdown: [...paymentBreakdown.values()],
-      cashSales,
-      cashRefunds: cashRefundRows.reduce((sum, amount) => sum + amount, 0),
-      cashRefundCount: cashRefundRows.length,
+      cashSales: cashSales + ppobCashSales,
+      cashRefunds: cashRefundRows.reduce((sum, amount) => sum + amount, 0) + ppobRefunds,
+      cashRefundCount: cashRefundRows.length + ppobCashRefunds.length,
+      ppobCashSales,
+      ppobCashRefunds: ppobRefunds,
       cashIn,
       cashOut,
     };
   }
 
+  // Shared drawer cash authority for payment domains (including PPOB cash refunds).
+  async assertDrawerCashAvailable(
+    client: Prisma.TransactionClient | PrismaService,
+    scope: TenantScope,
+    shift: { id: string; userId: string; openedAt: Date; closedAt: Date | null; openingCash: Prisma.Decimal },
+    requestedAmount: Prisma.Decimal,
+  ) {
+    const summary = await this.shiftCashSummary(client, scope, shift);
+    const available = new Prisma.Decimal(shift.openingCash)
+      .plus(summary.cashSales).plus(summary.cashIn)
+      .minus(summary.cashRefunds).minus(summary.cashOut);
+    if (available.isNegative() || requestedAmount.greaterThan(available)) {
+      throw new BadRequestException('Refund PPOB melebihi uang tunai tersedia di laci shift.');
+    }
+    return available;
+  }
+
   async closeShift(user: AuthUser, closingCash: number, grantId?: string) {
     const scope = this.requireTenantScope(user);
-    if (!Number.isFinite(closingCash) || closingCash < 0) throw new BadRequestException('Saldo akhir kas tidak valid.');
+    if (!Number.isFinite(closingCash) || closingCash < 0
+      || new Prisma.Decimal(closingCash).decimalPlaces() > 2) {
+      throw new BadRequestException('Saldo akhir kas wajib nonnegatif dengan maksimal 2 angka desimal.');
+    }
     return serializableTx(this.prisma, async (tx) => {
       const shift = await tx.cashierShift.findFirst({
         where: {
@@ -424,29 +510,43 @@ export class SalesService {
       });
       if (!shift) throw new BadRequestException('Tidak ada shift kasir yang terbuka.');
       const summary = await this.shiftCashSummary(tx, scope, shift);
-      const expected = Number(shift.openingCash) + summary.cashSales + summary.cashIn - summary.cashOut - summary.cashRefunds;
-      // A drawer that comes up SHORT past the change tolerance is a second gate. Probed live: closing
-      // with Rp 1 declared against a drawer short Rp 2.311.201 returned 201, so the missing money was
-      // written to a column and the shift closed anyway — the loss was recorded, not prevented.
-      //
-      // Only a shortfall is gated. Money left OVER is a safe outcome and must never be blocked, or
-      // this control becomes a way to stop a till from closing.
-      const shortfall = expected - closingCash;
-      if (shortfall > SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE) {
+      // This mirrors the existing shift recap contract; round once to legal currency precision.
+      const expected = new Prisma.Decimal(Number(shift.openingCash) + summary.cashSales + summary.cashIn - summary.cashOut - summary.cashRefunds)
+        .toDecimalPlaces(2);
+      const declared = new Prisma.Decimal(closingCash);
+      const difference = declared.minus(expected);
+      const shortfall = expected.minus(declared);
+      const postingAt = new Date();
+      // Never declare a shift CLOSED with an unresolved variance. Posting a balanced adjustment
+      // through Accounting Core and closing the shift happen in the SAME serializable transaction.
+      if (!difference.isZero()) {
+        const eventType: CashDrawerPostingEvent = difference.isNegative() ? 'CASHIER_SHIFT_SHORT' : 'CASHIER_SHIFT_OVER';
+        await assertCashDrawerPostingRule(tx, scope, eventType, postingAt);
+        await this.accounting.postOperationalEvent(tx, {
+          companyId: scope.companyId, branchId: scope.branchId, eventType,
+          sourceType: 'CashierShift', sourceId: shift.id,
+          idempotencyKey: `cash-shift-variance:${shift.id}`, businessDate: postingAt,
+          amounts: { gross: difference.abs() }, accountCodes: { drawerCash: DRAWER_ACCOUNT_CODE },
+          context: { cashierId: user.sub, expected: expected.toFixed(2), declared: declared.toFixed(2),
+            difference: difference.toFixed(2) },
+        });
+      }
+      if (shortfall.greaterThan(SUPERVISOR_SHIFT_DIFFERENCE_TOLERANCE)) {
         if (!grantId) {
           throw new ForbiddenException(
-            `Selisih kas Rp ${Math.round(shortfall).toLocaleString('id-ID')} melebihi toleransi. Tutup shift memerlukan persetujuan supervisor.`,
+            `Selisih kas Rp ${Math.round(shortfall.toNumber()).toLocaleString('id-ID')} melebihi toleransi. Tutup shift memerlukan persetujuan supervisor.`,
           );
         }
+        // Consume only after all accounting preflight and journal writes have succeeded.
         this.approvals.consume(grantId, 'SHIFT_CLOSE', user);
       }
       const row = await tx.cashierShift.update({
         where: { id: shift.id },
         data: {
-          closingCash: new Prisma.Decimal(closingCash),
-          expectedCash: new Prisma.Decimal(expected),
-          difference: new Prisma.Decimal(Number(closingCash) - expected),
-          closedAt: new Date(),
+          closingCash: declared,
+          expectedCash: expected,
+          difference,
+          closedAt: postingAt,
           status: 'CLOSED',
         },
       });
@@ -457,7 +557,9 @@ export class SalesService {
           action: 'CLOSE_CASHIER_SHIFT',
           entityType: 'CashierShift',
           entityId: shift.id,
-          payload: { expected, closingCash, cashSales: summary.cashSales, cashIn: summary.cashIn, cashOut: summary.cashOut, cashRefunds: summary.cashRefunds },
+          payload: { expected: expected.toFixed(2), closingCash: declared.toFixed(2),
+            difference: difference.toFixed(2), cashSales: summary.cashSales, cashIn: summary.cashIn,
+            cashOut: summary.cashOut, cashRefunds: summary.cashRefunds },
         },
       });
       return row;

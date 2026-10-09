@@ -72,6 +72,7 @@ export function collectFullSystemSummary(root = process.cwd(), env = process.env
   const r1TenantAccess = readJson(root, 'handoff/quality/github-r1-tenant-access-probe-latest.json');
   const r2HrPayroll = readJson(root, 'handoff/quality/github-r2-hr-payroll-probe-latest.json');
   const r4CoreBusiness = readJson(root, 'handoff/quality/github-r4-core-business-probe-latest.json');
+  const w3CashPostgres = readJson(root, 'handoff/quality/github-w3-cash-postgres-probe-latest.json');
   const p2aMultiUom = readJson(root, 'handoff/quality/github-p2a-multi-uom-runtime-probe-latest.json');
   const p2Payroll = readJson(root, 'handoff/quality/github-p2-payroll-runtime-probe-latest.json');
   const r5AssetsFleet = readJson(root, 'handoff/quality/github-r5-assets-fleet-probe-latest.json');
@@ -121,6 +122,7 @@ export function collectFullSystemSummary(root = process.cwd(), env = process.env
     r1TenantAccess: gateStatus(r1TenantAccess, current, (v) => v.status === 'PASS' && v.isolation?.foreignBranchDenied === true && v.isolation?.foreignCompanyDenied === true && v.tenant?.switched === true && v.access?.statusLifecycle === true),
     r2HrPayroll: gateStatus(r2HrPayroll, current, (v) => v.status === 'PASS' && Object.values(v.checks || {}).every(Boolean)),
     r4CoreBusiness: gateStatus(r4CoreBusiness, current, (v) => v.status === 'PASS' && Object.values(v.checks || {}).every(Boolean)),
+    w3CashPostgres: gateStatus(w3CashPostgres, current, (v) => v.status === 'PASS' && v.productionTouched === false && v.humanStage20 === 'PENDING' && Object.keys(v.checks || {}).length >= 10 && Object.values(v.checks).every(Boolean)),
     p2aMultiUom: gateStatus(p2aMultiUom, current, (v) => v.status === 'PASS' && v.productionTouched === false && Object.values(v.checks || {}).every(Boolean)),
     p2Payroll: gateStatus(p2Payroll, current, (v) => v.status === 'PASS' && v.productionTouched === false && Object.values(v.checks || {}).every(Boolean)),
     r5AssetsFleet: gateStatus(r5AssetsFleet, current, (v) => v.status === 'PASS' && Object.values(v.checks || {}).every(Boolean)),
@@ -163,6 +165,7 @@ export function collectFullSystemSummary(root = process.cwd(), env = process.env
     r1TenantAccess: stepOutcome(env, 'T360_CI_STEP_R1_TENANT_ACCESS'),
     r2HrPayroll: stepOutcome(env, 'T360_CI_STEP_R2_HR_PAYROLL'),
     r4CoreBusiness: stepOutcome(env, 'T360_CI_STEP_R4_CORE_BUSINESS'),
+    w3CashPostgres: stepOutcome(env, 'T360_CI_STEP_W3_CASH_POSTGRES'),
     p2aMultiUom: stepOutcome(env, 'T360_CI_STEP_P2A_MULTI_UOM'),
     p2Payroll: stepOutcome(env, 'T360_CI_STEP_P2_PAYROLL'),
     r5AssetsFleet: stepOutcome(env, 'T360_CI_STEP_R5_ASSETS_FLEET'),
@@ -188,7 +191,7 @@ export function collectFullSystemSummary(root = process.cwd(), env = process.env
   const priorJobStatus = String(env.T360_CI_JOB_STATUS || 'unknown').toLowerCase();
   const requiredAutomated = [
     'build','buildArtifact','artifactTransport','dependencyAudit','criticalUatCoverage','repositoryAudit','uiInteractionAudit','stage18','payrollMigration','stage19',
-    'builtBrowser','r7Ui','workerRuntime','apiRuntimeSweep','r1TenantAccess','r2HrPayroll','r4CoreBusiness','p2aMultiUom','p2Payroll','r5AssetsFleet','r6ScaleAi','p3Productization','p4CanonicalOwnership','p5VisualRebuild','notificationProviderProbe','stagingCertification','load','indexProfile','dr','stage20Automated',
+    'builtBrowser','r7Ui','workerRuntime','apiRuntimeSweep','r1TenantAccess','r2HrPayroll','r4CoreBusiness','w3CashPostgres','p2aMultiUom','p2Payroll','r5AssetsFleet','r6ScaleAi','p3Productization','p4CanonicalOwnership','p5VisualRebuild','notificationProviderProbe','stagingCertification','load','indexProfile','dr','stage20Automated',
   ];
   const automatedPassed = requiredAutomated.every((key) => gate[key] === 'PASS');
   const reportedDiagnostics = Object.values(diagnosticSteps).filter((value) => value !== 'NOT_REPORTED');

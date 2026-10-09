@@ -1,0 +1,75 @@
+{
+  "id": "T360-20261009-101100",
+  "title": "W3 Atomic cashier drawer transfers and shift variance Accounting Core journal",
+  "type": "feature",
+  "module": "accounting-core",
+  "wave": "W3",
+  "phase": "IMPLEMENTATION",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "Finance ACTIVE AccountingPostingRule per event; default fail-closed without mapping",
+  "dependencies": [
+    "accounting-core",
+    "cashier-shift",
+    "pos",
+    "supervisor-approval",
+    "W2 paid-PPOB"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "HIGH",
+    "tax": "LOW",
+    "payment": "MEDIUM",
+    "payroll": "NONE",
+    "sync": "LOW",
+    "security": "HIGH",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "CASH_IN and CASH_OUT in the POS are strictly ASSET-to-ASSET transfers with Finance-configured opposite account, not expense or revenue from cashier-controlled reason.",
+    "A manual cash transfer and POSTED balanced journal must commit atomically with existing receipt, audit and tenant-bound serializable transaction.",
+    "A short/over variance must post through Accounting Core before CLOSED state commits; fiscal period and close controls remain mandatory.",
+    "Previously unjournalled historical cash receipts cannot silently replay as if they were posted; no invented backfill.",
+    "Effective tax-period rules remain controlled by Tax Core; this W3 movement does not invent non-transfer expense taxation.",
+    "Cashier never sends account codes; only Finance can activate valid two-line debit/credit posting rules."
+  ],
+  "acceptanceCriteria": [
+    "Every new till transfer has POSTED balanced journal from Accounting Core with CashierCashMovement source id; any missing mapping or close period fails before commit.",
+    "Both shift shortage and overage receive POSTED journal with typed Finance counter-account and source shift id; zero variance has no adjustment event.",
+    "Idempotent replay preserves original receipt and rejects legacy record lacking matching POSTED journal; no cross-branch leakage.",
+    "POS retains existing four P5 views, cash movement buttons and supervisor controls while warning transfer-only semantics.",
+    "Complete local gates, PostgreSQL fault injection, built browser UAT, exact-commit GitHub UAT and separate Human Stage-20 remain mandatory.",
+    "Simulated POS ESC/POS/RawBT/cash drawer/barcode and signed Digiflazz provider cases run as mandatory hard-failing gates in both exact-source GitHub heavy workflows; human/provider certification remain separate.",
+    "Exact-source GitHub PostgreSQL cashier runtime probe posts balanced real debit/credit lines for CASH_IN, CASH_OUT, SHORT, OVER; rejects overdraft, payload replay mismatch and duplicate close; aggregate/R8 cannot pass without its evidence.",
+    "Exact-source PostgreSQL W3 probe must reject CASHIER ledger/account rule mutations, missing Finance rule cash capture and variance close, and >5% cash withdrawal without supervisor approval, asserting zero affected database rows."
+  ],
+  "testPlan": [
+    "node --test tests/w3-cash-drawer-accounting.test.mjs tests/cash-ppob-financial-safety.test.mjs",
+    "Check journal debit/credit balanced, tenant-scoped account rules and closed-period refusal on real PostgreSQL TEST.",
+    "Exercise idempotent retry, failure injection rollback, concurrent shift closure, cross-branch denial and supervisor grant.",
+    "npm run workflow:validate && npm run validate:repo && npm run audit:full:repo && npm run uat:pre-github:local",
+    "Exact-commit GitHub full system simulation and built browser UAT; retain Human Stage-20 pending.",
+    "npm run ci:peripherals:simulation — on actual printer/scanner modules plus loopback provider cases, with current source fingerprint evidence and no physical devices.",
+    "npm run ci:w3:postgres-probe — PostgreSQL locked staging runtime with dedicated CASHIER actor, Finance-configured accounts and POSTED journal verification in both heavy GitHub workflows.",
+    "On CI PostgreSQL: authenticated cashier negative paths for account/rule privilege escalation, missing mapping, premature variance close and supervisor cash-out denial; assert no rows created and shift remains OPEN."
+  ],
+  "migrationPlan": "No database column/table/enum added. Existing AccountingEvent sourceType/sourceId, AccountingPosting, JournalEntry, accountingPostingRule and account relations are reused; historical rows are not backfilled.",
+  "rollbackPlan": "Finance disables invalid posting rules to block NEW movements; preserve all committed AccountingEvent and journal rows, reconcile historical unjournalled movements explicitly, and perform any correction with Accounting Core compensating event only. Do not erase business evidence or schema.",
+  "monitoringPlan": "Track missing or inactive finance rules, account type/branch mismatch, failed/posting-closed events, cash drawer shortage/overage, orphan historical movements and idempotency replay refusals; investigate physical-cash mismatch with Finance.",
+  "securityNotes": "Cashier cannot choose GL accounts. Active rule and account types are resolved inside company/branch-scoped serializable transaction; existing supervisor one-time grant and drawer overdraft control remain enforced.",
+  "documentation": [
+    "docs/W3-CASH-DRAWER-ACCOUNTING-20261009.md",
+    "docs/adr/ADR-T360-20261009-W3-CASH-DRAWER-POSTING.md",
+    "tests/w3-cash-drawer-accounting.test.mjs",
+    "handoff/CURRENT-WORK.md",
+    "docs/W3-POS-PROVIDER-CI-SIMULATION-20261009.md",
+    "tests/ci-peripherals-simulation-wiring.test.mjs",
+    "scripts/ci-w3-cash-postgres-probe.mjs",
+    "tests/w3-cash-postgres-ci-wiring.test.mjs",
+    "docs/W3-POSTGRES-RUNTIME-GATE-20261009.md",
+    "docs/W3-POSTGRES-SECURITY-PREFLIGHT-20261009.md"
+  ],
+  "createdAt": "2026-10-09T10:11:00+08:00",
+  "updatedAt": "2026-10-09T15:00:00+08:00"
+}

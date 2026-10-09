@@ -1,0 +1,71 @@
+{
+  "id": "T360-20261009-012800",
+  "title": "POS cash movement and PPOB replay financial safety",
+  "type": "bug",
+  "module": "payments",
+  "wave": "W2",
+  "phase": "IMPLEMENTATION",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [
+    "accounting-core",
+    "pos",
+    "digital-services",
+    "idempotency"
+  ],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "MEDIUM",
+    "tax": "NONE",
+    "payment": "HIGH",
+    "payroll": "NONE",
+    "sync": "LOW",
+    "security": "HIGH",
+    "performance": "LOW"
+  },
+  "businessRules": [
+    "Cash withdrawal cannot exceed the shift's remaining cash after earlier CASH_OUT and cash refunds, even when the supervisor approves.",
+    "Cashier movement creation must use existing IdempotencyReceipt in the same database transaction, with a per-operator key and immutable branch/type/amount/reason fingerprint; replay remains safe after shift close.",
+    "POS must preserve the same movement idempotency key through transport uncertainty and supervisor approval retries, regenerating only on a changed intended movement or confirmed success.",
+    "PPOB replay may return only the authenticated branch and original operator transaction with the same SKU/destination/requested max-price; conflicting request replays fail closed.",
+    "Single-use supervisor grants use unpredictable nonces and are redeemable only by their original company, branch, operator and action; denied cross-operator/cross-branch attempts cannot spend the rightful operator's grant.",
+    "Cash movement amounts must be finite, at least 0.01 and have no more than two decimal places before being fingerprinted or written, because the canonical idempotency request hash uses a two-decimal money representation.",
+    "Financial transaction lifecycle, PPOB prepayment, journal postings and shift variance settlement are not implemented by this hardening; do not claim product readiness.",
+    "No gate, quality assertion, provider evidence or Human Stage-20 acceptance is relaxed or synthesized."
+  ],
+  "acceptanceCriteria": [
+    "Cash-out rejects overdrawn drawer balances and repeated small withdrawals consume the available float.",
+    "Idempotent retry of CASH_IN/CASH_OUT cannot create a second movement/audit record and rejects altered payload.",
+    "Cashier terminal retains its request key after authorization, failure and network timeout.",
+    "PPOB replays refuse different branches, users, SKU, target and maxPrice without returning other operators' transaction payload.",
+    "Captured supervisor grants cannot be used by another cashier or sister branch, and concurrent issuance does not collide.",
+    "Sub-cent cash amounts are rejected before the two-decimal idempotency fingerprint is computed.",
+    "PostgreSQL+SQLite transaction rehearsals, browser/HTTP UAT and full official GitHub gates are still required before closure."
+  ],
+  "testPlan": [
+    "node --test tests/cash-ppob-financial-safety.test.mjs tests/supervisor-cash-and-shift-gate.test.mjs tests/video-parity-expansion.test.mjs tests/p6a-retail-transaction-completion.test.mjs",
+    "node --test tests/supervisor-approval-appointment.test.mjs (real service/stub-DB runtime; requires complete repo node_modules)",
+    "npm run workflow:validate && npm run validate:repo && npm run audit:full:repo && npm run test:dependency-free",
+    "With npm ci and disposable SQLite/PostgreSQL instances, replay cash movement with same/different payload, concurrent CASH_OUT, close-shift replay and double PPOB submissions across operators/branches.",
+    "npm run uat:pre-github:local; after complete dependencies and full successful gate, require exact-commit Workflow Governance + Full System Simulation + Full Automated UAT and Human Stage-20 separately.",
+    "Verify accounting journal debit equals credit for existing sale tender posting and that cash-in/out hardening creates no unsupported standalone journal entries; verify CashMovement-to-finance gap remains a release blocker.",
+    "Exercise offline/sync retry and conflict controls: identical idempotency key plus same payload returns the original row, altered payload rejects, and same PPOB company-key across branches fails without leaking row data."
+  ],
+  "migrationPlan": "None. Existing IdempotencyReceipt persists cash movement retry receipts; no Prisma schema change or database migration.",
+  "rollbackPlan": "Rollback application code and keep all IdempotencyReceipt/CashierCashMovement/DigitalServiceTransaction records immutable; do not delete or rewrite historical finance facts.",
+  "monitoringPlan": "Monitor cash overdraft denials, mismatched idempotency requests, stalled PROCESSING receipts, concurrent shift operations and PPOB replay conflicts by branch/operator. Never log customerNo or provider credential in observability.",
+  "securityNotes": "Tenant identity comes from trusted AuthUser companyId/branchId, not DTO. PPOB 404 prevents cross-branch/user information leakage. No live provider credential is included.",
+  "documentation": [
+    "handoff/CURRENT-WORK.md",
+    "tests/cash-ppob-financial-safety.test.mjs"
+  ],
+  "createdAt": "2026-10-09T01:28:00+08:00",
+  "updatedAt": "2026-10-09T01:28:00+08:00",
+  "notes": [
+    "Patch based on full ZIP testoko-main (2).zip, not a live Git checkout. Existing P6A work item and canonical P5/Human Stage-20 product gates stay unchanged.",
+    "No live UAT or exact-commit GitHub status is claimed. This work item remains IMPLEMENTATION pending dependency-complete HTTP/DB/browser verification.",
+    "2026-10-09 continuation: scoped supervisor grants to company+branch+operator+action with UUID nonce; cash movement now rejects fractional-cent amounts before receipt hashing. Source/control regressions 44/44 PASS; official workflow/repository/product/navigation audits PASS before this work-item note was appended. Runtime supervisor appointment suite and PostgreSQL/SQLite browser gates still unverified in ZIP workspace."
+  ]
+}

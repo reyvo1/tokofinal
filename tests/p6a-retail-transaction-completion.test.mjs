@@ -27,6 +27,29 @@ function paymentModel(schema) {
   return match[0];
 }
 
+const p6aMigration = 'T360-20261005-p6a-retail-transaction-completion';
+const ppobMigration = 'T360-20261009-ppob-paid-fulfillment';
+
+function assertPaymentMigrationLineage(migrations) {
+  assert.ok(Array.isArray(migrations), 'Expand migration manifest must contain an ordered array');
+  assert.equal(new Set(migrations).size, migrations.length, 'Expand migration names must be unique');
+  for (const migration of [p6aMigration, ppobMigration]) {
+    assert.equal(migrations.filter((name) => name === migration).length, 1, `${migration} must be registered exactly once`);
+  }
+  assert.ok(
+    migrations.indexOf(p6aMigration) < migrations.indexOf(ppobMigration),
+    'P6A payment snapshots must migrate before W2 PPOB paid fulfillment',
+  );
+  for (let index = 0; index < migrations.length; index += 1) {
+    const currentDate = /^T360-(\d{8})-/.exec(migrations[index])?.[1];
+    assert.ok(currentDate, `Migration name lacks a sortable business date: ${migrations[index]}`);
+    if (index > 0) {
+      const previousDate = /^T360-(\d{8})-/.exec(migrations[index - 1])?.[1];
+      assert.ok(previousDate <= currentDate, `Expand migration chronology regressed at ${migrations[index]}`);
+    }
+  }
+}
+
 test('P6A payment schema persists immutable tender/accounting snapshot fields on SQLite and PostgreSQL', () => {
   for (const schema of [sqliteSchema, pgSchema]) {
     const payment = paymentModel(schema);
@@ -34,7 +57,34 @@ test('P6A payment schema persists immutable tender/accounting snapshot fields on
       assert.match(payment, new RegExp(`\\b${field}\\b`));
     }
   }
-  assert.ok(migrationOrder.migrations.at(-1)?.includes('T360-20261005-p6a-retail-transaction-completion'), 'P6A expand migration must be registered last');
+  assertPaymentMigrationLineage(migrationOrder.migrations);
+  for (const provider of ['sqlite', 'postgresql']) {
+    const p6aSql = read(`database/migrations/${p6aMigration}/${provider}-expand.sql`);
+    const ppobSql = read(`database/migrations/${ppobMigration}/${provider}-expand.sql`);
+    for (const field of ['methodName', 'methodReferenceId', 'methodSnapshot', 'settlementAccountCode', 'settlementBehavior', 'feeAmount', 'feeAccountCode']) {
+      assert.match(p6aSql, new RegExp(`ALTER TABLE "Payment" ADD COLUMN "${field}"`), `P6A ${provider} migration must persist ${field}`);
+    }
+    for (const field of ['paymentAccountingEventId', 'settlementAccountingEventId', 'refundAccountingEventId']) {
+      assert.match(ppobSql, new RegExp(`ALTER TABLE "DigitalServiceTransaction" ADD COLUMN "${field}"`), `PPOB ${provider} migration must persist ${field}`);
+    }
+    assert.doesNotMatch(p6aSql, /\bDROP\s+(?:TABLE|COLUMN)\b/i, `P6A ${provider} migration cannot drop history`);
+    assert.doesNotMatch(ppobSql, /\bDROP\s+(?:TABLE|COLUMN)\b/i, `PPOB ${provider} migration cannot drop history`);
+  }
+});
+
+test('negative control: P6A and W2 expand migrations cannot be deleted, reordered, duplicated or backdated', () => {
+  const migrations = migrationOrder.migrations;
+  assertPaymentMigrationLineage(migrations);
+  const invalid = [
+    migrations.filter((name) => name !== p6aMigration),
+    migrations.filter((name) => name !== ppobMigration),
+    [...migrations, ppobMigration],
+    migrations.map((name) => name === p6aMigration ? ppobMigration : name === ppobMigration ? p6aMigration : name),
+    [...migrations, 'T360-20260901-backdated-append'],
+  ];
+  for (const mutation of invalid) {
+    assert.throws(() => assertPaymentMigrationLineage(mutation), assert.AssertionError);
+  }
 });
 
 test('P6A tender methods are master-backed and no longer constrained to the legacy four-code enum', () => {

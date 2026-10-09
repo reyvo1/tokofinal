@@ -1,5 +1,6 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { compare, hash } from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from '../auth/auth.types';
 
@@ -47,7 +48,12 @@ const GRANT_TTL_MS = 5 * 60 * 1000;
 const PIN_MAX_FAILURES = 5;
 const PIN_LOCKOUT_MS = 60 * 1000;
 
-type GrantRow = ApprovalGrant & { expiresAt: number; companyId: string };
+type GrantRow = ApprovalGrant & {
+  expiresAt: number;
+  companyId: string;
+  branchId: string;
+  operatorId: string;
+};
 
 @Injectable()
 export class SupervisorApprovalService {
@@ -116,7 +122,8 @@ export class SupervisorApprovalService {
       },
     });
 
-    const grantId = `${user.sub}:${request.action}:${Date.now()}`;
+    // Opaque, collision-resistant nonce: never encode the operator identity in a bearer grant.
+    const grantId = randomUUID();
     const grant: GrantRow = {
       action: request.action,
       reason: request.reason,
@@ -127,6 +134,8 @@ export class SupervisorApprovalService {
       grantId,
       expiresAt: Date.now() + GRANT_TTL_MS,
       companyId: user.companyId ?? '',
+      branchId: user.branchId ?? '',
+      operatorId: user.sub,
     };
     this.grants.set(grantId, grant);
     return grant;
@@ -148,14 +157,20 @@ export class SupervisorApprovalService {
     if (grant.action !== action) {
       throw new ForbiddenException('Persetujuan supervisor tidak berlaku untuk tindakan ini.');
     }
-    // A grant belongs to the company that requested it; a till must not spend another branch's grant.
-    if (grant.companyId && user.companyId && grant.companyId !== user.companyId) {
+    // A bearer grant must be spent by the exact operator AND branch that requested it.
+    // Company-only checks let another employee or a sister branch reuse a captured grant.
+    if (grant.companyId !== user.companyId) {
       throw new ForbiddenException('Persetujuan supervisor tidak valid untuk perusahaan ini.');
     }
+    if (grant.branchId !== user.branchId || grant.operatorId !== user.sub) {
+      throw new ForbiddenException('Persetujuan supervisor hanya berlaku untuk kasir dan cabang pemohon.');
+    }
     this.grants.delete(grantId);
-    const { expiresAt, companyId, ...rest } = grant;
+    const { expiresAt, companyId, branchId, operatorId, ...rest } = grant;
     void expiresAt;
     void companyId;
+    void branchId;
+    void operatorId;
     return rest;
   }
 

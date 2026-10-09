@@ -1,0 +1,72 @@
+{
+  "id": "T360-20261009-033700",
+  "title": "W2 POS PPOB paid-cash capture and accounting settlement",
+  "type": "feature",
+  "module": "payments",
+  "wave": "W2",
+  "phase": "IMPLEMENTATION",
+  "risk": "HIGH",
+  "owner": "openai",
+  "featureFlag": "integration.config.ppobCashEnabled",
+  "dependencies": [
+    "accounting-core",
+    "pos",
+    "digital-services",
+    "outbox",
+    "idempotency"
+  ],
+  "impacts": {
+    "database": "HIGH",
+    "inventory": "NONE",
+    "accounting": "HIGH",
+    "tax": "HIGH",
+    "payment": "HIGH",
+    "payroll": "NONE",
+    "sync": "LOW",
+    "security": "HIGH",
+    "performance": "MEDIUM"
+  },
+  "businessRules": [
+    "All PPOB purchases require connected integration, explicit opt-in, cashier OPEN shift and verified no-tax product classification; no paid request may be enqueued before POSTED Accounting Core advance receipt in one serializable transaction.",
+    "No unverified tax assumption, missing provider asset account, missing posting rules, unknown provider cost or unlimited provider maxPrice may accept customer money.",
+    "Fulfillment requires explicit provider SUCCESS, POSTED prepayment, configured tenant-owned ASSET provider balance and bounded final cost; settlement is idempotent and journal-posted through Accounting Core.",
+    "Refund requires explicit provider FAILED, prior paid receipt, no settlement, open authorized cash drawer with enough cash, and new Accounting Core refund posting. PENDING/unknown is never automatically refundable.",
+    "Idempotent replay must preserve tenant, branch, actor, SKU, customer destination, paymentMethod and maxPrice. Worker must reject unpaid legacy events before making external provider calls.",
+    "Digiflazz catalog cannot forge tax approval; verified classification preserved only when product identity does not change.",
+    "All source gates remain, P5 visual and Human Stage-20 PENDING, no GitHub push or production readiness is asserted.",
+    "Perlakuan pajak NO_TAX_VERIFIED wajib didukung penetapan Finance sesuai aturan pajak berversi dan periode berlaku; transaksi kena pajak ditahan sampai Tax Core dapat menghitung kode/versi efektif yang sah."
+  ],
+  "acceptanceCriteria": [
+    "Cash capture, accounting advance and outbox creation are atomic and survive identical retry without double cash or provider event.",
+    "Preflight denies missing active rules, provider balance account, unverified tax, missing cost/maxPrice, disabled integration and absent shift without cash mutation.",
+    "Settlement and cash refund create balanced, immutable, idempotent journals; no refund on ambiguous provider state.",
+    "Shift reports count captured PPOB cash and refunded cash in proper cashier shifts.",
+    "Operator POS and Admin expose cash-only purchase, provider status/recheck, tax verification, explicit settlement/refund, and a default-off activation control.",
+    "SQLite+PostgreSQL schema parity and additive migration rehearsal PASS; mandatory local full gates and exact-commit GitHub UAT remain to run."
+  ],
+  "testPlan": [
+    "node --test tests/ppob-paid-cash-accounting.test.mjs tests/ppob-paid-schema-rehearsal.test.mjs tests/ppob-storefront-operator-coverage.test.mjs tests/cash-ppob-financial-safety.test.mjs tests/video-parity-expansion.test.mjs",
+    "npm run workflow:validate && npm run validate:repo && npm run audit:full:repo",
+    "npm run uat:pre-github:local on complete Ubuntu source, official SQLite profile and full dependencies.",
+    "On disposable TEST PostgreSQL, rehearse expand migration, duplicate capture/refund, posted journal balancing, cross-branch/operator denial, period closing, POS browser and live worker with stub Digiflazz test endpoint.",
+    "Exact source/commit GitHub Full System Simulation and Full Automated UAT; Human Stage-20 separate and not auto-accepted.",
+    "Replay/idempotency and offline conflict proof: retry identical paid PPOB key cannot duplicate posted journal or provider outbox; altered payload or foreign branch fails closed, and no offline PPOB payment is permitted."
+  ],
+  "migrationPlan": "Expand-only nullable fields and indexes in SQLite+PostgreSQL DigitalServiceTransaction. Historical rows remain unpaid and cannot dispatch from worker; no backfill of invented payment evidence. Requires Finance to create/verify ASSET provider balance code and three active posting rules before enabling integration. Rehearse migration against disposable clones.",
+  "rollbackPlan": "Disable integration.config.ppobCashEnabled first to stop new captures; retain all posted AccountingEvent, refunds and historical paid rows. Revert code only with an explicit reconciliation and provider outbox quarantine plan; never delete journals or columns containing business evidence.",
+  "monitoringPlan": "Track unpaid outbox rejected, stale PENDING requests, missing active posting rules, unmatched SUCCESS/FAILED, unposted settlement/refund, provider cost exceeding maxPrice and shift cash variances by branch. Redact customerNo/secrets.",
+  "securityNotes": "No arbitrary companyId/branchId in public DTO; tenant context trusted. Default feature flag OFF; strong receipt-bound dispatch; no provider credentials in archive or audit.",
+  "documentation": [
+    "docs/PPOB-CASH-PAYMENT-FULFILLMENT-20261009.md",
+    "docs/adr/ADR-T360-20261009-PPOB-PREPAYMENT.md",
+    "handoff/CURRENT-WORK.md",
+    "tests/ppob-paid-cash-accounting.test.mjs",
+    "tests/ppob-paid-schema-rehearsal.test.mjs"
+  ],
+  "createdAt": "2026-10-09T03:37:00+08:00",
+  "updatedAt": "2026-10-09T03:37:00+08:00",
+  "notes": [
+    "Work begun against latest locally PASS tokofinal source fingerprint 7934d881a52065da2e5628a75ba4923eafd9a93fb906fc46a29c0a140273f55a. ZIP candidate has no npm node_modules; source gate PASS is not full UAT.",
+    "Unfinished accounting for manual CASH_IN/CASH_OUT and shift variance is a separate high-priority W3 gate, not silently marked solved."
+  ]
+}

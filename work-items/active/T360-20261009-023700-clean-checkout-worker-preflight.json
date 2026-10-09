@@ -1,0 +1,58 @@
+{
+  "id": "T360-20261009-023700",
+  "title": "Clean-checkout worker preflight and isolated TypeScript regression",
+  "type": "bug",
+  "module": "quality-gates",
+  "wave": "W7",
+  "phase": "IMPLEMENTATION",
+  "risk": "MEDIUM",
+  "owner": "openai",
+  "featureFlag": "",
+  "dependencies": [],
+  "impacts": {
+    "database": "NONE",
+    "inventory": "NONE",
+    "accounting": "NONE",
+    "tax": "NONE",
+    "payment": "NONE",
+    "payroll": "NONE",
+    "sync": "NONE",
+    "security": "NONE",
+    "performance": "NONE"
+  },
+  "businessRules": [
+    "POST-1C Telegram wire UAT must exercise compiled apps/worker/dist/telegram-polling.js against the same real local HTTP harness; never replace it with a source-only assertion.",
+    "Preflight on a clean checkout must compile worker after SQLite Prisma generation and before the complete test suite; no tests may be skipped.",
+    "The worker clean-checkout typecheck must run without apps/api/dist but cannot rename or mutate the shared repository's apps/api/dist, as node --test can execute files concurrently.",
+    "No schema, business logic, GitHub workflow, UAT threshold, runtime provider configuration or previously green gate may be weakened."
+  ],
+  "acceptanceCriteria": [
+    "ci:preflight:local explicitly generates SQLite Prisma client, compiles worker, and then runs full dependency-free suite.",
+    "Telegram polling UAT keeps its compiled-worker import and real HTTP assertions.",
+    "Worker clean-checkout TypeScript test checks actual tsc against isolated worker source and installed dependency versions with no apps/api/dist, leaving shared build artifacts untouched.",
+    "Previous 1706/1708 Ubuntu baseline failures are rerun on exact candidate source and resolved without relaxing UAT; until then this item remains IMPLEMENTATION."
+  ],
+  "testPlan": [
+    "node --test tests/ci-preflight-worker-build-order.test.mjs tests/quality-fast-sqlite-prepare-order.test.mjs",
+    "npm run workflow:validate && npm run validate:repo && npm run ci:preflight:local",
+    "After complete dependencies, confirm tests/post1c-telegram-polling.test.mjs retains a real compiled HTTP wire test and tests/worker-dist-import-runtime.test.mjs proves typecheck without apps/api/dist.",
+    "npm run audit:full:repo && npm run uat:pre-github:local; retain GitHub exact-commit PostgreSQL/browser gates and separate human Stage-20 approval."
+  ],
+  "migrationPlan": "No database/schema changes. Compile-order and isolated test fixture correction only.",
+  "rollbackPlan": "Revert package.json preflight command and two test files plus the regression contract; do not touch data, history, or previously staged financial-hardening changes.",
+  "monitoringPlan": "Observe full preflight results on the operator's Ubuntu clean repo and exact-source GitHub Actions; record any remaining build/test failure with its original exit code.",
+  "securityNotes": "Tests use only local HTTP/temporary files, require no real Telegram token, and do not modify tenant data, provider secrets, protected production environments or application permissions.",
+  "documentation": [
+    "handoff/CURRENT-WORK.md",
+    "tests/ci-preflight-worker-build-order.test.mjs",
+    "tests/worker-dist-import-runtime.test.mjs",
+    "tests/post1c-telegram-polling.test.mjs"
+  ],
+  "createdAt": "2026-10-09T02:37:00+08:00",
+  "updatedAt": "2026-10-09T02:37:00+08:00",
+  "notes": [
+    "Operator's fresh repo based on supplied GitHub ZIP passed prepare but ci:preflight:local ended 1706/1708: compiled worker module missing for POST-1C wire suite and shared apps/api/dist precondition falsely asserted by worker typecheck fixture.",
+    "The new remote is https://github.com/reyvo1/tokofinal (public web view showed empty repo). No push/commit was performed and no CI/UAT readiness is claimed.",
+    "Fix preserves compiled-worker HTTP UAT, starts worker build before full preflight tests, isolates no-dist TypeScript check, and leaves financial patch, database and governance statuses untouched."
+  ]
+}

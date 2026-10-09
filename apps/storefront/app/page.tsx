@@ -12,8 +12,8 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
  *
  * API memakai 204 No Content dengan benar saat tidak ada data - fulfillment-options misalnya,
  * saat toko belum punya metode fulfillment. `await response.json()` pada body kosong melempar
- * SyntaxError, dan karena keempat fetch katalog berada dalam satu Promise.all, satu SyntaxError
- * itu menolak SELURUH promise: setProducts tidak pernah dipanggil dan katalog menampilkan
+ * SyntaxError, dan sebelum Promise.allSettled dipakai satu kegagalan menolak
+ * SELURUH promise: setProducts tidak pernah dipanggil dan katalog menampilkan
  * "Katalog belum tersedia" padahal /products sudah membalas 200 dengan produk aktif.
  *
  * Body kosong dikembalikan sebagai objek kosong; penolakan tetap ditentukan oleh response.ok,
@@ -109,6 +109,14 @@ function stockOf(product: Product) { return product.inventories.reduce((sum, ite
 
 export function StorefrontApp({ initialView = 'home' }: { initialView?: StorefrontView }) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [catalogCursor, setCatalogCursor] = useState<string | null>(null);
+  const [catalogPageBusy, setCatalogPageBusy] = useState(false);
+  const [catalogPageError, setCatalogPageError] = useState('');
+  const [searchProducts, setSearchProducts] = useState<Product[] | null>(null);
+  const [searchCursor, setSearchCursor] = useState<string | null>(null);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [manifest, setManifest] = useState<RuntimeManifest | null>(null);
   const [branchCode, setBranchCode] = useState(DEFAULT_BRANCH_CODE);
@@ -121,8 +129,13 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
   const [promoCode, setPromoCode] = useState('');
   const [customer, setCustomer] = useState({ customerName: '', customerEmail: '', customerPhone: '', address: '' });
   const [search, setSearch] = useState('');
+  const branchRef = useRef(branchCode);
+  const queryRef = useRef(search);
+  branchRef.current = branchCode;
+  queryRef.current = search;
   const [activeView, setActiveView] = useState<StorefrontView>(initialView);
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedCatalogProduct, setSelectedCatalogProduct] = useState<Product | null>(null);
   const [selectedSellingUnitId, setSelectedSellingUnitId] = useState('BASE');
   const [sortMode, setSortMode] = useState<'relevance' | 'name' | 'price-asc' | 'price-desc' | 'stock'>('relevance');
   const [submitting, setSubmitting] = useState(false);
@@ -258,6 +271,15 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
     if (!normalized || normalized === branchCode) return;
     window.localStorage.setItem('toko360.storefront.branch', normalized);
     setBranchCode(normalized);
+    setProducts([]);
+    setSelectedCatalogProduct(null);
+    setSelectedProductId('');
+    setCatalogCursor(null);
+    setCatalogPageError('');
+    setSearch('');
+    setSearchProducts(null);
+    setSearchCursor(null);
+    setSearchError('');
     setCart([]);
     setOrder(null);
     setAccountToken('');
@@ -272,7 +294,7 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([
+    Promise.allSettled([
       fetch(`${API}/products?branchCode=${encodeURIComponent(branchCode)}&limit=100`).then(async (response) => {
         const data = await readJsonSafe(response);
         if (!response.ok) throw new Error(apiErrorMessage(data, 'Katalog gagal dimuat.'));
@@ -294,8 +316,34 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
         return data as unknown as StorefrontBranch[];
       }),
     ])
-      .then(([data, runtime, fulfillment, branchRows]) => { if (!cancelled) { setProducts(data.items ?? []); setManifest(runtime); setBranches(branchRows ?? []); setFulfillmentMethods(fulfillment.methods ?? []); const firstDelivery = fulfillment.methods?.find((item) => item.fulfillmentType === 'DELIVERY'); setShippingMethodCode(firstDelivery?.code ?? fulfillment.methods?.[0]?.code ?? ''); setMessage(''); } })
-      .catch((error) => { if (!cancelled) notify(error instanceof Error ? error.message : 'API belum dapat dihubungi.', 'error'); })
+      .then(([catalogResult, manifestResult, fulfillmentResult, branchesResult]) => {
+        if (cancelled) return;
+        const failures: string[] = [];
+        if (catalogResult.status === 'fulfilled') {
+          setProducts(catalogResult.value.items ?? []);
+          setCatalogCursor(catalogResult.value.pageInfo?.nextCursor ?? null);
+        } else {
+          setProducts([]);
+          setCatalogCursor(null);
+          failures.push(`Katalog: ${String(catalogResult.reason)}`);
+        }
+        if (manifestResult.status === 'fulfilled') setManifest(manifestResult.value);
+        else { setManifest(null); failures.push(`Konfigurasi toko: ${String(manifestResult.reason)}`); }
+        if (fulfillmentResult.status === 'fulfilled') {
+          const fulfillment = fulfillmentResult.value;
+          setFulfillmentMethods(fulfillment.methods ?? []);
+          const firstDelivery = fulfillment.methods?.find((item) => item.fulfillmentType === 'DELIVERY');
+          setShippingMethodCode(firstDelivery?.code ?? fulfillment.methods?.[0]?.code ?? '');
+        } else {
+          setFulfillmentMethods([]);
+          setShippingMethodCode('');
+          failures.push(`Opsi pengiriman: ${String(fulfillmentResult.reason)}`);
+        }
+        if (branchesResult.status === 'fulfilled') setBranches(branchesResult.value ?? []);
+        else { setBranches([]); failures.push(`Daftar cabang: ${String(branchesResult.reason)}`); }
+        if (failures.length) notify(failures.join(' | '), 'error');
+        else setMessage('');
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [branchCode]);
@@ -307,21 +355,74 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
     void loadAccount(token).catch(() => { localStorage.removeItem('toko360.customer.session'); setAccountToken(''); setAccount(null); setAccountOrders([]); setAccountReturns([]); setFavoriteIds([]); setVerificationForm({ type: '', code: '' }); });
   }, []);
 
+  // A local filter of the first 100 items is not a storefront search. Query the public
+  // tenant/branch-scoped product endpoint; cancel stale results when search/branch changes.
+  useEffect(() => {
+    const query = search.trim();
+    if (!query) { setSearchProducts(null); setSearchCursor(null); setSearchBusy(false); setSearchError(''); return; }
+    let cancelled = false;
+    setSearchProducts(null);
+    setSearchCursor(null);
+    setSearchError('');
+    setSearchBusy(true);
+    const timer = window.setTimeout(() => {
+      fetch(`${API}/products?branchCode=${encodeURIComponent(branchCode)}&search=${encodeURIComponent(query)}&limit=100`)
+        .then(async (response) => {
+          const body = await readJsonSafe(response);
+          if (!response.ok) throw new Error(apiErrorMessage(body, 'Pencarian produk gagal.'));
+          return body as unknown as CursorPage<Product>;
+        })
+        .then((page) => { if (!cancelled) { setSearchProducts(page.items ?? []); setSearchCursor(page.pageInfo?.nextCursor ?? null); } })
+        .catch((error) => { if (!cancelled) setSearchError(error instanceof Error ? error.message : 'Pencarian produk gagal.'); })
+        .finally(() => { if (!cancelled) setSearchBusy(false); });
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [branchCode, search]);
+
+  async function loadMoreCatalog() {
+    const query = search.trim();
+    const cursor = query ? searchCursor : catalogCursor;
+    if (!cursor || catalogPageBusy || searchBusy || loading) return;
+    const activeBranch = branchCode;
+    setCatalogPageBusy(true);
+    setCatalogPageError('');
+    try {
+      const params = new URLSearchParams({ branchCode: activeBranch, limit: '100', cursor });
+      if (query) params.set('search', query);
+      const response = await fetch(`${API}/products?${params.toString()}`);
+      const body = await readJsonSafe(response);
+      if (!response.ok) throw new Error(apiErrorMessage(body, 'Halaman katalog gagal dimuat.'));
+      const page = body as unknown as CursorPage<Product>;
+      // Late responses must never merge one branch/query into another or corrupt its cursor.
+      if (branchRef.current !== activeBranch || queryRef.current.trim() !== query) return;
+      const merge = (current: Product[]) => {
+        const seen = new Set(current.map((product) => product.id));
+        return [...current, ...(page.items ?? []).filter((product) => !seen.has(product.id))];
+      };
+      if (query) { setSearchProducts((current) => merge(current ?? [])); setSearchCursor(page.pageInfo?.nextCursor ?? null); }
+      else { setProducts(merge); setCatalogCursor(page.pageInfo?.nextCursor ?? null); }
+    } catch (error) {
+      if (branchRef.current === activeBranch && queryRef.current.trim() === query) {
+        setCatalogPageError(error instanceof Error ? error.message : 'Halaman katalog gagal dimuat.');
+      }
+    } finally { setCatalogPageBusy(false); }
+  }
+
   const total = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [cart]);
   const visibleProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = q
-      ? products.filter((product) => product.name.toLowerCase().includes(q) || product.sku.toLowerCase().includes(q) || product.description?.toLowerCase().includes(q))
+      ? [...(searchProducts ?? products.filter((product) => product.name.toLowerCase().includes(q) || product.sku.toLowerCase().includes(q) || product.description?.toLowerCase().includes(q)))]
       : [...products];
     if (sortMode === 'name') return filtered.sort((a, b) => a.name.localeCompare(b.name, 'id'));
     if (sortMode === 'price-asc') return filtered.sort((a, b) => defaultSellingOption(a).unitPrice - defaultSellingOption(b).unitPrice);
     if (sortMode === 'price-desc') return filtered.sort((a, b) => defaultSellingOption(b).unitPrice - defaultSellingOption(a).unitPrice);
     if (sortMode === 'stock') return filtered.sort((a, b) => stockOf(b) - stockOf(a));
     return filtered;
-  }, [products, search, sortMode]);
+  }, [products, search, sortMode, searchProducts]);
   const selectedProduct = useMemo(
-    () => products.find((product) => product.id === selectedProductId) ?? null,
-    [products, selectedProductId],
+    () => selectedCatalogProduct?.id === selectedProductId ? selectedCatalogProduct : products.find((product) => product.id === selectedProductId) ?? null,
+    [products, selectedProductId, selectedCatalogProduct],
   );
   const selectedSellingOption = useMemo(() => {
     if (!selectedProduct) return null;
@@ -337,6 +438,7 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
   function openProduct(product: Product) {
     const option = defaultSellingOption(product);
     setSelectedProductId(product.id);
+    setSelectedCatalogProduct(product);
     setSelectedSellingUnitId(option.productUnitId ?? 'BASE');
     navigate('product');
   }
@@ -561,7 +663,7 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
           </div>
         </div>
         <div className="metricDeck">
-          <article><strong>{loading ? '—' : products.length}</strong><span>produk tersedia</span></article>
+          <article><strong>{loading ? '—' : products.length}</strong><span>produk dimuat</span></article>
           <article><strong>{cart.reduce((sum, item) => sum + item.quantity, 0)}</strong><span>item di keranjang</span></article>
           <article><strong>{account ? account.points : '—'}</strong><span>poin loyalitas</span></article>
         </div>
@@ -571,6 +673,7 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
         <div className="sectionTitle"><div><span className="eyebrow">PILIHAN TOKO</span><h2>Produk untuk mulai belanja</h2></div><button type="button" className="textAction" onClick={() => navigate('catalog')}>Lihat semua <ArrowRight size={15} /></button></div>
         <div className="productGrid compactGrid">
           {products.slice(0, 3).map((product) => { const option = defaultSellingOption(product); const stock = maxUnitQuantity(product, option.quantityFactor); return <article className="productCard" key={product.id}><div className="productImage" aria-hidden="true">{product.name.slice(0,1).toUpperCase()}</div><div className="body"><small>{product.sku}</small><h3>{product.name}</h3><div className="priceRow"><strong>{rupiah(option.unitPrice)}</strong><span>Stok {stock} {option.unitCode}</span></div><button type="button" onClick={() => openProduct(product)}>Lihat produk</button></div></article>; })}
+          {catalogCursor && <div className="flex items-center justify-center"><button type="button" className="secondary compact" onClick={() => navigate('catalog')}>Jelajahi katalog lengkap <ArrowRight size={15}/></button></div>}
           {!loading && !products.length && <div className="emptyState"><h4>Katalog belum tersedia</h4><p>Produk akan tampil setelah cabang mengaktifkan katalog.</p></div>}
         </div>
       </section>
@@ -578,14 +681,16 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
 
       {activeView === 'catalog' && <>
       <section>
-        <div className="sectionTitle"><div><span className="eyebrow">KATALOG</span><h2>Produk tersedia</h2></div><span>{loading ? 'Memuat…' : `${visibleProducts.length} produk`}</span></div>
+        <div className="sectionTitle"><div><span className="eyebrow">KATALOG</span><h2>Produk tersedia</h2></div><span>{loading ? 'Memuat…' : `${visibleProducts.length} produk ditampilkan${(search.trim() ? searchCursor : catalogCursor) ? ' · tersedia halaman berikutnya' : ''}`}</span></div>
         <div className="catalogControls">
           <div className="catalogToolbar"><Search size={17}/><input aria-label="Cari produk" placeholder="Cari nama atau SKU…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
           <label className="sortControl">Urutkan<select value={sortMode} onChange={(e) => setSortMode(e.target.value as typeof sortMode)}><option value="relevance">Relevansi</option><option value="name">Nama A-Z</option><option value="price-asc">Harga termurah</option><option value="price-desc">Harga tertinggi</option><option value="stock">Stok terbanyak</option></select></label>
         </div>
         <div className="productGrid">
           {loading && Array.from({ length: 6 }).map((_, i) => <article className="productCard" key={`sk${i}`} aria-busy="true"><div className="skeletonBlock tall" /><div className="body"><div className="skeletonBlock" style={{width:'35%'}} /><div className="skeletonBlock" style={{width:'70%',height:16}} /><div className="skeletonBlock" style={{width:'90%'}} /><div className="skeletonBlock" style={{width:'50%'}} /></div></article>)}
-          {!loading && !visibleProducts.length && <div className="emptyState"><div className="emptyIcon"><PackageSearch size={28} strokeWidth={1.6} /></div><h4>{products.length ? 'Produk tidak ditemukan' : 'Katalog belum tersedia'}</h4><p>{products.length ? 'Coba kata kunci lain.' : 'Produk akan tampil setelah toko mengaktifkan katalog untuk cabang ini.'}</p></div>}
+          {searchBusy && <p role="status" className="sectionHelp">Mencari seluruh katalog server cabang ini…</p>}
+          {searchError && <p role="alert" className="notice error">{searchError} Hasil lokal belum tentu lengkap.</p>}
+          {!loading && !searchBusy && !visibleProducts.length && <div className="emptyState"><div className="emptyIcon"><PackageSearch size={28} strokeWidth={1.6} /></div><h4>{products.length ? 'Produk tidak ditemukan' : 'Katalog belum tersedia'}</h4><p>{products.length ? 'Coba kata kunci lain.' : 'Produk akan tampil setelah toko mengaktifkan katalog untuk cabang ini.'}</p></div>}
           {visibleProducts.map((product) => {
             const option = defaultSellingOption(product);
             const stock = maxUnitQuantity(product, option.quantityFactor);
@@ -595,6 +700,11 @@ export function StorefrontApp({ initialView = 'home' }: { initialView?: Storefro
             </article>;
           })}
         </div>
+        {(search.trim() ? searchCursor : catalogCursor) && <div className="mt-5 flex flex-wrap items-center justify-center gap-3" role="status">
+          <span className="text-xs text-slate-500">Masih ada produk di server, katalog tidak dipotong diam-diam.</span>
+          <button type="button" className="secondary compact" disabled={catalogPageBusy || searchBusy} onClick={() => void loadMoreCatalog()}>{catalogPageBusy ? 'Memuat produk…' : 'Muat produk berikutnya'}</button>
+        </div>}
+        {catalogPageError && <p className="notice error" role="alert">{catalogPageError} <button type="button" className="secondary compact" onClick={() => void loadMoreCatalog()}>Coba lagi</button></p>}
       </section>
       </>}
 

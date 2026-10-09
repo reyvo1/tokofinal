@@ -10,24 +10,24 @@
     "posViews": 4,
     "storefrontViews": 5,
     "employeeViews": 7,
-    "interactiveControls": 503
+    "interactiveControls": 514
   },
   "presentation": {
     "admin": {
       "fileCount": 50,
-      "lineCount": 10291,
+      "lineCount": 10327,
       "requiredSemanticClassCount": 34,
       "missingSemanticClasses": []
     },
     "pos": {
-      "fileCount": 9,
-      "lineCount": 1697,
+      "fileCount": 10,
+      "lineCount": 1977,
       "requiredSemanticClassCount": 5,
       "missingSemanticClasses": []
     },
     "storefront": {
       "fileCount": 7,
-      "lineCount": 969,
+      "lineCount": 1079,
       "requiredSemanticClassCount": 30,
       "missingSemanticClasses": []
     },
@@ -40,21 +40,21 @@
   },
   "controls": {
     "admin": {
-      "buttons": 388,
+      "buttons": 390,
       "links": 2,
       "inertButtons": 0,
       "implicitSubmitButtons": 32,
       "inertLinks": 0
     },
     "pos": {
-      "buttons": 48,
+      "buttons": 54,
       "links": 1,
       "inertButtons": 0,
       "implicitSubmitButtons": 1,
       "inertLinks": 0
     },
     "storefront": {
-      "buttons": 42,
+      "buttons": 45,
       "links": 1,
       "inertButtons": 0,
       "implicitSubmitButtons": 0,

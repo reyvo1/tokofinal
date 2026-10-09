@@ -14,6 +14,7 @@ import { planPickup, pickupVoucherLines, type CrossBranchStock, type PickupQuote
 import { useSupervisorApproval } from '../lib/supervisor';
 import { openRawBtReceipt } from '../lib/printing';
 import StaffMemoWidget from './staff-memo';
+import PpobOperatorWorkspace from './ppob-workspace';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 type ProductVariant = { id: string; code: string; name: string; sku?: string | null; salePrice?: string | number | null; costPrice?: string | number | null; isDefault: boolean; isActive: boolean };
@@ -186,6 +187,7 @@ export default function PosPage() {
   const [cashMovementAmount, setCashMovementAmount] = useState(0);
   const [cashMovementReason, setCashMovementReason] = useState('');
   const [cashMovementBusy, setCashMovementBusy] = useState(false);
+  const cashMovementOperationRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
   const [shiftRecap, setShiftRecap] = useState<ShiftRecap | null>(null);
   const [shiftControlLoading, setShiftControlLoading] = useState(false);
@@ -213,6 +215,7 @@ export default function PosPage() {
   const [offlineClockOffsetMs, setOfflineClockOffsetMs] = useState(0);
   const pendingPaymentRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const [workspace, setWorkspace] = useState<PosWorkspace>('SALE');
+  const [ppobOpen, setPpobOpen] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<{ number: string; total: number } | null>(null);
 
   /**
@@ -820,6 +823,11 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
     if (!token || !shift || cashMovementBusy || cashMovementAmount <= 0 || !cashMovementReason.trim()) return;
     if (!apiOnline) { setMessage('Kas masuk/keluar membutuhkan server online.'); return; }
     setCashMovementBusy(true); setMessage('');
+    const fingerprint = JSON.stringify([shift.id, type, cashMovementAmount, cashMovementReason.trim()]);
+    if (cashMovementOperationRef.current?.fingerprint !== fingerprint) {
+      cashMovementOperationRef.current = { fingerprint, key: crypto.randomUUID() };
+    }
+    const idempotencyKey = cashMovementOperationRef.current.key;
     try {
       // A large withdrawal is refused by the server, so the cashier has to be able to ASK. Without
       // this the till shows "requires supervisor approval" and offers no way to satisfy it — a control
@@ -827,7 +835,7 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
       const post = async (approvalId?: string) => {
         await api('/sales/shifts/cash-movements', {
           method: 'POST',
-          body: JSON.stringify({ type, amount: cashMovementAmount, reason: cashMovementReason.trim(), ...(approvalId ? { supervisorApprovalId: approvalId } : {}) }),
+          body: JSON.stringify({ idempotencyKey, type, amount: cashMovementAmount, reason: cashMovementReason.trim(), ...(approvalId ? { supervisorApprovalId: approvalId } : {}) }),
         }, token);
       };
       // A grant may already be HELD from the PIN prompt the last time this button was pressed. It
@@ -845,6 +853,7 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
         setMessage('Pengambilan kas ini memerlukan persetujuan supervisor. Minta persetujuan, lalu tekan KAS KELUAR lagi.');
         return;
       }
+      cashMovementOperationRef.current = null;
       setMessage(`${type === 'CASH_IN' ? 'Kas masuk' : 'Kas keluar'} ${money(cashMovementAmount)} berhasil dicatat.`);
       setCashMovementAmount(0); setCashMovementReason('');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Gagal mencatat mutasi kas.'); }
@@ -1045,6 +1054,12 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
     {lastReceipt && <section className="receiptReady" aria-label="Struk transaksi terakhir"><div><strong>Struk {lastReceipt.number} siap</strong><small>{money(lastReceipt.total)} · dapat dibuka, dicetak, atau dibagikan dari halaman struk digital.</small></div><div className="rowActions"><button type="button" className="secondary" onClick={() => window.open(`${API}/receipts/${encodeURIComponent(lastReceipt.number)}`, '_blank', 'noopener,noreferrer')}>BUKA STRUK DIGITAL</button><button type="button" className="secondary" onClick={() => rawBtReceipt(lastReceipt.number)}>RAWBT 58MM</button><button type="button" className="clear" onClick={() => setLastReceipt(null)}>TUTUP</button></div></section>}
 
     {workspace === 'SALE' && <>
+    <div className="ppobEntry">
+      <div><strong>{ppobOpen ? 'Layanan digital / PPOB' : 'Butuh pulsa, PLN atau voucher digital?'}</strong><small>{ppobOpen ? 'Pembelian tunai wajib shift aktif dan jurnal uang muka sebelum provider dipanggil.' : 'Buka katalog, transaksi tunai terjurnal, dan pelacakan provider.'}</small></div>
+      <button type="button" className="secondary" aria-expanded={ppobOpen} onClick={() => setPpobOpen((current) => !current)}>{ppobOpen ? 'Kembali ke penjualan' : 'PPOB / Produk digital'}</button>
+    </div>
+    {ppobOpen && <PpobOperatorWorkspace token={token ?? ''} online={apiOnline} active={ppobOpen} shiftOpen={shift?.status === 'OPEN'} />}
+    {!ppobOpen && <>
     {ownedHeldSales.length > 0 && <section className="heldPanel"><strong>Transaksi Hold ({ownedHeldSales.length})</strong><div className="heldList">{ownedHeldSales.map((held) => <div key={held.id} className="heldItem"><div><b>{held.label}</b><small>{new Date(held.createdAt).toLocaleString('id-ID')} · {held.items.reduce((sum, item) => sum + item.quantity, 0)} item</small></div><button onClick={() => recallHeld(held.id)}>PANGGIL</button><button className="clear" onClick={() => deleteHeld(held.id)}>HAPUS</button></div>)}</div></section>}
 
 
@@ -1092,12 +1107,13 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
     </div>
 
     </>}
+    </>}
     {workspace === 'SHIFT' && <>
     <section className="shiftPanel">
       <div className="shiftIdentity"><Store size={18} /><div><strong>{shift ? 'Shift kasir aktif' : 'Shift belum dibuka'}</strong><small>{shift ? `Dibuka ${new Date(shift.openedAt).toLocaleString('id-ID')} · kas awal ${money(shift.openingCash)}` : 'Buka shift sebelum menerima transaksi.'}</small></div></div>
       {shift ? <div className="shiftActions"><label>Kas fisik saat tutup<input type="number" min="0" value={closingCash} onChange={(e) => setClosingCash(Math.max(0, Number(e.target.value) || 0))} /></label><button className="shiftClose" disabled={shiftBusy || cart.length > 0 || paying || !apiOnline || ownedOfflineQueue.length > 0} onClick={closeShift}>{shiftBusy ? 'MEMPROSES...' : 'TUTUP SHIFT'}</button></div>
         : <div className="shiftActions"><label>Kas awal<input type="number" min="0" value={openingCash} onChange={(e) => setOpeningCash(Math.max(0, Number(e.target.value) || 0))} /></label><button disabled={shiftBusy} onClick={openShift}>{shiftBusy ? 'MEMPROSES...' : 'BUKA SHIFT'}</button></div>}
-      {shift && <div className="cashMovementBar"><label>Nominal kas<input type="number" min="0" value={cashMovementAmount} onChange={(e) => setCashMovementAmount(Math.max(0, Number(e.target.value) || 0))} /></label><label>Alasan<input value={cashMovementReason} maxLength={240} onChange={(e) => setCashMovementReason(e.target.value)} placeholder="Contoh: uang kecil / biaya parkir" /></label><button disabled={cashMovementBusy || cashMovementAmount <= 0 || !cashMovementReason.trim() || !apiOnline} onClick={() => void recordCashMovement('CASH_IN')}>KAS MASUK</button><button className="shiftClose" disabled={cashMovementBusy || cashMovementAmount <= 0 || !cashMovementReason.trim() || !apiOnline} onClick={() => void recordCashMovement('CASH_OUT')}>KAS KELUAR</button></div>}
+      {shift && <div className="cashMovementBar"><label>Nominal kas<input type="number" min="0.01" step="0.01" value={cashMovementAmount} onChange={(e) => setCashMovementAmount(Math.max(0, Number(e.target.value) || 0))} /></label><label>Alasan<input value={cashMovementReason} maxLength={240} onChange={(e) => setCashMovementReason(e.target.value)} placeholder="Transfer kas laci ↔ kas penyimpanan (bukan biaya)" /></label><button disabled={cashMovementBusy || cashMovementAmount <= 0 || !cashMovementReason.trim() || !apiOnline} onClick={() => void recordCashMovement('CASH_IN')}>KAS MASUK</button><button className="shiftClose" disabled={cashMovementBusy || cashMovementAmount <= 0 || !cashMovementReason.trim() || !apiOnline} onClick={() => void recordCashMovement('CASH_OUT')}>KAS KELUAR</button></div>}
     </section>
     <section className="shiftControlGrid">
       <article className="shiftPanel">
@@ -1105,7 +1121,7 @@ return () => { active = false; window.clearInterval(interval); window.removeEven
         {shiftRecap ? <div className="shiftRecapGrid"><div><span>Penjualan</span><strong>{money(shiftRecap.sales.total)}</strong><small>{shiftRecap.sales.count} transaksi</small></div><div><span>Expected cash</span><strong>{money(shiftRecap.expectedCash ?? 0)}</strong><small>Opening {money(shiftRecap.openingCash)}</small></div><div><span>Kas masuk / keluar</span><strong>{money(shiftRecap.cashMovements.cashIn)} / {money(shiftRecap.cashMovements.cashOut)}</strong><small>Refund tunai {money(shiftRecap.refunds.cashTotal)}</small></div><div><span>Selisih</span><strong>{shiftRecap.difference == null ? '-' : money(shiftRecap.difference)}</strong><small>{(shiftRecap.paymentBreakdown?.length ? shiftRecap.paymentBreakdown.map((item) => `${item.methodName} ${money(item.grossAmount)} → ${item.settlementAccountCode}/${item.settlementBehavior}${item.feeAmount > 0 ? ` · MDR ${money(item.feeAmount)}` : ''}`).join(' · ') : Object.entries(shiftRecap.payments).map(([method,total]) => `${method} ${money(total)}`).join(' · ')) || 'Belum ada pembayaran'}</small></div></div> : <div className="syncEmpty"><Store size={20}/><span>Belum ada recap shift yang dapat ditampilkan.</span></div>}
       </article>
       <article className="shiftPanel">
-        <div className="cartTitle"><div><small>CASH MOVEMENT</small><h2>Kas masuk / keluar shift aktif</h2></div><span>{cashMovements.length} movement</span></div>
+        <div className="cartTitle"><div><small>TRANSFER KAS</small><h2>Mutasi kas laci yang terjurnal</h2></div><span>{cashMovements.length} movement</span></div>
         <div className="cashMovementList">{cashMovements.length ? cashMovements.map((movement) => <div key={movement.id} className="heldItem"><div><strong>{movement.type === 'CASH_IN' ? 'Kas masuk' : 'Kas keluar'}</strong><small>{movement.reason} · {new Date(movement.createdAt).toLocaleString('id-ID')}</small></div><strong>{movement.type === 'CASH_IN' ? '+' : '-'}{money(movement.amount)}</strong></div>) : <div className="syncEmpty"><WalletCards size={20}/><span>Belum ada cash movement pada shift aktif.</span></div>}</div>
       </article>
     </section>

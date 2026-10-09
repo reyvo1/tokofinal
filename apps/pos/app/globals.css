@@ -182,3 +182,30 @@ html[data-theme='dark'] .login>form label>input::placeholder{color:var(--pos-tex
 
 /* Personal memo is server-backed; no cashier note is stored in browser localStorage. */
 .posV4 .staffMemoWidget{margin:0 0 .75rem;border:1px solid var(--pos-border);border-radius:14px;background:var(--pos-surface);color:var(--pos-text)}.posV4 .staffMemoWidget>summary{display:flex;cursor:pointer;justify-content:space-between;gap:.75rem;padding:.7rem .85rem}.posV4 .staffMemoWidget>summary span{color:var(--pos-text-subtle);font-size:.75rem}.posV4 .staffMemoBody{display:grid;gap:.65rem;border-top:1px solid var(--pos-border);padding:.8rem}.posV4 .staffMemoForm{display:grid;grid-template-columns:minmax(140px,.7fr) minmax(180px,1.3fr) auto;gap:.55rem;align-items:end}.posV4 .staffMemoList{display:grid;gap:.5rem}.posV4 .staffMemoCard{display:flex;justify-content:space-between;gap:.75rem;border:1px solid var(--pos-border);border-radius:10px;background:var(--pos-surface);padding:.65rem}.posV4 .staffMemoCard p{margin:.3rem 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--pos-text-subtle)}@media(max-width:760px){.posV4 .staffMemoForm{grid-template-columns:1fr}.posV4 .staffMemoCard{display:grid}}
+
+/* POS Digital Services: read-only catalog + server transaction verification. */
+.posV4 .ppobEntry{display:flex;min-width:0;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:14px 16px;border:1px solid #99f6e4;border-radius:18px;background:linear-gradient(110deg,#f0fdfa,#f8fafc)}
+.posV4 .ppobEntry strong,.posV4 .ppobEntry small{display:block}
+.posV4 .ppobEntry strong{font-size:13px;font-weight:700;color:#134e4a}
+.posV4 .ppobEntry small{font-size:11px;margin-top:5px;color:#475569}
+.posV4 .ppobWorkspace{display:grid;gap:14px;margin-bottom:20px;min-width:0}
+.posV4 .ppobSafety{display:flex;gap:12px;align-items:flex-start;border-radius:18px;border:1px solid #fcd34d;background:#fffbeb;padding:16px;color:#92400e}
+.posV4 .ppobSafety strong{font-size:13px}
+.posV4 .ppobSafety p{font-size:11px;line-height:1.65;margin-top:4px}
+.posV4 .ppobPanels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.posV4 .ppobPanel{min-width:0;border:1px solid #e2e8f0;background:#fff;border-radius:22px;padding:16px;box-shadow:0 12px 25px rgba(15,23,42,.04)}
+.posV4 .ppobPanel .cartTitle button{display:inline-flex;align-items:center;gap:4px}
+.posV4 .ppobSearch{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.posV4 .ppobSearch input{width:100%;min-width:0}
+.posV4 .ppobList{list-style:none;padding:0;margin:8px 0 14px;max-height:440px;overflow-y:auto}
+.posV4 .ppobList li{display:flex;min-width:0;align-items:start;justify-content:space-between;gap:12px;border-bottom:1px solid #f1f5f9;padding:12px 4px}
+.posV4 .ppobList li>div{display:grid;gap:5px;min-width:0}
+.posV4 .ppobList li>div:last-child{text-align:right;flex-shrink:0}
+.posV4 .ppobList strong{font-size:12px;overflow-wrap:anywhere}
+.posV4 .ppobList small{font-size:10px;overflow-wrap:anywhere;color:#64748b}
+.posV4 .ppobStatus{font-size:10px;font-weight:700;color:#0f766e}
+@media(max-width:780px){.posV4 .ppobPanels{grid-template-columns:minmax(0,1fr)}}
+.posV4[data-theme='dark'] .ppobEntry,.posV4[data-theme='dark'] .ppobPanel{background:#0b1713;border-color:#34534a}
+.posV4[data-theme='dark'] .ppobEntry strong,.posV4[data-theme='dark'] .ppobList strong{color:#e7eee9}
+.posV4[data-theme='dark'] .ppobEntry small,.posV4[data-theme='dark'] .ppobList small{color:#9fb0aa}
+.posV4[data-theme='dark'] .ppobSafety{background:#302514;border-color:#886823;color:#fde68a}

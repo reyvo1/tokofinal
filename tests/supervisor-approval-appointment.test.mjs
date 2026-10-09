@@ -177,6 +177,44 @@ test('a grant is single-use, action-scoped, and company-scoped', async () => {
   assert.match(String(otherCompany.message), /tidak valid untuk perusahaan ini/);
 });
 
+test('a supervisor grant cannot be stolen by another operator or a sister branch', async () => {
+  const prisma = makePrisma();
+  const api = service(prisma);
+  await api.setPin({ sub: 'owner-1', companyId: COMPANY }, APPROVER.id, '482913');
+
+  const grant = await api.approve(CASHIER, '482913', { action: 'SALE_CASH_MOVEMENT', reason: 'cash-out' });
+  const otherOperator = await rejection(() => api.consume(grant.grantId, 'SALE_CASH_MOVEMENT', {
+    ...CASHIER, sub: 'cashier-2',
+  }));
+  assert.equal(otherOperator.getStatus?.() ?? otherOperator.status, 403);
+  assert.match(String(otherOperator.message), /kasir dan cabang pemohon/);
+
+  const otherBranch = await rejection(() => api.consume(grant.grantId, 'SALE_CASH_MOVEMENT', {
+    ...CASHIER, branchId: 'branch-2',
+  }));
+  assert.equal(otherBranch.getStatus?.() ?? otherBranch.status, 403);
+  assert.match(String(otherBranch.message), /kasir dan cabang pemohon/);
+
+  // Denied attempts must not consume the legitimate operator's one-time authorization.
+  assert.equal(api.consume(grant.grantId, 'SALE_CASH_MOVEMENT', CASHIER).grantId, grant.grantId);
+  const replay = await rejection(() => api.consume(grant.grantId, 'SALE_CASH_MOVEMENT', CASHIER));
+  assert.equal(replay.getStatus?.() ?? replay.status, 403);
+});
+
+test('two supervisor approvals issued immediately have distinct opaque nonces', async () => {
+  const prisma = makePrisma();
+  const api = service(prisma);
+  await api.setPin({ sub: 'owner-1', companyId: COMPANY }, APPROVER.id, '482913');
+  const [one, two] = await Promise.all([
+    api.approve(CASHIER, '482913', { action: 'SHIFT_CLOSE', reason: 'first' }),
+    api.approve(CASHIER, '482913', { action: 'SHIFT_CLOSE', reason: 'second' }),
+  ]);
+  assert.notEqual(one.grantId, two.grantId);
+  assert.match(one.grantId, /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i);
+  api.consume(one.grantId, 'SHIFT_CLOSE', CASHIER);
+  api.consume(two.grantId, 'SHIFT_CLOSE', CASHIER);
+});
+
 test('an inactive or absent approver is refused explicitly, never treated as "no approval needed"', async () => {
   const absent = makePrisma({ approverExists: false });
   const noSupervisor = await rejection(() => service(absent).approve(CASHIER, '482913', {

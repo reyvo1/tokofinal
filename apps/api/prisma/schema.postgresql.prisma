@@ -1583,6 +1583,15 @@ model DigitalServiceTransaction {
   sellingPrice   Decimal
   maxPrice       Decimal?
   costAmount     Decimal?
+  // Captured customer cash is posted atomically before provider dispatch.
+  cashierShiftId              String?
+  paymentAccountingEventId    String?
+  settlementAccountingEventId String?
+  refundAccountingEventId     String?
+  refundCashierShiftId        String?
+  capturedAt                  DateTime?
+  settledAt                   DateTime?
+  refundedAt                  DateTime?
   status         DigitalServiceTransactionStatus @default(QUEUED)
   providerRef    String?
   providerRc     String?
@@ -1602,6 +1611,8 @@ model DigitalServiceTransaction {
   @@unique([companyId, idempotencyKey])
   @@index([companyId, branchId, status, createdAt])
   @@index([integrationId, providerSku])
+  @@index([companyId, branchId, cashierShiftId, capturedAt])
+  @@index([companyId, branchId, refundCashierShiftId, refundedAt])
 }
 
 model ExternalMapping {

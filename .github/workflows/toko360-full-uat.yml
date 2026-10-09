@@ -186,6 +186,11 @@ jobs:
           set -o pipefail
           npm run build:gate 2>&1 | tee logs/github-uat/30-build-gate.log
 
+      - name: Simulate POS hardware and signed Digiflazz protocol
+        id: peripheral_sim
+        continue-on-error: true
+        run: npm run ci:peripherals:simulation
+
       - name: Record exact source and build artifact identities
         if: steps.build.outcome == 'success'
         shell: bash
@@ -286,6 +291,11 @@ jobs:
         id: r4_core_business
         continue-on-error: true
         run: npm run ci:r4:probe
+
+      - name: Exercise W3 cashier drawer PostgreSQL journaling on exact built runtime
+        id: w3_cash_postgres
+        continue-on-error: true
+        run: npm run ci:w3:postgres-probe
 
       - name: Exercise P2A mixed-UOM order fulfillment and historical return lifecycle
         id: p2a_multi_uom
@@ -475,6 +485,7 @@ jobs:
           STEP_SCHEMA: ${{ steps.schema.outcome }}
           STEP_SEED: ${{ steps.seed.outcome }}
           STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_PERIPHERAL_SIM: ${{ steps.peripheral_sim.outcome }}
           STEP_RECOVERY: ${{ steps.recovery.outcome }}
           STEP_BROWSER: ${{ steps.browser.outcome }}
           STEP_BUILT_BROWSER: ${{ steps.built_browser.outcome }}
@@ -483,6 +494,7 @@ jobs:
           STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
           STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
           STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          STEP_W3_CASH_POSTGRES: ${{ steps.w3_cash_postgres.outcome }}
           STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
           STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
           STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}
@@ -532,6 +544,7 @@ jobs:
           STEP_SCHEMA: ${{ steps.schema.outcome }}
           STEP_SEED: ${{ steps.seed.outcome }}
           STEP_BUILD: ${{ steps.build.outcome }}
+          STEP_PERIPHERAL_SIM: ${{ steps.peripheral_sim.outcome }}
           STEP_RECOVERY: ${{ steps.recovery.outcome }}
           STEP_BROWSER: ${{ steps.browser.outcome }}
           STEP_BUILT_BROWSER: ${{ steps.built_browser.outcome }}
@@ -540,6 +553,7 @@ jobs:
           STEP_R1_TENANT_ACCESS: ${{ steps.r1_tenant_access.outcome }}
           STEP_R2_HR_PAYROLL: ${{ steps.r2_hr_payroll.outcome }}
           STEP_R4_CORE_BUSINESS: ${{ steps.r4_core_business.outcome }}
+          STEP_W3_CASH_POSTGRES: ${{ steps.w3_cash_postgres.outcome }}
           STEP_P2A_MULTI_UOM: ${{ steps.p2a_multi_uom.outcome }}
           STEP_P2_PAYROLL: ${{ steps.p2_payroll.outcome }}
           STEP_R5_ASSETS_FLEET: ${{ steps.r5_assets_fleet.outcome }}
@@ -575,6 +589,7 @@ jobs:
           check "PostgreSQL schema" "$STEP_SCHEMA"
           check "PostgreSQL seed" "$STEP_SEED"
           check "Build gate" "$STEP_BUILD"
+          check "POS hardware and Digiflazz protocol simulation" "$STEP_PERIPHERAL_SIM"
           check "Payroll recovery fixture" "$STEP_RECOVERY"
           check "Built Browser UAT" "$STEP_BUILT_BROWSER"
           check "Browser UAT evidence" "$STEP_BROWSER"
@@ -583,6 +598,7 @@ jobs:
           check "R1 tenant/access runtime probe" "$STEP_R1_TENANT_ACCESS"
           check "R2 HR/attendance/payroll runtime probe" "$STEP_R2_HR_PAYROLL"
           check "R4 core-business runtime probe" "$STEP_R4_CORE_BUSINESS"
+          check "W3 real PostgreSQL cash journals" "$STEP_W3_CASH_POSTGRES"
           check "P2A mixed-UOM runtime probe" "$STEP_P2A_MULTI_UOM"
           check "P2 payroll runtime probe" "$STEP_P2_PAYROLL"
           check "R5 assets/fleet runtime probe" "$STEP_R5_ASSETS_FLEET"

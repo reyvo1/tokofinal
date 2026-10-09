@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { Permissions } from '../auth/permissions.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { DigitalServicesService } from './digital-services.service';
-import { CreateDigitalServiceTransactionDto } from './dto/digital-services.dto';
+import { CreateDigitalServiceTransactionDto, VerifyDigitalServiceTaxDto } from './dto/digital-services.dto';
 
 @ApiTags('digital-services')
 @ApiBearerAuth()
@@ -16,6 +16,11 @@ export class DigitalServicesController {
   @Get('products') @Permissions('digital_service.view')
   products(@CurrentUser() user: AuthUser, @Query('search') search?: string, @Query('category') category?: string, @Query('limit') limit?: string, @Query('cursor') cursor?: string) {
     return this.services.products(user, search, category, limit, cursor);
+  }
+
+  @Patch('products/:id/tax-verification') @Roles('SUPER_ADMIN', 'OWNER', 'FINANCE') @Permissions('digital_service.manage')
+  verifyTax(@Param('id') id: string, @Body() dto: VerifyDigitalServiceTaxDto, @CurrentUser() user: AuthUser) {
+    return this.services.verifyTax(id, dto, user);
   }
 
   @Post('catalog/sync') @Roles('SUPER_ADMIN', 'OWNER', 'ADMIN') @Permissions('digital_service.manage')
@@ -31,6 +36,12 @@ export class DigitalServicesController {
 
   @Get('transactions/:id') @Permissions('digital_service.view')
   detail(@Param('id') id: string, @CurrentUser() user: AuthUser) { return this.services.transaction(id, user); }
+
+  @Post('transactions/:id/settle') @Roles('SUPER_ADMIN', 'OWNER', 'ADMIN', 'FINANCE') @Permissions('digital_service.manage')
+  settle(@Param('id') id: string, @CurrentUser() user: AuthUser) { return this.services.settle(id, user); }
+
+  @Post('transactions/:id/refund') @Roles('SUPER_ADMIN', 'OWNER', 'ADMIN', 'FINANCE') @Permissions('payment.refund')
+  refund(@Param('id') id: string, @CurrentUser() user: AuthUser) { return this.services.refund(id, user); }
 
   @Post('transactions/:id/recheck') @Roles('SUPER_ADMIN', 'OWNER', 'ADMIN', 'CASHIER') @Permissions('digital_service.manage')
   recheck(@Param('id') id: string, @CurrentUser() user: AuthUser) { return this.services.recheck(id, user); }

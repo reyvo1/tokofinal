@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -32,28 +33,34 @@ test('worker TIDAK boleh punya import literal ke apps/api/dist', () => {
 });
 
 test('worker typecheck tidak bergantung pada apps/api/dist (checkout bersih CI)', () => {
-  // Test ini harus MEMBUAT kondisi CI-nya sendiri, bukan bergantung pada keadaan repo.
-  // `npm run quality:full` membangun api sebelum test jalan, jadi `apps/api/dist` PASTI ada
-  // di sini - padahal runner GitHub menjalankan lint/typecheck di checkout BERSIH tanpa dist/.
-  // Versi pertama test ini menegasikan kondisi itu: ia menolak jalan kalau dist/ ada, jadi ia
-  // MEMERAH sendiri
-  // di dalam quality:full yang sehat. Itu test yang salah, bukan regression yang nyata.
-  const apiDist = path.join(root, 'apps/api/dist');
-  const stash = fs.existsSync(apiDist) ? `${apiDist}.t360-test-stash` : null;
-  if (stash) fs.renameSync(apiDist, stash);
-
+  // Reproduce a clean checkout in an isolated, temporary workspace. Never rename
+  // apps/api/dist in the shared repository: node --test executes test files in
+  // parallel, and another integration test can import that directory concurrently.
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 't360-worker-clean-checkout-'));
   let failure;
   try {
-    execFileSync('npx', ['tsc', '--noEmit', '-p', 'apps/worker/tsconfig.json'], {
-      cwd: root, stdio: 'pipe', timeout: 180_000,
-    });
-  } catch (error) {
-    failure = error.stdout?.toString().slice(0, 600) ?? error.message;
+    const workerDir = path.join(scratch, 'apps/worker');
+    fs.mkdirSync(workerDir, { recursive: true });
+    fs.cpSync(path.join(root, 'apps/worker/src'), path.join(workerDir, 'src'), { recursive: true });
+    fs.copyFileSync(path.join(root, 'apps/worker/tsconfig.json'), path.join(workerDir, 'tsconfig.json'));
+    // Resolve exactly the installed, generated package dependencies without
+    // copying their contents or introducing a separate package-lock.
+    fs.symlinkSync(path.join(root, 'node_modules'), path.join(scratch, 'node_modules'), 'dir');
+    assert.equal(fs.existsSync(path.join(scratch, 'apps/api/dist')), false,
+      'isolated checkout must have no apps/api/dist');
+    const tsc = path.join(root, 'node_modules/typescript/bin/tsc');
+    assert.equal(fs.existsSync(tsc), true, 'use the workspace-pinned TypeScript compiler');
+    try {
+      execFileSync(process.execPath, [tsc, '--noEmit', '-p', path.join(workerDir, 'tsconfig.json')], {
+        cwd: scratch, stdio: 'pipe', timeout: 180_000,
+      });
+    } catch (error) {
+      failure = [error.stdout?.toString(), error.stderr?.toString(), error.message]
+        .filter(Boolean).join('\n').slice(0, 1800);
+    }
   } finally {
-    if (stash) fs.renameSync(stash, apiDist);
+    fs.rmSync(scratch, { recursive: true, force: true });
   }
-
-  assert.equal(fs.existsSync(apiDist), true, 'apps/api/dist harus dikembalikan setelah test');
   assert.equal(failure, undefined,
     `typecheck worker GAGAL tanpa apps/api/dist - itu persis kondisi CI:\n${failure}`);
 });
