@@ -86,3 +86,12 @@ test('security proposal preserves npm install failure diagnostics without mutati
   assert.match(script, /slice\(-24\)/);
   assert.doesNotMatch(script, /--legacy-peer-deps|--force/);
 });
+
+test('diagnostic security proposal refuses incomplete npm audit or nonzero registry exit without blockers', () => {
+  assert.match(script, /const evaluated = evaluateAudit\(auditJson\)/);
+  assert.match(script, /auditRun\.error \|\| \(auditRun\.exitCode !== 0 && evaluated\.blocking === 0\)/);
+  assert.match(script, /security proposal npm audit failed/);
+  const auditGate = read('scripts/ci-audit-production-deps.mjs');
+  assert.match(auditGate, /assertCompleteNpmAudit\(audit\)/);
+  assert.match(auditGate, /NPM_AUDIT_INVALID/);
+});

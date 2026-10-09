@@ -1,0 +1,75 @@
+name: TOKO360 W3 Security Lock Recovery
+
+# This diagnostic pipeline runs against a dedicated feature branch ONLY.
+# It cannot publish to main, change protected branches, or forge exact-commit UAT.
+on:
+  push:
+    branches: [ci/w3-security-lock-recovery]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: w3-security-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  authentic-lock-and-local-uat:
+    name: Resolve public npm, audit, and run unchanged local UAT
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CI: 'true'
+      npm_config_registry: https://registry.npmjs.org/
+    steps:
+      - name: Checkout exact recovery candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Node 22 with authentic npm metadata
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve uncommitted security lock in isolated workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/ci-resolve-security-dependency-lock.mjs "$GITHUB_WORKSPACE" "$RUNNER_TEMP/w3-security-package-lock.json"
+          node scripts/verify-security-lock.mjs package.json "$RUNNER_TEMP/w3-security-package-lock.json" .github/ci/security-dependency-plan.json package-lock.json
+          cp "$RUNNER_TEMP/w3-security-package-lock.json" package-lock.json
+
+      - name: Authentic deterministic npm install including optional native packages
+        run: npm ci --include=optional --no-fund
+
+      - name: Exercise authentic patched Sharp/libvips and source-map-js runtime
+        run: node scripts/ci-verify-security-runtime.mjs
+
+      - name: Prepare dedicated local SQLite UAT environment
+        run: cp .env.local.example .env
+
+      - name: Production security audit — unchanged HIGH and CRITICAL policy
+        run: npm run ci:audit:production
+
+      - name: Exact candidate official local UAT — unchanged quality gates
+        run: npm run uat:pre-github:local
+
+      - name: Bind candidate lock to source commit after successful gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- package.json .github/ci/security-dependency-plan.json
+          test -n "$(git diff -- package-lock.json)"
+          mkdir -p "$RUNNER_TEMP/w3-security-evidence"
+          cp package-lock.json "$RUNNER_TEMP/w3-security-evidence/package-lock.json"
+          node -e 'const fs=require("node:fs"),c=require("node:crypto");const lock=fs.readFileSync("package-lock.json");fs.writeFileSync(process.env.RUNNER_TEMP+"/w3-security-evidence/evidence.json",JSON.stringify({checkpoint:process.env.GITHUB_SHA,lockSha256:c.createHash("sha256").update(lock).digest("hex"),checks:["npm ci --include=optional --no-fund","npm run ci:audit:production","npm run uat:pre-github:local"],exactCommitUat:"PENDING",humanStage20:"PENDING"},null,2)+"\n")'
+
+      - name: Publish lock candidate ONLY after all gates PASS
+        uses: actions/upload-artifact@v4
+        with:
+          name: w3-reviewed-npm-lock-${{ github.sha }}
+          path: ${{ runner.temp }}/w3-security-evidence/
+          if-no-files-found: error
+          retention-days: 7

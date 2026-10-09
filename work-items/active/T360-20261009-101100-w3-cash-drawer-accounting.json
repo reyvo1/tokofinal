@@ -42,7 +42,10 @@
     "Complete local gates, PostgreSQL fault injection, built browser UAT, exact-commit GitHub UAT and separate Human Stage-20 remain mandatory.",
     "Simulated POS ESC/POS/RawBT/cash drawer/barcode and signed Digiflazz provider cases run as mandatory hard-failing gates in both exact-source GitHub heavy workflows; human/provider certification remain separate.",
     "Exact-source GitHub PostgreSQL cashier runtime probe posts balanced real debit/credit lines for CASH_IN, CASH_OUT, SHORT, OVER; rejects overdraft, payload replay mismatch and duplicate close; aggregate/R8 cannot pass without its evidence.",
-    "Exact-source PostgreSQL W3 probe must reject CASHIER ledger/account rule mutations, missing Finance rule cash capture and variance close, and >5% cash withdrawal without supervisor approval, asserting zero affected database rows."
+    "Exact-source PostgreSQL W3 probe must reject CASHIER ledger/account rule mutations, missing Finance rule cash capture and variance close, and >5% cash withdrawal without supervisor approval, asserting zero affected database rows.",
+    "Fail-closed npm production audit and security proposal integrity: truncated audit JSON, inconsistent vulnerability counts, hidden HIGH findings or registry errors must never create a PASS.",
+    "The security-only lock resolver and candidate verifier reject partial Sharp native package graphs on every platform, including absent or wrongly classified optional @img/sharp binaries, before a lock can be adopted; full npm ci and HIGH/CRITICAL audit remain mandatory.",
+    "GitHub lock-recovery must exercise real sharp 0.35.5 native PNG generation and source-map-js 1.2.2 mapping after npm ci, and before unchanged production audit/UAT, failing closed if native binaries are unavailable."
   ],
   "testPlan": [
     "node --test tests/w3-cash-drawer-accounting.test.mjs tests/cash-ppob-financial-safety.test.mjs",
@@ -52,7 +55,10 @@
     "Exact-commit GitHub full system simulation and built browser UAT; retain Human Stage-20 pending.",
     "npm run ci:peripherals:simulation — on actual printer/scanner modules plus loopback provider cases, with current source fingerprint evidence and no physical devices.",
     "npm run ci:w3:postgres-probe — PostgreSQL locked staging runtime with dedicated CASHIER actor, Finance-configured accounts and POSTED journal verification in both heavy GitHub workflows.",
-    "On CI PostgreSQL: authenticated cashier negative paths for account/rule privilege escalation, missing mapping, premature variance close and supervisor cash-out denial; assert no rows created and shift remains OPEN."
+    "On CI PostgreSQL: authenticated cashier negative paths for account/rule privilege escalation, missing mapping, premature variance close and supervisor cash-out denial; assert no rows created and shift remains OPEN.",
+    "node --test tests/github-production-dependency-audit.test.mjs tests/github-production-dependency-audit-failclosed.test.mjs tests/github-security-dependency-proposal.test.mjs",
+    "node --test tests/security-lock-resolver-contract.test.mjs tests/security-lock-real-npm-regression.test.mjs tests/w3-security-github-recovery-gate.test.mjs",
+    "node scripts/ci-verify-security-runtime.mjs (only after authentic npm ci --include=optional)"
   ],
   "migrationPlan": "No database column/table/enum added. Existing AccountingEvent sourceType/sourceId, AccountingPosting, JournalEntry, accountingPostingRule and account relations are reused; historical rows are not backfilled.",
   "rollbackPlan": "Finance disables invalid posting rules to block NEW movements; preserve all committed AccountingEvent and journal rows, reconcile historical unjournalled movements explicitly, and perform any correction with Accounting Core compensating event only. Do not erase business evidence or schema.",
@@ -68,7 +74,9 @@
     "scripts/ci-w3-cash-postgres-probe.mjs",
     "tests/w3-cash-postgres-ci-wiring.test.mjs",
     "docs/W3-POSTGRES-RUNTIME-GATE-20261009.md",
-    "docs/W3-POSTGRES-SECURITY-PREFLIGHT-20261009.md"
+    "docs/W3-POSTGRES-SECURITY-PREFLIGHT-20261009.md",
+    "docs/W3-SECURITY-AUDIT-FAILCLOSED-20261009.md",
+    "docs/W3-SECURITY-NATIVE-GRAPH-CLOSURE-20261009.md"
   ],
   "createdAt": "2026-10-09T10:11:00+08:00",
   "updatedAt": "2026-10-09T15:00:00+08:00"

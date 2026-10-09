@@ -7,6 +7,47 @@ import { spawnNpm } from './lib/process-runner.mjs';
 import { sourceFingerprint } from './lib/source-fingerprint.mjs';
 
 const DEFAULT_OUTPUT = 'handoff/quality/npm-audit-production-latest.json';
+const SEVERITIES = ['info', 'low', 'moderate', 'high', 'critical'];
+
+function auditObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * npm audit is an external security authority, not an optional statistics feed.
+ * An empty/truncated/error response must never be interpreted as zero findings.
+ * Verify the metadata against the actual vulnerability entries before issuing
+ * a PASS; the unchanged HIGH/CRITICAL policy is applied only to valid reports.
+ */
+export function assertCompleteNpmAudit(audit) {
+  if (!auditObject(audit) || !auditObject(audit.metadata) ||
+      !auditObject(audit.metadata.vulnerabilities) || !auditObject(audit.vulnerabilities) || audit.error) {
+    throw new Error('NPM_AUDIT_INVALID: missing vulnerability report/metadata or npm audit error');
+  }
+  const counts = audit.metadata.vulnerabilities;
+  for (const severity of [...SEVERITIES, 'total']) {
+    if (!Number.isSafeInteger(counts[severity]) || counts[severity] < 0) {
+      throw new Error(`NPM_AUDIT_INVALID: invalid or missing ${severity} count`);
+    }
+  }
+  if (SEVERITIES.reduce((sum, severity) => sum + counts[severity], 0) !== counts.total) {
+    throw new Error('NPM_AUDIT_INVALID: inconsistent total vulnerability count');
+  }
+  const observed = Object.fromEntries(SEVERITIES.map((severity) => [severity, 0]));
+  for (const [name, entry] of Object.entries(audit.vulnerabilities)) {
+    if (!auditObject(entry) || !SEVERITIES.includes(entry.severity) ||
+        typeof entry.name !== 'string' || entry.name.length === 0 ||
+        entry.name !== name) {
+      throw new Error(`NPM_AUDIT_INVALID: malformed vulnerability entry ${name}`);
+    }
+    observed[entry.severity] += 1;
+  }
+  for (const severity of SEVERITIES) {
+    if (counts[severity] !== observed[severity]) {
+      throw new Error(`NPM_AUDIT_INVALID: ${severity} metadata (${counts[severity]}) differs from findings (${observed[severity]})`);
+    }
+  }
+}
 
 export function vulnerabilityCounts(audit) {
   const value = audit?.metadata?.vulnerabilities || {};
@@ -37,6 +78,7 @@ export function blockingFindings(audit) {
 }
 
 export function evaluateAudit(audit) {
+  assertCompleteNpmAudit(audit);
   const counts = vulnerabilityCounts(audit);
   const findings = blockingFindings(audit);
   const blocking = counts.high + counts.critical;

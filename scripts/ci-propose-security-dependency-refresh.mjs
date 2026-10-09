@@ -159,7 +159,7 @@ function evaluateCandidate({ root, outputDir, sourceIdentity, committedLockSha25
     // Deliberately do not seed the candidate with the committed lock. Security proposals must
     // resolve from the patched manifests so transitive overrides/advisory fixes are actually
     // exercised instead of inheriting stale vulnerable resolutions from the old lockfile.
-    const install = run(tempRoot, ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund']);
+    const install = run(tempRoot, ['install', '--package-lock-only', '--include=optional', '--ignore-scripts', '--no-audit', '--no-fund']);
     fs.writeFileSync(path.join(candidateOutput, 'npm-install-package-lock-only.log'), `${install.stdout}${install.stderr}`);
     if (install.error || install.exitCode !== 0) {
       const tail = `${install.stderr || install.stdout || ''}`.trim().split(/\r?\n/).slice(-24).join(' | ').slice(-4000);
@@ -179,6 +179,11 @@ function evaluateCandidate({ root, outputDir, sourceIdentity, committedLockSha25
     try { auditJson = JSON.parse(auditRun.stdout || '{}'); }
     catch { throw new Error(`security proposal npm audit did not return valid JSON: ${auditRun.stderr.slice(-500)}`); }
     const evaluated = evaluateAudit(auditJson);
+    // npm may exit nonzero for registry/CLI errors without a blocking finding.
+    // Never publish such a result as an audit-clean candidate.
+    if (auditRun.error || (auditRun.exitCode !== 0 && evaluated.blocking === 0)) {
+      throw new Error(`security proposal npm audit failed (exit ${auditRun.exitCode}${auditRun.error ? `, error: ${auditRun.error}` : ''}) without high/critical finding`);
+    }
     result.audit = { exitCode: auditRun.exitCode, ...evaluated };
 
     const proposedLock = path.join(tempRoot, 'package-lock.json');

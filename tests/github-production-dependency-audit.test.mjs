@@ -4,8 +4,22 @@ import fs from 'node:fs';
 import { blockingFindings, evaluateAudit, vulnerabilityCounts } from '../scripts/ci-audit-production-deps.mjs';
 
 test('production dependency audit blocks high/critical but records lower severities', () => {
-  const safe = { metadata: { vulnerabilities: { info: 0, low: 2, moderate: 1, high: 0, critical: 0, total: 3 } } };
-  const bad = { metadata: { vulnerabilities: { low: 0, moderate: 0, high: 2, critical: 1, total: 3 } } };
+  const safe = {
+    metadata: { vulnerabilities: { info: 0, low: 2, moderate: 1, high: 0, critical: 0, total: 3 } },
+    vulnerabilities: {
+      'low-a': { name: 'low-a', severity: 'low' },
+      'low-b': { name: 'low-b', severity: 'low' },
+      'moderate-a': { name: 'moderate-a', severity: 'moderate' },
+    },
+  };
+  const bad = {
+    metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 2, critical: 1, total: 3 } },
+    vulnerabilities: {
+      'high-a': { name: 'high-a', severity: 'high' },
+      'high-b': { name: 'high-b', severity: 'high' },
+      'critical-a': { name: 'critical-a', severity: 'critical' },
+    },
+  };
   assert.deepEqual(vulnerabilityCounts(safe), { info: 0, low: 2, moderate: 1, high: 0, critical: 0, total: 3 });
   assert.equal(evaluateAudit(safe).passed, true);
   assert.equal(evaluateAudit(bad).blocking, 3);
